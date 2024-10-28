@@ -1,5 +1,6 @@
-export function getUser(data: any): any {
-    return (dispatch: any) => {
-        dispatch({});
-    };
-}
+import { GET_USER_INFOR } from './actionsType';
+
+export const getUserInfor = (data : any) => ({
+    type: GET_USER_INFOR ,
+    payload: data,
+});

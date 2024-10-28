@@ -2,12 +2,12 @@ import { useSelector } from "react-redux";
 import { GlobalState } from "../global";
 
 const useAppAccessor = () => {
-    const getUser = useSelector((state: GlobalState) => {
-        return state.User;
+    const getUserInfor = useSelector((state: GlobalState) => {
+        return state.login;
     });
 
     return {
-        getUser: () => getUser,
+        getUserInfor: () => getUserInfor,
     };
 };
 

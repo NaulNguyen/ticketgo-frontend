@@ -1,49 +1,65 @@
-// CompanyRegistration.tsx
 import React, { useState } from "react";
-import { Grid, TextField, Button, IconButton, InputAdornment } from "@mui/material";
+import { Grid, TextField, Button, IconButton, InputAdornment, Typography, Box } from "@mui/material";
 import { Formik, Form, Field } from "formik";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
-import { companyValidationSchema } from "../../schemas";
+import { userValidationSchema } from "../schemas";
+import UserService from "../service/UserService";
 
-interface CompanyRegistrationProps {
-    onSubmit: (values: any) => void;
-}
+interface RegistrationProps {
+    onClose: () => void;
+    onLoginClick: () => void; // Prop to open the login modal
+  }
 
-const CompanyRegistration: React.FC<CompanyRegistrationProps> = ({ onSubmit }) => {
+const Registration: React.FC<RegistrationProps> = ({ onClose, onLoginClick }) => {
     const [showPassword, setShowPassword] = useState(false);
 
     const togglePasswordVisibility = () => {
         setShowPassword(!showPassword);
     };
 
+
+    const handleUserSubmit = async (values: any) => {
+        try {
+            await UserService.register(values);  
+            onClose();
+        } catch (error) {
+            console.error("User registration failed:", error);
+        }
+    };
+    
+
     return (
         <Formik
             initialValues={{
-                password: "",
                 email: "",
-                companyName: "",
-                phone: "",
-                address: "",
-                description: "",
-                businessLicense: "",
+                password: "",
+                fullName: "",
+                phoneNumber: "",
+                dateOfBirth: "",
             }}
-            validationSchema={companyValidationSchema}
+            validationSchema={userValidationSchema}
             onSubmit={(values, actions) => {
-                onSubmit(values);
+                console.log(values);
+                handleUserSubmit(values);
                 actions.resetForm();
             }}>
-            {({ handleSubmit, handleChange, values, errors, touched }) => (
+            {({  handleSubmit, handleChange, setFieldValue, values, errors, touched  }) => (
                 <Form onSubmit={handleSubmit}>
                     <Grid container spacing={2}>
                         <Grid item xs={12}>
+                            <Typography variant="h4" align="center">
+                                Đăng ký
+                            </Typography>
+                        </Grid>
+                        <Grid item xs={12}>
                             <Field
                                 as={TextField}
-                                label="Tên công ty"
-                                name="companyName"
-                                value={values.companyName}
+                                label="Họ và Tên"
+                                name="fullName"
+                                value={values.fullName}
                                 onChange={handleChange}
-                                error={touched.companyName && !!errors.companyName}
-                                helperText={touched.companyName && errors.companyName}
+                                error={touched.fullName && !!errors.fullName}
+                                helperText={touched.fullName && errors.fullName}
                                 fullWidth
                                 required
                             />
@@ -91,11 +107,11 @@ const CompanyRegistration: React.FC<CompanyRegistrationProps> = ({ onSubmit }) =
                             <Field
                                 as={TextField}
                                 label="Số điện thoại"
-                                name="phone"
-                                value={values.phone}
+                                name="phoneNumber"
+                                value={values.phoneNumber}
                                 onChange={handleChange}
-                                error={touched.phone && !!errors.phone}
-                                helperText={touched.phone && errors.phone}
+                                error={touched.phoneNumber && !!errors.phoneNumber}
+                                helperText={touched.phoneNumber && errors.phoneNumber}
                                 fullWidth
                                 required
                             />
@@ -103,38 +119,18 @@ const CompanyRegistration: React.FC<CompanyRegistrationProps> = ({ onSubmit }) =
                         <Grid item xs={12}>
                             <Field
                                 as={TextField}
-                                label="Địa chỉ"
-                                name="address"
-                                value={values.address}
-                                onChange={handleChange}
-                                error={touched.address && !!errors.address}
-                                helperText={touched.address && errors.address}
+                                label="Ngày sinh"
+                                name="dateOfBirth"
+                                type="date"
+                                value={values.dateOfBirth}
+                                onChange={(e: any) => {
+                                    const isoDate = e.target.value;
+                                    setFieldValue("dateOfBirth", isoDate); 
+                                }}
+                                error={touched.dateOfBirth && !!errors.dateOfBirth}
+                                helperText={touched.dateOfBirth && errors.dateOfBirth}
                                 fullWidth
-                                required
-                            />
-                        </Grid>
-                        <Grid item xs={12}>
-                            <Field
-                                as={TextField}
-                                label="Mô tả"
-                                name="description"
-                                value={values.description}
-                                onChange={handleChange}
-                                error={touched.description && !!errors.description}
-                                helperText={touched.description && errors.description}
-                                fullWidth
-                            />
-                        </Grid>
-                        <Grid item xs={12}>
-                            <Field
-                                as={TextField}
-                                label="Giấy phép kinh doanh"
-                                name="businessLicense"
-                                value={values.businessLicense}
-                                onChange={handleChange}
-                                error={touched.businessLicense && !!errors.businessLicense}
-                                helperText={touched.businessLicense && errors.businessLicense}
-                                fullWidth
+                                InputLabelProps={{ shrink: true }} 
                                 required
                             />
                         </Grid>
@@ -144,10 +140,28 @@ const CompanyRegistration: React.FC<CompanyRegistrationProps> = ({ onSubmit }) =
                             </Button>
                         </Grid>
                     </Grid>
+
+                    <Typography variant="body2" paddingTop={2} sx={{ fontSize: "1rem" }}>
+                        Bạn đã có tài khoản?{' '}
+                        <Box
+                            component="span"
+                            color="primary.main"
+                            sx={{
+                            cursor: "pointer",
+                            textDecoration: "none",
+                            "&:hover": {
+                                textDecoration: "underline",
+                            },
+                            }}
+                            onClick={onLoginClick}
+                        >
+                            Đăng nhập
+                        </Box>
+                    </Typography>
                 </Form>
             )}
         </Formik>
     );
 };
 
-export default CompanyRegistration;
+export default Registration;
