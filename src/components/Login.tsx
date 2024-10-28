@@ -31,6 +31,7 @@ const Login: React.FC<LoginProps> = ({ onClose, onRegisterClick }) => {
             Cookies.set('accessToken', accessToken);
             Cookies.set('refreshToken', refreshToken);
             const userInfoResponse = await UserService.fetchUserInfor();
+            console.log('User Info Response:', userInfoResponse); // Log the response to check its structure
             dispatch(loginSuccess(userInfoResponse));
             onClose();
         }

@@ -25,7 +25,7 @@ const loginReducer = (state = initialState, action: any): LoginState => {
                 isAuthenticated: true,
                 isLoading: false,
                 error: "",
-                user: { ...action.payload.user }, // Ensure this structure matches your user data
+                user: { ...action.payload.data }, 
             };
         case LOGIN_FAILURE:
             return { ...state, isLoading: false, error: action.payload };

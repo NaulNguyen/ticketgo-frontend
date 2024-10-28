@@ -4,7 +4,9 @@ import Cookies from 'js-cookie';
 const API_URL = 'http://localhost:8080';
 
 const getToken = () => {
-  return Cookies.get('jwt');
+  const token = Cookies.get('accessToken');
+  console.log('JWT Token:', token);
+  return token;
 };
 
 const axiosWithJWT = axios.create({
