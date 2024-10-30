@@ -1,32 +1,25 @@
 import React, { useState } from "react";
-import { Header } from "../components";
-import { Button, TextField, IconButton, InputAdornment, Autocomplete } from "@mui/material";
-import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
-import MyLocationIcon from "@mui/icons-material/MyLocation";
-import PlaceIcon from "@mui/icons-material/Place";
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
+import { DestinationCard, Header, Search } from "../components";
+import { IconButton, Container, Typography, Box } from "@mui/material";
 import { ToastContainer } from "react-toastify";
-
-const cities = [
-    "Hà Nội",
-    "Hồ Chí Minh",
-    "Đà Nẵng",
-    "Hải Phòng",
-    "Cần Thơ",
-    "Nha Trang",
-    "Huế",
-];
+import ArrowBackIosIcon from "@mui/icons-material/ArrowBackIos";
+import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 
 const Home = () => {
-    const [departure, setDeparture] = useState<string | null>(null);
-    const [destination, setDestination] = useState<string | null>(null);
-    const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+    const [index, setIndex] = useState(0);
+    const totalCards = 9;
+    const cardsToShow = 7;
 
-    const handleSwap = () => {
-        const temp = departure;
-        setDeparture(destination);
-        setDestination(temp);
+    const handlePrev = () => {
+        if (index > 0) {
+            setIndex(index - 1);
+        }
+    };
+
+    const handleNext = () => {
+        if (index < totalCards - cardsToShow) {
+            setIndex(index + 1);
+        }
     };
 
     return (
@@ -40,106 +33,42 @@ const Home = () => {
                     alt="Banner"
                     className="w-full h-[480px] object-cover"
                 />
-                <div className="absolute inset-0 flex justify-center items-center text-white text-3xl font-bold">
-                    {/* Search Section */}
-                    <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-5xl border border-gray-300">
-                        <div className="flex items-center space-x-4">
-                            {/* Nơi xuất phát */}
-                            <Autocomplete
-                                freeSolo
-                                options={cities}
-                                value={departure}
-                                onChange={(event: React.SyntheticEvent, newValue: string | null) => {
-                                    setDeparture(newValue);
-                                }}
-                                renderInput={(params) => (
-                                    <TextField
-                                        {...params}
-                                        label="Nơi xuất phát"
-                                        variant="outlined"
-                                        fullWidth
-                                        sx={{ minWidth: "220px" }}
-                                        InputProps={{
-                                            ...params.InputProps,
-                                            startAdornment: (
-                                                <InputAdornment position="start">
-                                                    <MyLocationIcon sx={{ color: "blue" }} />
-                                                </InputAdornment>
-                                            ),
-                                        }}
-                                    />
-                                )}
-                            />
-
-                            {/* Swap Button */}
-                            <IconButton
-                                color="primary"
-                                onClick={handleSwap}
-                                aria-label="swap"
-                                size="large">
-                                <SwapHorizIcon />
-                            </IconButton>
-
-                            {/* Nơi đến */}
-                            <Autocomplete
-                                freeSolo
-                                options={cities}
-                                value={destination}
-                                onChange={(event: React.SyntheticEvent, newValue: string | null) => {
-                                    setDestination(newValue);
-                                }}
-                                renderInput={(params) => (
-                                    <TextField
-                                        {...params}
-                                        label="Nơi đến"
-                                        variant="outlined"
-                                        fullWidth
-                                        sx={{ minWidth: "220px" }}
-                                        InputProps={{
-                                            ...params.InputProps,
-                                            startAdornment: (
-                                                <InputAdornment position="start">
-                                                    <PlaceIcon sx={{ color: "red" }} />
-                                                </InputAdornment>
-                                            ),
-                                        }}
-                                    />
-                                )}
-                            />
-
-                            {/* Thời gian */}
-                            <LocalizationProvider dateAdapter={AdapterDateFns}>
-                              <DatePicker
-                                  label="Chọn thời gian"
-                                  value={selectedDate}
-                                  onChange={(date) => setSelectedDate(date)}
-                                  minDate={new Date()}
-                                  disablePast
-                                  slotProps={{
-                                      textField: {
-                                          variant: "outlined",
-                                          fullWidth: true,
-                                          sx: { minWidth: "220px" },
-                                      },
-                                  }}
-                              />
-                          </LocalizationProvider>
-
-
-                            {/* Search Button */}
-                            <div className="flex justify-center ml-4 flex-row">
-                                <Button
-                                    variant="contained"
-                                    color="primary"
-                                    size="medium"
-                                    sx={{ minWidth: "120px", py: 2 }}>
-                                    Tìm kiếm
-                                </Button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <Search />
             </div>
+            <Container>
+                <Typography variant="h6" fontWeight="bold" ml={5} mt={2}>
+                    <span className="border-2 border-cyan-500 mr-2"></span>Tuyến đường phổ biến
+                </Typography>
+                <Box display="flex" alignItems="center">
+                    <IconButton onClick={handlePrev} disabled={index === 0}>
+                        <ArrowBackIosIcon />
+                    </IconButton>
+                    <Box
+                        sx={{
+                            display: "flex",
+                            overflow: "hidden",
+                            gap: 2,
+                        }}>
+                        <Box
+                            sx={{
+                                display: "flex",
+                                transform: `translateX(-${index * 100}%)`,
+                                transition: "transform 0.5s ease",
+                                width: `${(totalCards * 100) / cardsToShow}%`,
+                                gap: 2,
+                            }}>
+                            {Array.from({ length: totalCards }, (_, i) => (
+                                <Box key={i} sx={{ flex: "1 0 auto" }}>
+                                    <DestinationCard />
+                                </Box>
+                            ))}
+                        </Box>
+                    </Box>
+                    <IconButton onClick={handleNext} disabled={index >= totalCards - cardsToShow}>
+                        <ArrowForwardIosIcon />
+                    </IconButton>
+                </Box>
+            </Container>
         </div>
     );
 };

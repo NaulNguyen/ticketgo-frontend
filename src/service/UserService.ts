@@ -1,5 +1,4 @@
 import axios from "axios";
-import Cookies from "js-cookie";
 import { axiosWithJWT } from "../config/axiosConfig";
 
 class UserService {
@@ -7,7 +6,10 @@ class UserService {
 
     static async register(userData: any) {
         try {
-            const response = await axios.post(`${UserService.BASE_URL}/api/v1/auth/register`, userData);
+            const response = await axios.post(
+                `${UserService.BASE_URL}/api/v1/auth/register`,
+                userData
+            );
             return response.data;
         } catch (err) {
             throw err;
@@ -16,7 +18,11 @@ class UserService {
 
     static async login(userData: any) {
         try {
-            const response = await axios.post(`${UserService.BASE_URL}/api/v1/auth/login`, userData, {headers: {"Content-Type": "application/json"}});
+            const response = await axios.post(
+                `${UserService.BASE_URL}/api/v1/auth/login`,
+                userData,
+                { headers: { "Content-Type": "application/json" } }
+            );
             return response.data;
         } catch (err) {
             throw err;
@@ -32,14 +38,15 @@ class UserService {
             } else {
                 throw new Error(`Unexpected response status: ${response.status}`);
             }
-        } catch (err : any) {
+        } catch (err: any) {
             // Log the error details
-            console.error("Error fetching user info:", err.response ? err.response.data : err.message);
-            throw err; 
+            console.error(
+                "Error fetching user info:",
+                err.response ? err.response.data : err.message
+            );
+            throw err;
         }
     }
-    
 }
-
 
 export default UserService;
