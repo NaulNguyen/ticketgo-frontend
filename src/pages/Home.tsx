@@ -11,22 +11,22 @@ const Home = () => {
     const cardsToShow = 7;
 
     const handlePrev = () => {
-        if (index > 0) {
-            setIndex(index - 1);
-        }
+        if (index > 0) setIndex(index - 1);
     };
 
     const handleNext = () => {
-        if (index < totalCards - cardsToShow) {
-            setIndex(index + 1);
-        }
+        if (index < totalCards - cardsToShow) setIndex(index + 1);
+    };
+
+    const handleKeyDown = (e: any) => {
+        if (e.key === "ArrowLeft") handlePrev();
+        if (e.key === "ArrowRight") handleNext();
     };
 
     return (
-        <div>
+        <div onKeyDown={handleKeyDown} tabIndex={0}>
             <ToastContainer position="top-right" autoClose={3000} />
             <Header />
-            {/* Banner */}
             <div className="relative">
                 <img
                     src="https://static.vexere.com/production/banners/1209/leader-board-vn.jpg"
@@ -43,12 +43,7 @@ const Home = () => {
                     <IconButton onClick={handlePrev} disabled={index === 0}>
                         <ArrowBackIosIcon />
                     </IconButton>
-                    <Box
-                        sx={{
-                            display: "flex",
-                            overflow: "hidden",
-                            gap: 2,
-                        }}>
+                    <Box sx={{ display: "flex", overflow: "hidden", gap: 2 }}>
                         <Box
                             sx={{
                                 display: "flex",
