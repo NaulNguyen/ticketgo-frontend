@@ -1,6 +1,7 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+@import url("https://fonts.googleapis.com/css2?family=Pacifico&display=swap");
 
 body {
     margin: 0;
@@ -13,4 +14,8 @@ body {
 
 code {
     font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
+}
+
+.font-pacifico {
+    font-family: "Pacifico", cursive;
 }
