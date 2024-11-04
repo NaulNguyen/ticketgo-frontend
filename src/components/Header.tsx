@@ -5,31 +5,21 @@ import Registration from "./Register";
 import Login from "./Login";
 
 const Header = () => {
-    const [isRegisterModalOpen, setRegisterModalOpen] = useState(false);
-    const [isLoginModalOpen, setLoginModalOpen] = useState(false);
+    const [modalState, setModalState] = useState({ isRegisterOpen: false, isLoginOpen: false });
 
-    const handleOpenRegisterModal = () => {
-        setRegisterModalOpen(true);
-        setLoginModalOpen(false); // Close login modal if open
+    const openModal = (type: any) => {
+        setModalState({
+            isRegisterOpen: type === "register",
+            isLoginOpen: type === "login",
+        });
     };
 
-    const handleCloseRegisterModal = () => {
-        setRegisterModalOpen(false);
-    };
-
-    const handleOpenLoginModal = () => {
-        setLoginModalOpen(true);
-        setRegisterModalOpen(false); // Close register modal if open
-    };
-
-    const handleCloseLoginModal = () => {
-        setLoginModalOpen(false);
-    };
+    const closeModal = () => setModalState({ isRegisterOpen: false, isLoginOpen: false });
 
     return (
         <header className="flex justify-between items-center px-6 py-4 bg-white shadow-md">
             <div className="flex items-center">
-                <img src="/path-to-your-logo.png" alt="TicketGo Logo" className="w-32 h-auto" />
+                <span className="font-pacifico text-4xl">TicketGo</span>
             </div>
 
             <div className="flex space-x-4">
@@ -37,14 +27,14 @@ const Header = () => {
                     variant="contained"
                     color="primary"
                     startIcon={<LoginIcon />}
-                    onClick={handleOpenLoginModal}>
+                    onClick={() => openModal("login")}>
                     Đăng nhập
                 </Button>
             </div>
 
             <Modal
-                open={isRegisterModalOpen}
-                onClose={handleCloseRegisterModal}
+                open={modalState.isRegisterOpen}
+                onClose={closeModal}
                 aria-labelledby="register-modal"
                 aria-describedby="modal-register-user-company">
                 <Box
@@ -60,16 +50,13 @@ const Header = () => {
                         p: 4,
                         borderRadius: "10px",
                     }}>
-                    <Registration
-                        onClose={handleCloseRegisterModal}
-                        onLoginClick={handleOpenLoginModal}
-                    />
+                    <Registration onClose={closeModal} onLoginClick={() => openModal("login")} />
                 </Box>
             </Modal>
 
             <Modal
-                open={isLoginModalOpen}
-                onClose={handleCloseLoginModal}
+                open={modalState.isLoginOpen}
+                onClose={closeModal}
                 aria-labelledby="login-modal"
                 aria-describedby="modal-login-user">
                 <Box
@@ -85,10 +72,7 @@ const Header = () => {
                         p: 4,
                         borderRadius: "10px",
                     }}>
-                    <Login
-                        onClose={handleCloseLoginModal}
-                        onRegisterClick={handleOpenRegisterModal}
-                    />
+                    <Login onClose={closeModal} onRegisterClick={() => openModal("register")} />
                 </Box>
             </Modal>
         </header>
