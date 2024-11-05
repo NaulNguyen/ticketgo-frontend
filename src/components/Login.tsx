@@ -8,7 +8,6 @@ import UserService from "../service/UserService";
 import Cookies from 'js-cookie';
 import { loginRequest, loginSuccess, loginFailure } from '../actions/login.action';
 import { useDispatch } from 'react-redux';
-import useAppAccessor from '../hook/useAppAccessor';
 
 interface LoginProps {
   onClose: () => void;
@@ -17,10 +16,6 @@ interface LoginProps {
 
 const Login: React.FC<LoginProps> = ({ onClose, onRegisterClick }) => {
     const dispatch = useDispatch();
-    const { getUserInfor } = useAppAccessor(); 
-    const userInfo = getUserInfor();
-
-    console.log("UserInfor: ",userInfo);
     const handleSubmit = async (values: { email: string; password: string; }) => {
       dispatch(loginRequest());
       try {

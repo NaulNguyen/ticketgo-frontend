@@ -2,8 +2,8 @@ import React, { useEffect, useState, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { CircularProgress, Box } from "@mui/material";
 import axios from "axios";
-import { toast, ToastContainer } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css'; // Import styles for toastify
+import { toast } from "react-toastify";
 
 const AccountActivation = () => {
     const location = useLocation();
@@ -56,7 +56,6 @@ const AccountActivation = () => {
 
     return (
         <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" height="100vh">
-            <ToastContainer />
             {isLoading ? (
                 <CircularProgress />
             ) : (

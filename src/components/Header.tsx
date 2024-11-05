@@ -1,11 +1,15 @@
 import React, { useState } from "react";
-import { Button, Modal, Box } from "@mui/material";
+import { Button, Modal, Box, Avatar, styled, Badge } from "@mui/material";
 import LoginIcon from "@mui/icons-material/Login";
 import Registration from "./Register";
 import Login from "./Login";
+import useAppAccessor from '../hook/useAppAccessor';
 
 const Header = () => {
     const [modalState, setModalState] = useState({ isRegisterOpen: false, isLoginOpen: false });
+    const { getUserInfor } = useAppAccessor(); 
+    const userInfo = getUserInfor();
+    console.log("UserInfor: ",userInfo);
 
     const openModal = (type: any) => {
         setModalState({
@@ -16,22 +20,60 @@ const Header = () => {
 
     const closeModal = () => setModalState({ isRegisterOpen: false, isLoginOpen: false });
 
+    const StyledBadge = styled(Badge)(({ theme }) => ({
+        '& .MuiBadge-badge': {
+          backgroundColor: '#44b700',
+          color: '#44b700',
+          boxShadow: `0 0 0 2px ${theme.palette.background.paper}`,
+          '&::after': {
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            borderRadius: '50%',
+            animation: 'ripple 1.2s infinite ease-in-out',
+            border: '1px solid currentColor',
+            content: '""',
+          },
+        },
+        '@keyframes ripple': {
+          '0%': {
+            transform: 'scale(.8)',
+            opacity: 1,
+          },
+          '100%': {
+            transform: 'scale(2.4)',
+            opacity: 0,
+          },
+        },
+      }));
+
     return (
         <header className="flex justify-between items-center px-6 py-4 bg-white shadow-md">
             <div className="flex items-center">
                 <span className="font-pacifico text-4xl">TicketGo</span>
             </div>
-
-            <div className="flex space-x-4">
-                <Button
-                    variant="contained"
-                    color="primary"
-                    startIcon={<LoginIcon />}
-                    onClick={() => openModal("login")}>
-                    Đăng nhập
-                </Button>
-            </div>
-
+            {userInfo.isAuthenticated ? (
+                <StyledBadge
+                overlap="circular"
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                variant="dot"
+              >
+                <Avatar src={userInfo.user.imageUrl} />
+                </StyledBadge>
+            ) : (
+                <div className="flex space-x-4">
+                    <Button
+                        variant="contained"
+                        color="primary"
+                        startIcon={<LoginIcon />}
+                        onClick={() => openModal("login")}
+                    >
+                        Đăng nhập
+                    </Button>
+                </div>
+            )}
             <Modal
                 open={modalState.isRegisterOpen}
                 onClose={closeModal}

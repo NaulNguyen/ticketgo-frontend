@@ -5,7 +5,6 @@ const API_URL = 'http://localhost:8080';
 
 const getToken = () => {
   const token = Cookies.get('accessToken');
-  console.log('JWT Token:', token);
   return token;
 };
 

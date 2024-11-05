@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { DestinationCard, Header, Search } from "../components";
 import { IconButton, Container, Typography, Box } from "@mui/material";
-import { ToastContainer } from "react-toastify";
 import ArrowBackIosIcon from "@mui/icons-material/ArrowBackIos";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 
@@ -25,7 +24,6 @@ const Home = () => {
 
     return (
         <div onKeyDown={handleKeyDown} tabIndex={0}>
-            <ToastContainer position="top-right" autoClose={3000} />
             <Header />
             <div className="relative">
                 <img
