@@ -4,6 +4,7 @@ import { Formik, Form, Field } from "formik";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { userValidationSchema } from "../schemas";
 import UserService from "../service/UserService";
+import { toast } from "react-toastify";
 
 interface RegistrationProps {
     onClose: () => void;
@@ -22,6 +23,8 @@ const Registration: React.FC<RegistrationProps> = ({ onClose, onLoginClick }) =>
         try {
             await UserService.register(values);  
             onClose();
+            toast.success("Đăng ký tài khoản thành công");
+            toast.info("Vui lòng kiểm tra email để kích hoạt tài khoản!")
         } catch (error) {
             console.error("User registration failed:", error);
         }
