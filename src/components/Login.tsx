@@ -29,6 +29,7 @@ const Login: React.FC<LoginProps> = ({ onClose, onRegisterClick }) => {
             console.log('User Info Response:', userInfoResponse); // Log the response to check its structure
             dispatch(loginSuccess(userInfoResponse));
             onClose();
+            toast.success("Đăng nhập thành công");
         }
       } catch (error: any) {
           if (error.response) {
