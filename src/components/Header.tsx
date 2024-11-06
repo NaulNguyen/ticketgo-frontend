@@ -9,7 +9,6 @@ const Header = () => {
     const [modalState, setModalState] = useState({ isRegisterOpen: false, isLoginOpen: false });
     const { getUserInfor } = useAppAccessor(); 
     const userInfo = getUserInfor();
-    console.log("UserInfor: ",userInfo);
 
     const openModal = (type: any) => {
         setModalState({
