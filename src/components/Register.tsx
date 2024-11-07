@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Grid, TextField, Button, IconButton, InputAdornment, Typography, Box } from "@mui/material";
+import { Grid, TextField, Button, IconButton, InputAdornment, Typography, Box, CircularProgress } from "@mui/material";
 import { Formik, Form, Field } from "formik";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { userValidationSchema } from "../schemas";
@@ -8,11 +8,12 @@ import { toast } from "react-toastify";
 
 interface RegistrationProps {
     onClose: () => void;
-    onLoginClick: () => void; // Prop to open the login modal
+    onLoginClick: () => void; 
   }
 
 const Registration: React.FC<RegistrationProps> = ({ onClose, onLoginClick }) => {
     const [showPassword, setShowPassword] = useState(false);
+    const [loading, setLoading] = useState(false);
 
     const togglePasswordVisibility = () => {
         setShowPassword(!showPassword);
@@ -20,13 +21,16 @@ const Registration: React.FC<RegistrationProps> = ({ onClose, onLoginClick }) =>
 
 
     const handleUserSubmit = async (values: any) => {
+        setLoading(true);
         try {
             await UserService.register(values);  
             onClose();
             toast.success("Đăng ký tài khoản thành công");
             toast.info("Vui lòng kiểm tra email để kích hoạt tài khoản!")
         } catch (error) {
-            console.error("User registration failed:", error);
+            toast.error(`User registration failed: ${error}`);
+        } finally {
+            setLoading(false);
         }
     };
     
@@ -138,7 +142,14 @@ const Registration: React.FC<RegistrationProps> = ({ onClose, onLoginClick }) =>
                             />
                         </Grid>
                         <Grid item xs={12}>
-                            <Button type="submit" variant="contained" color="primary" fullWidth>
+                            <Button
+                                type="submit"
+                                variant="contained"
+                                color="primary"
+                                fullWidth
+                                disabled={loading}
+                                startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}
+                            >
                                 Đăng ký
                             </Button>
                         </Grid>
