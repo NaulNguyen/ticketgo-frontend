@@ -1,5 +1,5 @@
-import React from 'react';
-import { Box, Button, TextField, Typography } from '@mui/material';
+import React, {useState} from 'react';
+import { Box, Button, CircularProgress, TextField, Typography } from '@mui/material';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import { loginValidationSchema } from "../schemas";
 import { toast } from 'react-toastify';
@@ -15,9 +15,13 @@ interface LoginProps {
 }
 
 const Login: React.FC<LoginProps> = ({ onClose, onRegisterClick }) => {
+    const [loading, setLoading] = useState(false);
+
     const dispatch = useDispatch();
+
     const handleSubmit = async (values: { email: string; password: string; }) => {
       dispatch(loginRequest());
+      setLoading(true);
       try {
           const response = await UserService.login(values); // Now this returns the full response
           console.log(response)
@@ -26,14 +30,12 @@ const Login: React.FC<LoginProps> = ({ onClose, onRegisterClick }) => {
             Cookies.set('accessToken', accessToken);
             Cookies.set('refreshToken', refreshToken);
             const userInfoResponse = await UserService.fetchUserInfor();
-            console.log('User Info Response:', userInfoResponse); // Log the response to check its structure
             dispatch(loginSuccess(userInfoResponse));
             onClose();
             toast.success("Đăng nhập thành công");
         }
       } catch (error: any) {
           if (error.response) {
-              // Server responded with a status other than 2xx
               const { status, data } = error.response;
               if (status === 401) {
                   toast.error(data.message || "Vui lòng kiểm tra email hoặc mật khẩu của bạn.");
@@ -46,10 +48,11 @@ const Login: React.FC<LoginProps> = ({ onClose, onRegisterClick }) => {
                   dispatch(loginFailure(data.message));
               }
           } else {
-              // Network or other errors
               toast.error("Login failed: " + (error.message || "An unknown error occurred"));
               dispatch(loginFailure(error.message));
           }
+      } finally {
+          setLoading(false);
       }
   };
   
@@ -92,15 +95,15 @@ const Login: React.FC<LoginProps> = ({ onClose, onRegisterClick }) => {
                   helperText={<ErrorMessage name="password" />}
                   error={Boolean(errors.password && touched.password)} // Corrected error handling
                 />
-                <Button 
-                  type="submit" 
-                  variant="contained" 
-                  color="primary" 
-                  disabled={isSubmitting} 
-                  fullWidth 
-                  sx={{ marginTop: 2 }}
+                 <Button
+                    type="submit"
+                    variant="contained"
+                    color="primary"
+                    fullWidth
+                    disabled={loading}
+                    startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}
                 >
-                  {isSubmitting ? 'Đang đăng nhập...' : 'Đăng nhập'}
+                    Đăng nhập
                 </Button>
                 <Typography variant="body2" paddingTop={2} sx={{ fontSize: "1rem" }}>
                   Bạn chưa có tài khoản?{' '}
