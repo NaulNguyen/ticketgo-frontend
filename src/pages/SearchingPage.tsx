@@ -18,7 +18,7 @@ import { LocationRoute } from "../components/IconSVG";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import ArrowDropUpIcon from "@mui/icons-material/ArrowDropUp";
 import Details from "../components/Details";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import dayjs from "dayjs";
 
@@ -46,9 +46,10 @@ interface SearchResult {
 
 const SearchingPage = () => {
     const location = useLocation();
+    const navigate = useNavigate();
 
-    const [isDetailsExpanded, setIsDetailsExpanded] = useState(false);
-    const [isSeatSelectOpen, setIsSeatSelectOpen] = useState(false);
+    const [expandedId, setExpandedId] = useState<string | null>(null);
+    const [seatSelectId, setSeatSelectId] = useState<string | null>(null);
     const [searchResults, setSearchResults] = useState<SearchResult>({
         data: [],
         pagination: {
@@ -58,22 +59,56 @@ const SearchingPage = () => {
             totalItems: 0,
         },
     });
-    
+    const [sortBy, setSortBy] = useState("departureTime");
+    const [sortDirection, setSortDirection] = useState("asc");
     const [currentPage, setCurrentPage] = useState(1); 
 
     console.log("Search results:", searchResults);
 
-    const handleToggleDetails = () => {
-        setIsDetailsExpanded((prev) => !prev);
+    const handleToggleDetails = (id: string) => {
+        setExpandedId(prev => (prev === id ? null : id));
     };
 
-    const handleSelectTrip = () => {
-        setIsSeatSelectOpen((prev) => !prev);
+    const handleSelectTrip = (id: string) => {
+        setSeatSelectId(prev => (prev === id ? null : id));
     };
 
     const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
         setCurrentPage(value);
     };
+
+    const handleSortChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const value = event.target.value;
+        let newSortBy = "departureTime";
+        let newSortDirection = "asc";
+    
+        if (value === "default") {
+            newSortBy = "departureTime";
+            newSortDirection = "asc";
+        } else if (value === "earliest") {
+            newSortBy = "departureTime";
+            newSortDirection = "asc";
+        } else if (value === "latest") {
+            newSortBy = "departureTime";
+            newSortDirection = "desc";
+        } else if (value === "priceAsc") {
+            newSortBy = "price";
+            newSortDirection = "asc";
+        } else if (value === "priceDesc") {
+            newSortBy = "price";
+            newSortDirection = "desc";
+        }
+    
+        setSortBy(newSortBy);
+        setSortDirection(newSortDirection);
+    
+        const searchParams = new URLSearchParams(location.search);
+        searchParams.set("sortBy", newSortBy);
+        searchParams.set("sortDirection", newSortDirection);
+    
+        navigate(`${location.pathname}?${searchParams.toString()}`);
+    };
+    
 
     useEffect(() => {
         const fetchSearchResults = async () => {
@@ -82,8 +117,8 @@ const SearchingPage = () => {
                 departureLocation: searchParams.get("departureLocation") || "",
                 arrivalLocation: searchParams.get("arrivalLocation") || "",
                 departureDate: searchParams.get("departureDate") || "",
-                sortBy: searchParams.get("sortBy") || "departureTime",
-                sortDirection: searchParams.get("sortDirection") || "asc",
+                sortBy: searchParams.get("sortBy") || sortBy,
+                sortDirection: searchParams.get("sortDirection") || sortDirection,
                 pageNumber: currentPage,  
                 pageSize: 5,
             };
@@ -95,9 +130,8 @@ const SearchingPage = () => {
                 console.error("Error fetching search results:", error);
             }
         };
-
         fetchSearchResults();
-    }, [location, currentPage]);
+    }, [location, currentPage, sortBy, sortDirection]);
 
     return (
         <div style={{ backgroundColor: "rgb(243,243,243)", minHeight: "100vh" }}>
@@ -136,6 +170,7 @@ const SearchingPage = () => {
                                 aria-labelledby="sort-options-label"
                                 defaultValue="default"
                                 name="radio-buttons-group"
+                                onChange={handleSortChange}
                             >
                                 <FormControlLabel value="default" control={<Radio />} label="Mặc định" />
                                 <FormControlLabel value="earliest" control={<Radio />} label="Giờ đi sớm nhất" />
@@ -149,7 +184,7 @@ const SearchingPage = () => {
                     {/* Search Results */}
                     <Box display="flex" flexDirection="column" width="100%">
                         {searchResults.data?.length > 0 ? (
-                            searchResults.data.map((result: any) => (
+                            searchResults.data.map((result) => (
                                 <Box
                                     key={result.scheduleId}
                                     mb={3}
@@ -237,7 +272,7 @@ const SearchingPage = () => {
                                                         <Box
                                                             display="flex"
                                                             alignItems="center"
-                                                            onClick={handleToggleDetails}
+                                                            onClick={() => handleToggleDetails(result.scheduleId)}
                                                             sx={{ cursor: "pointer", mr: 2 }}
                                                         >
                                                             <Typography
@@ -250,7 +285,7 @@ const SearchingPage = () => {
                                                             >
                                                                 Thông tin chi tiết
                                                             </Typography>
-                                                            {isDetailsExpanded ? (
+                                                            {expandedId === result.scheduleId ? (
                                                                 <ArrowDropUpIcon color="primary" />
                                                             ) : (
                                                                 <ArrowDropDownIcon color="primary" />
@@ -260,24 +295,24 @@ const SearchingPage = () => {
                                                             variant="contained"
                                                             color="primary"
                                                             size="small"
-                                                            onClick={handleSelectTrip}
+                                                            onClick={() => handleSelectTrip(result.scheduleId)}
                                                             sx={{
                                                                 textTransform: "none",
-                                                                backgroundColor: isSeatSelectOpen ? "rgb(192, 192, 192)" : "rgb(255, 199, 0)",
+                                                                backgroundColor: seatSelectId === result.scheduleId ? "rgb(192, 192, 192)" : "rgb(255, 199, 0)",
                                                                 color: "black",
                                                                 p: "8px 16px",
                                                                 fontWeight: "bold",
                                                             }}
                                                         >
-                                                            {isSeatSelectOpen ? "Đóng" : "Chọn chuyến"}
+                                                            {seatSelectId  === result.scheduleId ? "Đóng" : "Chọn chuyến"}
                                                         </Button>
                                                     </Box>
                                                 </Box>
                                             </Box>
                                         </Box>
                                     </Box>
-                                    {isDetailsExpanded && <Details />}
-                                    {isSeatSelectOpen && <SeatSelect />}
+                                    {expandedId === result.scheduleId && <Details scheduleId={result.scheduleId} />}
+                                    { seatSelectId  === result.scheduleId && <SeatSelect />}
                                 </Box>
                             ))
                         ) : (
