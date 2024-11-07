@@ -15,8 +15,6 @@ export const loginFailure = (error : any) => ({
 });
 
 
-export const logout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("refreshToken");
-    return { type: LOGOUT };
-};
+export const logout = () => ({
+    type: LOGOUT,
+});
