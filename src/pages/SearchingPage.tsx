@@ -59,11 +59,9 @@ const SearchingPage = () => {
             totalItems: 0,
         },
     });
-    const [sortBy, setSortBy] = useState("departureTime");
+    const [sortBy, setSortBy] = useState("departureDate");
     const [sortDirection, setSortDirection] = useState("asc");
     const [currentPage, setCurrentPage] = useState(1); 
-
-    console.log("Search results:", searchResults);
 
     const handleToggleDetails = (id: string) => {
         setExpandedId(prev => (prev === id ? null : id));
@@ -79,17 +77,17 @@ const SearchingPage = () => {
 
     const handleSortChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const value = event.target.value;
-        let newSortBy = "departureTime";
+        let newSortBy = "departureDate";
         let newSortDirection = "asc";
     
         if (value === "default") {
-            newSortBy = "departureTime";
+            newSortBy = "departureDate";
             newSortDirection = "asc";
         } else if (value === "earliest") {
-            newSortBy = "departureTime";
+            newSortBy = "departureDate";
             newSortDirection = "asc";
         } else if (value === "latest") {
-            newSortBy = "departureTime";
+            newSortBy = "departureDate";
             newSortDirection = "desc";
         } else if (value === "priceAsc") {
             newSortBy = "price";
@@ -122,7 +120,6 @@ const SearchingPage = () => {
                 pageNumber: currentPage,  
                 pageSize: 5,
             };
-            console.log("Search params:", params);
             try {
                 const response = await axios.post("http://localhost:8080/api/v1/routes/search", params);
                 setSearchResults(response.data);
