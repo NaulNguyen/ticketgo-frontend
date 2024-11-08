@@ -1,7 +1,6 @@
 import {
     Box,
     Divider,
-    Grid,
     List,
     ListItem,
     Tab,
@@ -13,11 +12,9 @@ import TranslateIcon from "@mui/icons-material/Translate";
 import HealthAndSafetyIcon from "@mui/icons-material/HealthAndSafety";
 import WaterDropIcon from "@mui/icons-material/WaterDrop";
 import HardwareIcon from "@mui/icons-material/Hardware";
-import BatteryChargingFullIcon from "@mui/icons-material/BatteryChargingFull";
-import CurtainsIcon from "@mui/icons-material/Curtains"; 
-import SpeakerIcon from "@mui/icons-material/Speaker";
-import WifiIcon from "@mui/icons-material/Wifi";
-import AcUnitIcon from "@mui/icons-material/AcUnit";
+import FastfoodIcon from '@mui/icons-material/Fastfood';
+import WbIncandescentIcon from '@mui/icons-material/WbIncandescent';
+import BedIcon from '@mui/icons-material/Bed';
 import axios from "axios";
 
 interface RouteStop {
@@ -39,10 +36,26 @@ interface Policy {
     policyContent: string;
 }
 
+interface Amenity {
+    name: string;
+    description: string;
+}
+
+const amenityIcons: { [key: string]: React.ReactNode } = {
+    "Nhân viên sử dụng tiếng anh": <TranslateIcon sx={{ marginX: "8px", color: "blue" }} />,
+    "Ghế massage": <HealthAndSafetyIcon sx={{ marginX: "8px", color: "blue" }} />,
+    "Bánh ngọt": <FastfoodIcon sx={{ marginX: "8px", color: "blue" }} />,
+    "Đèn đọc sách": <WbIncandescentIcon sx={{ marginX: "8px", color: "blue" }} />,
+    "Nước uống": <WaterDropIcon sx={{ marginX: "8px", color: "blue" }} />,
+    "Gối nằm": <BedIcon sx={{ marginX: "8px", color: "blue" }} />,
+    "Búa phá kính": <HardwareIcon sx={{ marginX: "8px", color: "blue" }} />,
+};
+
 const Details: React.FC<DetailsProps> = ({ scheduleId }) => {
     const [tabIndex, setTabIndex] = useState(0);
     const [routeStops, setRouteStops] = useState<RouteStopsData | null>(null);
     const [policies, setPolicies] = useState<Policy[]>([]);
+    const [amenities, setAmenities] = useState<Amenity[]>([]);
 
     const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
         setTabIndex(newValue);
@@ -74,6 +87,16 @@ const Details: React.FC<DetailsProps> = ({ scheduleId }) => {
                 } 
             };
           fetchPolicies();
+        } else if (tabIndex === 2) {
+            const fetchAmenities = async () => {
+                try {
+                    const response = await axios.get('http://localhost:8080/api/v1/amenities');
+                    setAmenities(response.data.data); 
+                } catch (err) {
+                    console.error('Failed to fetch amenities', err);
+                } 
+            };
+            fetchAmenities();
         }
       }, [tabIndex]);
 
@@ -188,7 +211,7 @@ const Details: React.FC<DetailsProps> = ({ scheduleId }) => {
                     </Box>
                 )}
 
-                {tabIndex === 1 &&
+                {tabIndex === 1 && (
                     <Box>
                         <Divider />
                         <Typography variant="h6" fontSize={18} fontWeight={700} mb={2} mt={3}>
@@ -196,7 +219,10 @@ const Details: React.FC<DetailsProps> = ({ scheduleId }) => {
                         </Typography>
                         {policies.length > 0 &&
                             policies.map((policy, index) => (
-                                <>
+                                <Box key={index}  
+                                sx={{
+                                    borderBottom: index === policies.length - 1 ? 'none' : '1px solid rgba(0, 0, 0, 0.12)',
+                                }}>
                                     <Typography
                                         variant="subtitle1"
                                         sx={{ mt: 2, color: "rgba(0, 0, 0, 0.65)" }}
@@ -210,115 +236,31 @@ const Details: React.FC<DetailsProps> = ({ scheduleId }) => {
                                             <ListItem key={lineIndex}>{line}</ListItem>
                                         ))}
                                     </List>
-                                    <Divider />
-                                </>
+                                </Box>
                             ))
                         }
                     </Box>
-                }
+                )}
 
                 {tabIndex === 2 && (
                     <Box>
-                        <Box sx={{ backgroundColor: "rgb(245, 245, 245)", borderRadius: "20px" }}>
-                            <Box fontSize={14} padding={2}>
+                        <Divider />
+                        {amenities.map((amenity, index) => (
+                            <Box key={index} fontSize={14} padding={2} 
+                                sx={{
+                                    borderBottom: index === amenities.length - 1 ? 'none' : '1px solid rgba(0, 0, 0, 0.12)',
+                                }}>
                                 <Box display="flex">
-                                    <TranslateIcon sx={{ marginX: "8px", color: "blue" }} />
+                                    {amenityIcons[amenity.name] || <TranslateIcon sx={{ marginX: "8px", color: "blue" }} />}
                                     <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                                        Nhân viên sử dụng tiếng Anh
+                                        {amenity.name}
                                     </Typography>
                                 </Box>
                                 <Typography variant="body2" color="textSecondary" paddingTop={1}>
-                                    Nhân viên phòng vé, tài xế, phụ xe có thể giao tiếp bằng tiếng
-                                    Anh với hành khách.
+                                    {amenity.description}
                                 </Typography>
                             </Box>
-                            <Divider />
-                            <Box fontSize={14} padding={2}>
-                                <Box display="flex">
-                                    <HealthAndSafetyIcon sx={{ marginX: "8px", color: "blue" }} />
-                                    <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                                        Dây đai an toàn
-                                    </Typography>
-                                </Box>
-                                <Typography variant="body2" color="textSecondary" paddingTop={1}>
-                                    Trên xe có trang bị dây đai an toàn cho hành khách khi ngồi trên
-                                    xe
-                                </Typography>
-                            </Box>
-                            <Divider />
-                            <Box fontSize={14} padding={2}>
-                                <Box display="flex">
-                                    <WaterDropIcon sx={{ marginX: "8px", color: "blue" }} />
-                                    <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                                        Nước uống
-                                    </Typography>
-                                </Box>
-                                <Typography variant="body2" color="textSecondary" paddingTop={1}>
-                                    Nhà xe có phục vụ nước cho hành khách
-                                </Typography>
-                            </Box>
-                            <Divider />
-                            <Box fontSize={14} padding={2}>
-                                <Box display="flex">
-                                    <HardwareIcon sx={{ marginX: "8px", color: "blue" }} />
-                                    <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                                        Búa phá kính
-                                    </Typography>
-                                </Box>
-                                <Typography variant="body2" color="textSecondary" paddingTop={1}>
-                                    Dùng để phá kính ô tô thoát hiểm trong trường hợp khẩn cấp.
-                                </Typography>
-                            </Box>
-                        </Box>
-                        <Box padding={2}>
-                            <Grid container spacing={2} columns={3}>
-                                <Grid
-                                    item
-                                    xs={1}
-                                    display="flex"
-                                    flexDirection="column"
-                                    alignItems="center">
-                                    <BatteryChargingFullIcon fontSize="large" />
-                                    <Typography>Sạc điện thoại</Typography>
-                                </Grid>
-                                <Grid
-                                    item
-                                    xs={1}
-                                    display="flex"
-                                    flexDirection="column"
-                                    alignItems="center">
-                                    <CurtainsIcon fontSize="large" />
-                                    <Typography>Rèm cửa</Typography>
-                                </Grid>
-                                <Grid
-                                    item
-                                    xs={1}
-                                    display="flex"
-                                    flexDirection="column"
-                                    alignItems="center">
-                                    <SpeakerIcon fontSize="large" />
-                                    <Typography>Dàn âm thanh (Loa)</Typography>
-                                </Grid>
-                                <Grid
-                                    item
-                                    xs={1}
-                                    display="flex"
-                                    flexDirection="column"
-                                    alignItems="center">
-                                    <WifiIcon fontSize="large" />
-                                    <Typography>Wifi</Typography>
-                                </Grid>
-                                <Grid
-                                    item
-                                    xs={1}
-                                    display="flex"
-                                    flexDirection="column"
-                                    alignItems="center">
-                                    <AcUnitIcon fontSize="large" />
-                                    <Typography>Điều hòa</Typography>
-                                </Grid>
-                            </Grid>
-                        </Box>
+                        ))}
                     </Box>
                 )}
             </Box>
