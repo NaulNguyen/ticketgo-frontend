@@ -34,8 +34,8 @@ export const EmptySeat = () => (
             rx="2.25"
             fill="#FFF"
             stroke="#B8B8B8"
-            stroke-width="1.5"
-            stroke-linejoin="round"></rect>
+            strokeWidth="1.5"
+            strokeLinejoin="round"></rect>
         <rect
             x="10.25"
             y="11.75"
@@ -45,8 +45,8 @@ export const EmptySeat = () => (
             transform="rotate(90 10.25 11.75)"
             fill="#FFF"
             stroke="#B8B8B8"
-            stroke-width="1.5"
-            stroke-linejoin="round"></rect>
+            strokeWidth="1.5"
+            strokeLinejoin="round"></rect>
         <rect
             x="35.25"
             y="11.75"
@@ -56,8 +56,8 @@ export const EmptySeat = () => (
             transform="rotate(90 35.25 11.75)"
             fill="#FFF"
             stroke="#B8B8B8"
-            stroke-width="1.5"
-            stroke-linejoin="round"></rect>
+            strokeWidth="1.5"
+            strokeLinejoin="round"></rect>
         <rect
             x="8.75"
             y="22.75"
@@ -66,8 +66,8 @@ export const EmptySeat = () => (
             rx="2.25"
             fill="#FFF"
             stroke="#B8B8B8"
-            stroke-width="1.5"
-            stroke-linejoin="round"></rect>
+            strokeWidth="1.5"
+            strokeLinejoin="round"></rect>
         <path
             className="icon-selected"
             d="M20 6.333A6.67 6.67 0 0 0 13.334 13 6.67 6.67 0 0 0 20 19.667 6.67 6.67 0 0 0 26.667 13 6.669 6.669 0 0 0 20 6.333zm-1.333 10L15.333 13l.94-.94 2.394 2.387 5.06-5.06.94.946-6 6z"
@@ -89,8 +89,8 @@ export const BlockedSeat = () => (
             rx="2.25"
             fill="#E0E0E0"
             stroke="#FFFFFF"
-            stroke-width="1.5"
-            stroke-linejoin="round"></rect>
+            strokeWidth="1.5"
+            strokeLinejoin="round"></rect>
         <rect
             x="10.25"
             y="11.75"
@@ -100,8 +100,8 @@ export const BlockedSeat = () => (
             transform="rotate(90 10.25 11.75)"
             fill="#E0E0E0"
             stroke="#FFFFFF"
-            stroke-width="1.5"
-            stroke-linejoin="round"></rect>
+            strokeWidth="1.5"
+            strokeLinejoin="round"></rect>
         <rect
             x="35.25"
             y="11.75"
@@ -111,8 +111,8 @@ export const BlockedSeat = () => (
             transform="rotate(90 35.25 11.75)"
             fill="#E0E0E0"
             stroke="#FFFFFF"
-            stroke-width="1.5"
-            stroke-linejoin="round"></rect>
+            strokeWidth="1.5"
+            strokeLinejoin="round"></rect>
         <rect
             x="8.75"
             y="22.75"
@@ -121,8 +121,8 @@ export const BlockedSeat = () => (
             rx="2.25"
             fill="#E0E0E0"
             stroke="#FFFFFF"
-            stroke-width="1.5"
-            stroke-linejoin="round"></rect>
+            strokeWidth="1.5"
+            strokeLinejoin="round"></rect>
         <path
             className="icon-selected"
             d="M20 6.333A6.67 6.67 0 0 0 13.334 13 6.67 6.67 0 0 0 20 19.667 6.67 6.67 0 0 0 26.667 13 6.669 6.669 0 0 0 20 6.333zm-1.333 10L15.333 13l.94-.94 2.394 2.387 5.06-5.06.94.946-6 6z"
@@ -144,8 +144,8 @@ export const SelectedSeat = () => (
             rx="2.25"
             fill="#8BE5B0"
             stroke="#27AE60"
-            stroke-width="1.5"
-            stroke-linejoin="round"></rect>
+            strokeWidth="1.5"
+            strokeLinejoin="round"></rect>
         <rect
             x="10.25"
             y="11.75"
@@ -155,8 +155,8 @@ export const SelectedSeat = () => (
             transform="rotate(90 10.25 11.75)"
             fill="#8BE5B0"
             stroke="#27AE60"
-            stroke-width="1.5"
-            stroke-linejoin="round"></rect>
+            strokeWidth="1.5"
+            strokeLinejoin="round"></rect>
         <rect
             x="35.25"
             y="11.75"
@@ -166,8 +166,8 @@ export const SelectedSeat = () => (
             transform="rotate(90 35.25 11.75)"
             fill="#8BE5B0"
             stroke="#27AE60"
-            stroke-width="1.5"
-            stroke-linejoin="round"></rect>
+            strokeWidth="1.5"
+            strokeLinejoin="round"></rect>
         <rect
             x="8.75"
             y="22.75"
@@ -176,8 +176,8 @@ export const SelectedSeat = () => (
             rx="2.25"
             fill="#8BE5B0"
             stroke="#27AE60"
-            stroke-width="1.5"
-            stroke-linejoin="round"></rect>
+            strokeWidth="1.5"
+            strokeLinejoin="round"></rect>
         <path
             className="icon-selected"
             d="M20 6.333A6.67 6.67 0 0 0 13.334 13 6.67 6.67 0 0 0 20 19.667 6.67 6.67 0 0 0 26.667 13 6.669 6.669 0 0 0 20 6.333zm-1.333 10L15.333 13l.94-.94 2.394 2.387 5.06-5.06.94.946-6 6z"
