@@ -1,17 +1,29 @@
 import React, { useState } from "react";
-import { Button, Modal, Box, Avatar, styled, Badge, IconButton, Menu, MenuItem, ListItemIcon } from "@mui/material";
+import {
+    Button,
+    Modal,
+    Box,
+    Avatar,
+    styled,
+    Badge,
+    IconButton,
+    Menu,
+    MenuItem,
+    ListItemIcon,
+} from "@mui/material";
 import LoginIcon from "@mui/icons-material/Login";
 import Registration from "./Register";
 import Login from "./Login";
-import useAppAccessor from '../hook/useAppAccessor';
+import useAppAccessor from "../hook/useAppAccessor";
 import Logout from "@mui/icons-material/Logout";
-import PersonIcon from '@mui/icons-material/Person';
-import LoyaltyIcon from '@mui/icons-material/Loyalty';
-import CommentIcon from '@mui/icons-material/Comment';
-import Cookies from 'js-cookie';
+import PersonIcon from "@mui/icons-material/Person";
+import LoyaltyIcon from "@mui/icons-material/Loyalty";
+import CommentIcon from "@mui/icons-material/Comment";
+import Cookies from "js-cookie";
 import { useDispatch } from "react-redux";
-import { logout } from '../actions/login.action';
+import { logout } from "../actions/login.action";
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
 const Header = () => {
     const [modalState, setModalState] = useState({ isRegisterOpen: false, isLoginOpen: false });
@@ -19,8 +31,9 @@ const Header = () => {
 
     const dispatch = useDispatch();
     const open = Boolean(anchorEl);
+    const navigate = useNavigate();
 
-    const { getUserInfor } = useAppAccessor(); 
+    const { getUserInfor } = useAppAccessor();
     const userInfo = getUserInfor();
 
     const handleAvatarClick = (event: React.MouseEvent<HTMLElement>) => {
@@ -38,59 +51,64 @@ const Header = () => {
         });
     };
 
+    const handleNavigateClick = () => {
+        navigate("/");
+    };
+
     const closeModal = () => setModalState({ isRegisterOpen: false, isLoginOpen: false });
 
     const StyledBadge = styled(Badge)(({ theme }) => ({
-        '& .MuiBadge-badge': {
-          backgroundColor: '#44b700',
-          color: '#44b700',
-          boxShadow: `0 0 0 2px ${theme.palette.background.paper}`,
-          '&::after': {
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
-            borderRadius: '50%',
-            animation: 'ripple 1.2s infinite ease-in-out',
-            border: '1px solid currentColor',
-            content: '""',
-          },
+        "& .MuiBadge-badge": {
+            backgroundColor: "#44b700",
+            color: "#44b700",
+            boxShadow: `0 0 0 2px ${theme.palette.background.paper}`,
+            "&::after": {
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                height: "100%",
+                borderRadius: "50%",
+                animation: "ripple 1.2s infinite ease-in-out",
+                border: "1px solid currentColor",
+                content: '""',
+            },
         },
-        '@keyframes ripple': {
-          '0%': {
-            transform: 'scale(.8)',
-            opacity: 1,
-          },
-          '100%': {
-            transform: 'scale(2.4)',
-            opacity: 0,
-          },
+        "@keyframes ripple": {
+            "0%": {
+                transform: "scale(.8)",
+                opacity: 1,
+            },
+            "100%": {
+                transform: "scale(2.4)",
+                opacity: 0,
+            },
         },
-      }));
+    }));
 
     const handleLogout = () => {
-        Cookies.remove('accessToken');
-        Cookies.remove('refreshToken');
+        Cookies.remove("accessToken");
+        Cookies.remove("refreshToken");
         dispatch(logout());
         toast.success("Đăng xuất thành công");
     };
 
     return (
         <header className="flex justify-between items-center px-6 py-4 bg-white shadow-md">
-            <div className="flex items-center">
+            <div className="flex items-center cursor-pointer" onClick={handleNavigateClick}>
                 <span className="font-pacifico text-4xl">TicketGo</span>
             </div>
             {userInfo.isAuthenticated ? (
-                <IconButton onClick={handleAvatarClick} 
-                    aria-controls={open ? 'account-menu' : undefined}
+                <IconButton
+                    onClick={handleAvatarClick}
+                    aria-controls={open ? "account-menu" : undefined}
                     aria-haspopup="true"
-                    aria-expanded={open ? 'true' : undefined}>
+                    aria-expanded={open ? "true" : undefined}>
                     <StyledBadge
                         overlap="circular"
-                        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
                         variant="dot">
-                            <Avatar src={userInfo.user.imageUrl} />
+                        <Avatar src={userInfo.user.imageUrl} />
                     </StyledBadge>
                 </IconButton>
             ) : (
@@ -99,8 +117,7 @@ const Header = () => {
                         variant="contained"
                         color="primary"
                         startIcon={<LoginIcon />}
-                        onClick={() => openModal("login")}
-                    >
+                        onClick={() => openModal("login")}>
                         Đăng nhập
                     </Button>
                 </div>
@@ -112,56 +129,55 @@ const Header = () => {
                 onClose={handleAvatarClose}
                 onClick={handleAvatarClose}
                 slotProps={{
-                paper: {
-                    elevation: 0,
-                    sx: {
-                    overflow: 'visible',
-                    filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.32))',
-                    mt: 0.5,
-                    borderRadius: "10px",
-                    '& .MuiAvatar-root': {
-                        width: 32,
-                        height: 32,
-                        ml: -0.5,
-                        mr: 1,
+                    paper: {
+                        elevation: 0,
+                        sx: {
+                            overflow: "visible",
+                            filter: "drop-shadow(0px 2px 8px rgba(0,0,0,0.32))",
+                            mt: 0.5,
+                            borderRadius: "10px",
+                            "& .MuiAvatar-root": {
+                                width: 32,
+                                height: 32,
+                                ml: -0.5,
+                                mr: 1,
+                            },
+                            "&::before": {
+                                content: '""',
+                                display: "block",
+                                position: "absolute",
+                                top: 0,
+                                right: 14,
+                                width: "fit-content",
+                                height: 10,
+                                bgcolor: "background.paper",
+                                transform: "translateY(-50%) rotate(45deg)",
+                                zIndex: 0,
+                            },
+                        },
                     },
-                    '&::before': {
-                        content: '""',
-                        display: 'block',
-                        position: 'absolute',
-                        top: 0,
-                        right: 14,
-                        width: "fit-content",
-                        height: 10,
-                        bgcolor: 'background.paper',
-                        transform: 'translateY(-50%) rotate(45deg)',
-                        zIndex: 0,
-                    },
-                    },
-                },
                 }}
-                transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-                anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-            >
-                <MenuItem sx={{paddingX: "20px", paddingY: "10px"}}>
+                transformOrigin={{ horizontal: "right", vertical: "top" }}
+                anchorOrigin={{ horizontal: "right", vertical: "bottom" }}>
+                <MenuItem sx={{ paddingX: "20px", paddingY: "10px" }}>
                     <ListItemIcon>
                         <PersonIcon fontSize="small" />
                     </ListItemIcon>
                     Thông tin tài khoản
                 </MenuItem>
-                <MenuItem sx={{paddingX: "20px", paddingY: "10px"}}>
+                <MenuItem sx={{ paddingX: "20px", paddingY: "10px" }}>
                     <ListItemIcon>
                         <LoyaltyIcon fontSize="small" />
                     </ListItemIcon>
                     Đơn hàng của tôi
                 </MenuItem>
-                <MenuItem sx={{paddingX: "20px", paddingY: "10px"}} >
+                <MenuItem sx={{ paddingX: "20px", paddingY: "10px" }}>
                     <ListItemIcon>
                         <CommentIcon fontSize="small" />
                     </ListItemIcon>
                     Nhận xét chuyến đi
                 </MenuItem>
-                <MenuItem sx={{paddingX: "20px", paddingY: "10px"}} onClick={handleLogout}>
+                <MenuItem sx={{ paddingX: "20px", paddingY: "10px" }} onClick={handleLogout}>
                     <ListItemIcon>
                         <Logout fontSize="small" />
                     </ListItemIcon>
