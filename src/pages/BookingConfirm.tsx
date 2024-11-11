@@ -73,7 +73,7 @@ const BookingConfirm = () => {
                             border: "1px solid #e0e0e0",
                             marginTop: "20px",
                             width: "700px",
-                            height: "fit-content",
+                            height: "400px",
                         }}>
                         <Typography variant="h5" sx={{ fontWeight: "bold", fontSize: "18px" }}>
                             Thông tin liên hệ
