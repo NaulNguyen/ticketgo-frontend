@@ -7,6 +7,7 @@ import AccountActivation from "./components/AccountActivation";
 import SearchingPage from "./pages/SearchingPage";
 import "react-toastify/dist/ReactToastify.css";
 import { ToastContainer } from "react-toastify";
+import BookingConfirm from "./pages/BookingConfirm";
 
 function App() {
     return (
@@ -20,6 +21,7 @@ function App() {
                         <Route path="/" element={<Home />} />
                         <Route path="/activate" element={<AccountActivation />} />
                         <Route path="/search" element={<SearchingPage />} />
+                        <Route path="/bookingConfirm" element={<BookingConfirm />} />
                     </Routes>
                 </Provider>
             </div>

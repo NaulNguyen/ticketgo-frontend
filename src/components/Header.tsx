@@ -94,9 +94,9 @@ const Header = () => {
     };
 
     return (
-        <header className="flex justify-between items-center px-6 py-4 bg-white shadow-md">
+        <header className="flex justify-between items-center px-6 py-4 bg-[#0d47a1] shadow-md">
             <div className="flex items-center cursor-pointer" onClick={handleNavigateClick}>
-                <span className="font-pacifico text-4xl">TicketGo</span>
+                <span className="font-pacifico text-4xl text-white">TicketGo</span>
             </div>
             {userInfo.isAuthenticated ? (
                 <IconButton
@@ -115,7 +115,7 @@ const Header = () => {
                 <div className="flex space-x-4">
                     <Button
                         variant="contained"
-                        color="primary"
+                        sx={{backgroundColor: 'white', color: 'black', textTransform: "none", fontWeight: 'bold'}}
                         startIcon={<LoginIcon />}
                         onClick={() => openModal("login")}>
                         Đăng nhập
