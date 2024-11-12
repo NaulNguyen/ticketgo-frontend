@@ -1,9 +1,11 @@
-import { Box, Button, Divider, Step, StepLabel, Stepper, Typography } from "@mui/material";
+import { Box, Button, Divider, Radio, Step, StepLabel, Stepper, Tooltip, Typography } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import { BlockedSeat, EmptySeat, SelectedSeat, Wheel } from "./IconSVG";
 import axios from "axios";
 import useAppAccessor from "../hook/useAppAccessor";
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 interface Seat {
     seatId: number;
@@ -18,19 +20,35 @@ interface FloorData {
 
 interface SeatSelectProps {
     scheduleId: string;
+    price: number;
 }
 
-const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId }) => {
+interface RouteStopsData {
+    pickup: RouteStop[];
+    dropoff: RouteStop[];
+}
+
+interface RouteStop {
+    location: string;
+    arrivalTime: string;
+    stopId: number;
+}
+
+const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
     const [seatsData, setSeatsData] = useState<FloorData | null>(null);
     const [selectedSeats, setSelectedSeats] = useState<Seat[]>([]);
     const [activeStep, setActiveStep] = React.useState(0);
+    const [routeStops, setRouteStops] = useState<RouteStopsData | null>(null);
+    const [selectedPickup, setSelectedPickup] = useState<number | null>(null);
+    const [selectedDropoff, setSelectedDropoff] = useState<number | null>(null);
 
     const steps = ['Chổ mong muốn', 'Điểm đón trả'];
+    const priceFormatted = new Intl.NumberFormat('en-US').format(price);
+    const navigate = useNavigate();
 
+    
     const { getUserInfor } = useAppAccessor();
     const userInfo = getUserInfor();
-
-    const isStepOptional = (step: number) => step === 1;
 
     const handleNext = () => {
         setActiveStep((prevActiveStep) => prevActiveStep + 1);
@@ -39,6 +57,25 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId }) => {
     const handleBack = () => {
         setActiveStep((prevActiveStep) => prevActiveStep - 1);
     };
+
+    const handlePickupChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setSelectedPickup(Number(event.target.value));
+    };
+    
+    const handleDropoffChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setSelectedDropoff(Number(event.target.value));
+    };
+
+    useEffect(() => {
+        if (activeStep >= 2) {
+            if (userInfo.isAuthenticated) {
+                navigate('/bookingConfirm');
+            } else {
+                toast.warn('Vui lòng đăng nhập để tiếp tục đặt vé');
+            }
+            setActiveStep(0);
+        }
+    }, [activeStep, userInfo.isAuthenticated, navigate]);
 
     useEffect(() => {
         const fetchSeatsData = async () => {
@@ -54,6 +91,20 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId }) => {
         fetchSeatsData();
     }, [scheduleId, userInfo.isAuthenticated]);
 
+    useEffect(() => {
+        if (activeStep === 1) {
+            const fetchRouteStops = async () => {
+                try {
+                    const response = await axios.get(`http://localhost:8080/api/v1/route-stops?scheduleId=${scheduleId}`);
+                    setRouteStops(response.data.data);
+                } catch (error) {
+                    console.error("Failed to fetch route stops", error);
+                }
+            };
+            fetchRouteStops();
+        }
+    }, [scheduleId, activeStep]);
+
     const toggleSeatSelection = (seat: Seat) => {
         if (selectedSeats.some(s => s.seatId === seat.seatId)) {
             setSelectedSeats(prev => prev.filter(s => s.seatId !== seat.seatId));
@@ -62,13 +113,41 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId }) => {
         }
     };
 
+    const calculateTotalPrice = () => {
+        return selectedSeats.length * price;
+    };
+
     const renderSeats = (seats: Seat[][]) => (
         seats.map((row, rowIndex) => (
             <Box key={rowIndex} display="flex" gap={2} mt={1}>
                 {row.map(seat => (
-                    <Box sx={{ cursor: seat.isAvailable ? "pointer" : "not-allowed" }} onClick={() => seat.isAvailable && toggleSeatSelection(seat)}>
-                        {selectedSeats.some(s => s.seatId === seat.seatId) ? <SelectedSeat /> : (seat.isAvailable ? <EmptySeat /> : <BlockedSeat />)}
+                    <Tooltip
+                    key={seat.seatId}
+                    title={`Mã ghế: ${seat.seatNumber} - Giá: ${priceFormatted}đ`}
+                    placement="top"
+                    arrow
+                    slotProps={{
+                        popper: {
+                          modifiers: [
+                            {
+                              name: 'offset',
+                              options: {
+                                offset: [0, -10],
+                              },
+                            },
+                          ],
+                        },
+                      }}
+                >
+                    <Box 
+                        sx={{ cursor: seat.isAvailable ? "pointer" : "not-allowed" }} 
+                        onClick={() => seat.isAvailable && toggleSeatSelection(seat)}
+                    >
+                        {selectedSeats.some(s => s.seatId === seat.seatId) 
+                            ? <SelectedSeat /> 
+                            : (seat.isAvailable ? <EmptySeat /> : <BlockedSeat />)}
                     </Box>
+                </Tooltip>
                 ))}
             </Box>
         ))
@@ -89,138 +168,241 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId }) => {
                 })}
             </Stepper>
             <Divider />
-            <Box display="flex">
-                <Box flex={1} display="flex" flexDirection="column" justifyContent="center" alignItems="center">
-                    <Box display="flex" flexDirection="column">
-                        <Typography variant="h6" fontWeight="bold" sx={{ fontSize: "16px", color: "black" }}>
-                            Chú thích
-                        </Typography>
-                        <Box gap={3} display="flex" flexDirection="column">
-                            <div className="flex gap-1 items-center text-sm">
-                                <BlockedSeat />
-                                <p>Ghế không bán</p>
-                            </div>
-                            <div className="flex gap-1 items-center text-sm">
-                                <SelectedSeat />
-                                <p>Đang chọn</p>
-                            </div>
-                            <div className="flex gap-1 items-center text-sm">
-                                <EmptySeat />
-                                <p>Còn trống</p>
-                            </div>
+            <Box display="flex" justifyContent="center">
+                {activeStep === 0 && (
+                    <Box flex={1} display="flex" flexDirection="column" justifyContent="center" alignItems="center">
+                        <Box display="flex" flexDirection="column">
+                            <Typography variant="h6" fontWeight="bold" sx={{ fontSize: "16px", color: "black" }}>
+                                Chú thích
+                            </Typography>
+                            <Box gap={3} display="flex" flexDirection="column">
+                                <div className="flex gap-1 items-center text-sm">
+                                    <BlockedSeat />
+                                    <p>Ghế không bán</p>
+                                </div>
+                                <div className="flex gap-1 items-center text-sm">
+                                    <SelectedSeat />
+                                    <p>Đang chọn</p>
+                                </div>
+                                <div className="flex gap-1 items-center text-sm">
+                                    <EmptySeat />
+                                    <p>Còn trống</p>
+                                </div>
+                            </Box>
                         </Box>
                     </Box>
-                </Box>
+                )}
 
                 {/* Floors */}
-                <Box display="flex" gap={2} minWidth="416px">
-                    {/* Floor 1 */}
-                    <Box display="flex" flexDirection="column" justifyContent="center" alignItems="center">
-                        <Typography variant="h6" fontWeight="bold" sx={{ fontSize: "16px", color: "black" }}>
-                            Tầng dưới
-                        </Typography>
-                        <Box flex={1} display="flex" justifyContent="center" alignItems="center">
-                            <Box sx={{
-                                display: "flex",
-                                flexDirection: "column",
-                                justifyContent: "center",
-                                alignItems: "center",
-                                width: seatsData?.floor_1 && seatsData?.floor_1[0].length === 2 ? "160px" : "200px",
-                                height: "300px",
-                                backgroundColor: "rgb(242, 242, 242)",
-                                padding: "24px 0 24px 0",
-                                borderTopLeftRadius: "40px",
-                                borderTopRightRadius: "40px",
-                            }}>
-                                <Box sx={{ alignSelf: "start", ml: seatsData?.floor_1 && seatsData?.floor_1[0].length === 2 ? 5 : 3.5, mb: 1, pointerEvents: "none", cursor: "not-allowed" }}>
-                                    <Wheel />
-                                </Box>
-                                <Box>
-                                    {seatsData?.floor_1 && renderSeats(seatsData.floor_1)}
+                {activeStep === 0 && (
+                    <Box display="flex" gap={2} minWidth="416px">
+                        {/* Floor 1 */}
+                        <Box display="flex" flexDirection="column" justifyContent="center" alignItems="center">
+                            <Typography variant="h6" fontWeight="bold" sx={{ fontSize: "16px", color: "black" }}>
+                                Tầng dưới
+                            </Typography>
+                            <Box flex={1} display="flex" justifyContent="center" alignItems="center">
+                                <Box sx={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    justifyContent: "center",
+                                    alignItems: "center",
+                                    width: seatsData?.floor_1 && seatsData?.floor_1[0].length === 2 ? "160px" : "200px",
+                                    height: "300px",
+                                    backgroundColor: "rgb(242, 242, 242)",
+                                    padding: "24px 0 24px 0",
+                                    borderTopLeftRadius: "40px",
+                                    borderTopRightRadius: "40px",
+                                }}>
+                                    <Box sx={{ alignSelf: "start", ml: seatsData?.floor_1 && seatsData?.floor_1[0].length === 2 ? 5 : 3.5, mb: 1, pointerEvents: "none", cursor: "not-allowed" }}>
+                                        <Wheel />
+                                    </Box>
+                                    <Box>
+                                        {seatsData?.floor_1 && renderSeats(seatsData.floor_1)}
+                                    </Box>
                                 </Box>
                             </Box>
                         </Box>
-                    </Box>
 
-                    {/* Floor 2 */}
-                    <Box display="flex" flexDirection="column" justifyContent="center" alignItems="center">
-                        <Typography variant="h6" fontWeight="bold" sx={{ fontSize: "16px", color: "black" }}>
-                            Tầng trên
-                        </Typography>
-                        <Box flex={1} display="flex" justifyContent="center" alignItems="center">
-                            <Box sx={{
-                                display: "flex",
-                                flexDirection: "column",
-                                justifyContent: "center",
-                                alignItems: "center",
-                                width: seatsData?.floor_1 && seatsData?.floor_1[0].length === 2 ? "160px" : "200px",
-                                height: "300px",
-                                backgroundColor: "rgb(242, 242, 242)",
-                                padding: "24px 0 24px 0",
-                                borderTopLeftRadius: "40px",
-                                borderTopRightRadius: "40px",
-                            }}>
-                                <Box sx={{ width: "100%", height: "50px", alignSelf: "start", ml: 1, mb: 4 }}></Box>
-                                <Box>
-                                    {seatsData?.floor_2 && renderSeats(seatsData.floor_2)}
+                        {/* Floor 2 */}
+                        <Box display="flex" flexDirection="column" justifyContent="center" alignItems="center">
+                            <Typography variant="h6" fontWeight="bold" sx={{ fontSize: "16px", color: "black" }}>
+                                Tầng trên
+                            </Typography>
+                            <Box flex={1} display="flex" justifyContent="center" alignItems="center">
+                                <Box sx={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    justifyContent: "center",
+                                    alignItems: "center",
+                                    width: seatsData?.floor_1 && seatsData?.floor_1[0].length === 2 ? "160px" : "200px",
+                                    height: "300px",
+                                    backgroundColor: "rgb(242, 242, 242)",
+                                    padding: "24px 0 24px 0",
+                                    borderTopLeftRadius: "40px",
+                                    borderTopRightRadius: "40px",
+                                }}>
+                                    <Box sx={{ width: "100%", height: "50px", alignSelf: "start", ml: 1, mb: 4 }}></Box>
+                                    <Box>
+                                        {seatsData?.floor_2 && renderSeats(seatsData.floor_2)}
+                                    </Box>
                                 </Box>
                             </Box>
                         </Box>
                     </Box>
-                </Box>
+                )}
+
+                {activeStep > 0 && routeStops && (
+                                      <Box display="flex" flexDirection="column" alignItems="center" mt={2}>
+                                        <Box display="flex" justifyContent="center" alignItems="center" gap={2}>
+                                            <Box>
+                                                <Typography
+                                                    variant="subtitle1"
+                                                    sx={{ mb: 2 }}
+                                                    fontSize={18}
+                                                    fontWeight={700}
+                                                >
+                                                    Điểm đón
+                                                </Typography>
+                                                <Box
+                                                    sx={{
+                                                        maxHeight: '450px', 
+                                                        overflowY: 'auto',  
+                                                        paddingRight: '10px', 
+                                                    }}
+                                                    >
+                                                    {routeStops.pickup.map((stop, index) => {
+                                                        const arrivalTime = new Date(stop.arrivalTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+                                                        return (
+                                                            <Box key={index} display="flex" alignItems="center" sx={{ paddingTop: '13px' }}>
+                                                            {/* Radio Button */}
+                                                                <Radio
+                                                                   sx={{ marginRight: 2 }}
+                                                                   value={stop.stopId}
+                                                                   name={`pickup-stop-${index}`}
+                                                                   checked={selectedPickup === stop.stopId}
+                                                                   onChange={handlePickupChange}
+                                                                />
+                                                                <Typography display="flex" alignItems="center">
+                                                                    <span style={{ fontWeight: 'bold', marginRight: '8px' }}>
+                                                                        {arrivalTime}
+                                                                    </span>
+                                                                    <span style={{ marginRight: '8px' }}>•</span>
+                                                                    <span style={{ width: "190px" }}>{stop.location}</span>
+                                                                </Typography>
+                                                            </Box>
+                                                        );
+                                                    })}
+                                                </Box>
+                                            </Box>
+                                            <Divider orientation="vertical" flexItem />
+                                            <Box>
+                                                <Typography
+                                                    variant="subtitle1"
+                                                    sx={{ mb: 2 }}
+                                                    fontSize={18}
+                                                    fontWeight={700}
+                                                >
+                                                    Điểm trả
+                                                </Typography>
+                                                <Box
+                                                    sx={{
+                                                        maxHeight: '450px', 
+                                                        overflowY: 'auto',  
+                                                        paddingRight: '10px', 
+                                                    }}
+                                                    >
+                                                    {routeStops.dropoff.map((stop, index) => {
+                                                        const arrivalTime = new Date(stop.arrivalTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+                                                        return (
+                                                            <Box key={index} display="flex" alignItems="center" sx={{ paddingTop: '13px' }}>
+                                                            {/* Radio Button */}
+                                                            <Radio
+                                                                sx={{ marginRight: 2 }}
+                                                                value={stop.stopId}
+                                                                name={`dropoff-stop-${index}`}
+                                                                checked={selectedDropoff === stop.stopId}
+                                                                onChange={handleDropoffChange}
+                                                            />
+                                                            <Typography display="flex" alignItems="center">
+                                                                <span style={{ fontWeight: 'bold', marginRight: '8px' }}>
+                                                                    {arrivalTime}
+                                                                </span>
+                                                                <span style={{ marginRight: '8px' }}>•</span>
+                                                                <span style={{ width: "190px" }}>{stop.location}</span>
+                                                            </Typography>
+                                                        </Box>
+                                                        );
+                                                    })}
+                                                </Box>
+                                            </Box>
+                                        </Box>
+                                    </Box>
+                                )}
             </Box>
 
             {/* Footer: Total and Continue button */}
             <Box>
                 <Divider />
                 <Box display="flex" justifyContent="space-between" gap={2} alignItems="center" marginTop={3}>
-                <Button 
-                    sx={{
-                        textTransform: "none",
-                        backgroundColor: "white", 
-                        border: "1px solid", 
-                        padding: "6px 12px",
-                        fontSize: "14px",
-                        color: "black",
-                        display: activeStep === 0 ? "none" : "flex", // Dùng flex để căn chỉnh
-                        alignItems: "center", 
-                        justifyContent: "center", 
-                        width: "120px", 
-                        "&:hover": {
-                            color: "rgb(98, 180, 246)", 
-                            borderColor: "rgb(98, 180, 246)", 
-                        },
-                    }} 
-                    onClick={handleBack}
-                    startIcon={
-                        <ArrowBackIosIcon 
-                            fontSize="small" // Kích thước icon nhỏ
-                            sx={{ marginRight: "4px" }} // Khoảng cách giữa icon và chữ
-                        />
-                    }
-                >
-                    Quay lại
-                </Button>
+                    {activeStep === 0 ? (
+                        <Box sx={{ width: "120px" }} /> 
+                    ) : (
+                        <Button 
+                            sx={{
+                                textTransform: "none",
+                                backgroundColor: "white", 
+                                border: "1px solid", 
+                                padding: "6px 12px",
+                                fontSize: "14px",
+                                color: "black",
+                                display: "flex", // Luôn dùng flex ở đây
+                                alignItems: "center", 
+                                justifyContent: "center", 
+                                width: "120px", 
+                                "&:hover": {
+                                    color: "rgb(98, 180, 246)", 
+                                    borderColor: "rgb(98, 180, 246)", 
+                                },
+                            }} 
+                            onClick={handleBack}
+                            startIcon={
+                                <ArrowBackIosIcon 
+                                    fontSize="small"
+                                    sx={{ marginRight: "4px" }}
+                                />
+                            }
+                        >
+                            Quay lại
+                        </Button>
+                    )}
 
-                    <Box display="flex" justifyContent="flex-end" gap={2} alignItems="center" marginTop={3}>
+                    <Box display="flex" justifyContent="flex-end" gap={2} alignItems="center">
                         <div>
-                            <p className="inline-block text-sm">Tổng cộng: </p>
+                            <p className="inline-block text-sm mr-1">Tổng cộng: </p>
                             <span style={{ color: "rgb(0, 96, 196)", fontWeight: "bold", fontSize: "14px" }}>
-                                0đ
+                                {new Intl.NumberFormat("en-US").format(calculateTotalPrice())}đ
                             </span>
                         </div>
-                        <Button sx={{
-                            textTransform: "none",
-                            backgroundColor: "rgb(0, 96, 196)",
-                            color: "white",
-                            padding: "6px 12px",
-                            fontSize: "14px",
-                        }} onClick={handleNext}>
-                            Tiếp tục
-                        </Button>
+                        {(selectedSeats.length > 0 && activeStep === 0) || 
+                            (activeStep === 1 && selectedPickup && selectedDropoff) ? (
+                                <Button
+                                    sx={{
+                                        textTransform: "none",
+                                        backgroundColor: "rgb(0, 96, 196)",
+                                        color: "white",
+                                        padding: "6px 12px",
+                                        fontSize: "14px",
+                                    }}
+                                    onClick={handleNext}
+                                >
+                                    Tiếp tục
+                                </Button>
+                            ) : null}
                     </Box>
                 </Box>
             </Box>
+
         </Box>
     );
 };
