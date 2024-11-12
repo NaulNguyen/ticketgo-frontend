@@ -15,6 +15,8 @@ import { LocationRoute } from "../components/IconSVG";
 import HealthAndSafetyIcon from "@mui/icons-material/HealthAndSafety";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
+import DirectionsBusIcon from "@mui/icons-material/DirectionsBus";
+import GroupIcon from "@mui/icons-material/Group";
 
 const PaymentMethod = () => {
     const [showPriceDetails, setShowPriceDetails] = useState(false);
@@ -239,9 +241,14 @@ const PaymentMethod = () => {
                                     border: "1px solid #e0e0e0",
                                     fontSize: "12px",
                                 }}>
-                                <Typography sx={{ color: "gray", padding: "12px" }}>
-                                    T5, 21/11/2024
-                                </Typography>
+                                <Box display="flex" alignItems="center" gap={1}>
+                                    <DirectionsBusIcon sx={{ color: "#2474e5", ml: 1 }} />
+                                    <Typography sx={{ fontWeight: "700", paddingY: "12px" }}>
+                                        T5, 21/11/2024
+                                    </Typography>
+                                    <GroupIcon sx={{ color: "gray" }} />
+                                    <Typography>1</Typography>
+                                </Box>
                                 <Divider />
 
                                 <Box
