@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
     Button,
     Modal,
@@ -10,6 +10,7 @@ import {
     Menu,
     MenuItem,
     ListItemIcon,
+    Typography,
 } from "@mui/material";
 import LoginIcon from "@mui/icons-material/Login";
 import Registration from "./Register";
@@ -23,15 +24,20 @@ import Cookies from "js-cookie";
 import { useDispatch } from "react-redux";
 import { logout } from "../actions/login.action";
 import { toast } from "react-toastify";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const Header = () => {
     const [modalState, setModalState] = useState({ isRegisterOpen: false, isLoginOpen: false });
     const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+    const [timeLeft, setTimeLeft] = useState(300);
+    const [timeoutModalOpen, setTimeoutModalOpen] = useState(false);
 
     const dispatch = useDispatch();
     const open = Boolean(anchorEl);
     const navigate = useNavigate();
+    const location = useLocation();
+
+    const isPaymentMethod = location.pathname === "/paymentMethod";
 
     const { getUserInfor } = useAppAccessor();
     const userInfo = getUserInfor();
@@ -93,11 +99,93 @@ const Header = () => {
         toast.success("Đăng xuất thành công");
     };
 
+    useEffect(() => {
+        if (isPaymentMethod && timeLeft > 0) {
+            const timer = setInterval(() => setTimeLeft(timeLeft - 1), 1000);
+            return () => clearInterval(timer); // Cleanup on unmount
+        } else if (timeLeft === 0) {
+            setTimeoutModalOpen(true);
+        }
+    }, [isPaymentMethod, timeLeft]);
+
+    const handleCloseTimeoutModal = () => {
+        setTimeoutModalOpen(false);
+        navigate("/search");
+    };
+
+    // Time Formatting
+    const formatTime = (time: number) => {
+        const minutes = Math.floor(time / 60);
+        const seconds = time % 60;
+        return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
+    };
+
     return (
         <header className="flex justify-between items-center px-6 py-4 bg-[#0d47a1] shadow-md">
             <div className="flex items-center cursor-pointer" onClick={handleNavigateClick}>
                 <span className="font-pacifico text-4xl text-white">TicketGo</span>
             </div>
+            {isPaymentMethod && (
+                <Box display="flex" gap={1}>
+                    <Typography sx={{ color: "white", fontWeight: "bold", fontSize: "20px" }}>
+                        Thời gian thanh toán còn lại{" "}
+                    </Typography>
+                    <Typography
+                        sx={{
+                            color: "white",
+                            fontWeight: "bold",
+                            fontSize: "22px",
+                            padding: "0px 4px",
+                            backgroundColor: "rgb(235, 87, 87)",
+                            borderRadius: "8px",
+                        }}>
+                        {formatTime(timeLeft)}
+                    </Typography>
+                </Box>
+            )}
+
+            <Modal
+                open={timeoutModalOpen}
+                onClose={handleCloseTimeoutModal}
+                aria-labelledby="timeout-modal"
+                aria-describedby="timeout-modal-description">
+                <Box
+                    sx={{
+                        position: "absolute",
+                        top: "50%",
+                        left: "50%",
+                        transform: "translate(-50%, -50%)",
+                        width: "90%",
+                        maxWidth: "520px",
+                        height: "200px",
+                        bgcolor: "white",
+                        boxShadow: 24,
+                        p: 4,
+                        borderRadius: "10px",
+                        textAlign: "center",
+                        outline: "none",
+                    }}>
+                    <Typography variant="h6" sx={{ mb: 2, fontWeight: "700" }}>
+                        Thời hạn thanh toán vé đã hết
+                    </Typography>
+                    <Typography sx={{ mb: 3, fontSize: "14px" }}>
+                        Xin quý khách vui lòng đặt lại vé khác. Ticketgo chân thành cảm ơn.
+                    </Typography>
+                    <Button
+                        variant="contained"
+                        onClick={handleCloseTimeoutModal}
+                        sx={{
+                            backgroundColor: "rgb(13, 46, 89)",
+                            color: "white",
+                            width: "100%",
+                            textTransform: "none",
+                            fontWeight: "bold",
+                            "&:hover": { backgroundColor: "#2474e5" },
+                        }}>
+                        Đã hiểu
+                    </Button>
+                </Box>
+            </Modal>
             {userInfo.isAuthenticated ? (
                 <IconButton
                     onClick={handleAvatarClick}
@@ -115,7 +203,12 @@ const Header = () => {
                 <div className="flex space-x-4">
                     <Button
                         variant="contained"
-                        sx={{backgroundColor: 'white', color: 'black', textTransform: "none", fontWeight: 'bold'}}
+                        sx={{
+                            backgroundColor: "white",
+                            color: "black",
+                            textTransform: "none",
+                            fontWeight: "bold",
+                        }}
                         startIcon={<LoginIcon />}
                         onClick={() => openModal("login")}>
                         Đăng nhập
