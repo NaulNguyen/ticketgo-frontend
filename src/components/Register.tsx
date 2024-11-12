@@ -46,7 +46,6 @@ const Registration: React.FC<RegistrationProps> = ({ onClose, onLoginClick }) =>
             }}
             validationSchema={userValidationSchema}
             onSubmit={(values, actions) => {
-                console.log(values);
                 handleUserSubmit(values);
                 actions.resetForm();
             }}>

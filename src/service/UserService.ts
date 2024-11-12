@@ -33,7 +33,6 @@ class UserService {
         try {
             const response = await axiosWithJWT.get(`/api/v1/users/me`);
             if (response.status === 200) {
-                console.log("User info APi:", response.data);
                 return response.data; // Return user info directly
             } else {
                 throw new Error(`Unexpected response status: ${response.status}`);

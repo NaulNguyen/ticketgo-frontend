@@ -24,7 +24,6 @@ const Login: React.FC<LoginProps> = ({ onClose, onRegisterClick }) => {
       setLoading(true);
       try {
           const response = await UserService.login(values); // Now this returns the full response
-          console.log(response)
           if (response.status === 200) {
             const { accessToken, refreshToken } = response.data;
             Cookies.set('accessToken', accessToken);
