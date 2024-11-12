@@ -309,7 +309,7 @@ const SearchingPage = () => {
                                         </Box>
                                     </Box>
                                     {expandedId === result.scheduleId && <Details scheduleId={result.scheduleId} />}
-                                    { seatSelectId  === result.scheduleId && <SeatSelect scheduleId={result.scheduleId}/>}
+                                    { seatSelectId  === result.scheduleId && <SeatSelect scheduleId={result.scheduleId} price={result.price}/>}
                                 </Box>
                             ))
                         ) : (
