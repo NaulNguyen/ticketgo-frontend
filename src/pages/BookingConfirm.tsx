@@ -7,6 +7,7 @@ import {
     Container,
     Divider,
     FormControl,
+    IconButton,
     MenuItem,
     Select,
     TextField,
@@ -15,28 +16,28 @@ import {
 import ArrowBackIosIcon from "@mui/icons-material/ArrowBackIos";
 import { LocationRoute } from "../components/IconSVG";
 import HealthAndSafetyIcon from "@mui/icons-material/HealthAndSafety";
-import ChangePickandDropDrawer from "../components/ChangePickandDropDrawer";
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
+import DirectionsBusIcon from "@mui/icons-material/DirectionsBus";
+import GroupIcon from "@mui/icons-material/Group";
 
 const BookingConfirm = () => {
     const navigate = useNavigate();
-    const [drawerTitle, setDrawerTitle] = useState("");
-    const [openDrawer, setOpenDrawer] = useState(false);
 
-    const handleDrawerOpen = () => setOpenDrawer(true);
-    const handleDrawerClose = () => setOpenDrawer(false);
+    const [showPriceDetails, setShowPriceDetails] = useState(false);
+
+    const handlePriceBoxClick = () => {
+        setShowPriceDetails((prev) => !prev);
+    };
 
     const handleBackClick = () => navigate(-1);
-    const handleChangePickup = () => {
-        setDrawerTitle("Thay đổi điểm đón");
-        handleDrawerOpen();
-    };
-    const handleChangeDropoff = () => {
-        setDrawerTitle("Thay đổi điểm trả");
-        handleDrawerOpen();
-    };
-
     return (
-        <div style={{ backgroundColor: "rgb(242, 242, 242)", minHeight: "450px" }}>
+        <div
+            style={{
+                backgroundColor: "rgb(242, 242, 242)",
+                minHeight: "450px",
+                minWidth: "450px",
+            }}>
             <Header />
             <Container
                 sx={{
@@ -58,10 +59,9 @@ const BookingConfirm = () => {
                 <Container
                     sx={{
                         display: "flex",
-                        justifyContent: "center", // Center content horizontally
+                        justifyContent: "center",
                         alignItems: "flex-start",
                     }}>
-                    {/* Contact Information Box */}
                     <Box
                         sx={{
                             display: "flex",
@@ -73,7 +73,7 @@ const BookingConfirm = () => {
                             border: "1px solid #e0e0e0",
                             marginTop: "20px",
                             width: "700px",
-                            height: "400px",
+                            minHeight: "400px",
                         }}>
                         <Typography variant="h5" sx={{ fontWeight: "bold", fontSize: "18px" }}>
                             Thông tin liên hệ
@@ -147,20 +147,70 @@ const BookingConfirm = () => {
                         <Box
                             sx={{
                                 backgroundColor: "white",
-                                display: "flex",
-                                justifyContent: "space-between",
                                 alignItems: "center",
                                 padding: 2,
                                 borderRadius: "8px",
                                 border: "1px solid #e0e0e0",
-                            }}>
-                            <Typography sx={{ fontWeight: "700", fontSize: "18px" }}>
-                                Tạm tính
-                            </Typography>
-                            <Typography
-                                sx={{ fontWeight: "bold", color: "#2474e5", fontSize: "18px" }}>
-                                300.000đ
-                            </Typography>
+                                cursor: "pointer",
+                            }}
+                            onClick={handlePriceBoxClick}>
+                            <Box
+                                sx={{
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                    alignItems: "center",
+                                }}>
+                                <Typography sx={{ fontWeight: "700", fontSize: "18px" }}>
+                                    Tạm tính
+                                </Typography>
+                                <Box
+                                    sx={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                    }}>
+                                    <Typography
+                                        sx={{
+                                            fontWeight: "bold",
+                                            color: "#2474e5",
+                                            fontSize: "18px",
+                                        }}>
+                                        300.000đ
+                                    </Typography>
+                                    <IconButton
+                                        sx={{
+                                            "&:hover": {
+                                                backgroundColor: "transparent",
+                                            },
+                                            padding: "0",
+                                        }}>
+                                        {showPriceDetails ? (
+                                            <KeyboardArrowUpIcon />
+                                        ) : (
+                                            <KeyboardArrowDownIcon />
+                                        )}
+                                    </IconButton>
+                                </Box>
+                            </Box>
+                            {showPriceDetails && (
+                                <Box
+                                    sx={{
+                                        marginTop: 2,
+                                        display: "flex",
+                                        justifyContent: "space-between",
+                                    }}>
+                                    <Typography sx={{ fontSize: "14px" }}>Giá vé</Typography>
+                                    <Box
+                                        display="flex"
+                                        flexDirection="column"
+                                        justifyContent="flex-end">
+                                        <Typography sx={{ fontSize: "14px" }}>300.000đ</Typography>
+                                        <Typography
+                                            sx={{ fontSize: "12px", color: "rgb(133, 133, 133)" }}>
+                                            Mã ghế: A12
+                                        </Typography>
+                                    </Box>
+                                </Box>
+                            )}
                         </Box>
 
                         <Box
@@ -170,6 +220,7 @@ const BookingConfirm = () => {
                                 padding: "20px",
                                 borderRadius: "8px",
                                 border: "1px solid #e0e0e0",
+                                minHeight: "300px",
                             }}>
                             <Typography
                                 sx={{ fontWeight: "bold", fontSize: "18px", marginBottom: 2 }}>
@@ -184,9 +235,14 @@ const BookingConfirm = () => {
                                     border: "1px solid #e0e0e0",
                                     fontSize: "12px",
                                 }}>
-                                <Typography sx={{ color: "gray", padding: "12px" }}>
-                                    T5, 21/11/2024
-                                </Typography>
+                                <Box display="flex" alignItems="center" gap={1}>
+                                    <DirectionsBusIcon sx={{ color: "#2474e5", ml: 1 }} />
+                                    <Typography sx={{ fontWeight: "700", paddingY: "12px" }}>
+                                        T5, 21/11/2024
+                                    </Typography>
+                                    <GroupIcon sx={{ color: "gray" }} />
+                                    <Typography>1</Typography>
+                                </Box>
                                 <Divider />
 
                                 <Box
@@ -207,7 +263,7 @@ const BookingConfirm = () => {
                                         }}
                                     />
                                     <Box>
-                                        <Typography sx={{ fontWeight: "500" }}>
+                                        <Typography sx={{ fontWeight: "700" }}>
                                             NASA Travel
                                         </Typography>
                                         <Typography sx={{ color: "gray", fontSize: "14px" }}>
@@ -235,45 +291,12 @@ const BookingConfirm = () => {
                                     <LocationRoute />
 
                                     <Box display="flex" flexDirection="column" gap={3.5}>
-                                        <Typography sx={{ fontWeight: "500" }}>
+                                        <Typography sx={{ fontWeight: "700" }}>
                                             Trạm Hà Nội
                                         </Typography>
-                                        <Typography sx={{ fontWeight: "500" }}>
+                                        <Typography sx={{ fontWeight: "700" }}>
                                             Trạm Đà Nẵng
                                         </Typography>
-                                    </Box>
-
-                                    <Box display="flex" flexDirection="column" gap={3}>
-                                        <Button
-                                            sx={{
-                                                fontSize: "12px",
-                                                textDecoration: "underline",
-                                                textTransform: "none",
-                                                padding: "none",
-                                                fontWeight: "bold",
-                                                "&:hover": {
-                                                    backgroundColor: "transparent",
-                                                    textDecoration: "underline",
-                                                },
-                                            }}
-                                            onClick={handleChangePickup}>
-                                            Thay đổi
-                                        </Button>
-                                        <Button
-                                            sx={{
-                                                fontSize: "12px",
-                                                textDecoration: "underline",
-                                                textTransform: "none",
-                                                padding: "none",
-                                                fontWeight: "bold",
-                                                "&:hover": {
-                                                    backgroundColor: "transparent",
-                                                    textDecoration: "underline",
-                                                },
-                                            }}
-                                            onClick={handleChangeDropoff}>
-                                            Thay đổi
-                                        </Button>
                                     </Box>
                                 </Box>
                             </Box>
@@ -290,6 +313,7 @@ const BookingConfirm = () => {
                     alignItems: "center",
                     position: "absolute",
                     padding: "20px",
+                    height: "100px",
                 }}>
                 <Button
                     variant="contained"
@@ -306,11 +330,6 @@ const BookingConfirm = () => {
                     Tiếp tục
                 </Button>
             </Box>
-            <ChangePickandDropDrawer
-                open={openDrawer}
-                onClose={handleDrawerClose}
-                title={drawerTitle}
-            />
         </div>
     );
 };
