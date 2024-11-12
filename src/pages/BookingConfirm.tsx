@@ -20,9 +20,15 @@ import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import DirectionsBusIcon from "@mui/icons-material/DirectionsBus";
 import GroupIcon from "@mui/icons-material/Group";
+import useAppAccessor from "../hook/useAppAccessor";
 
 const BookingConfirm = () => {
     const navigate = useNavigate();
+
+    const { getUserInfor } = useAppAccessor();
+    const userInfo = getUserInfor();
+
+    console.log(userInfo)
 
     const [showPriceDetails, setShowPriceDetails] = useState(false);
 
@@ -87,6 +93,7 @@ const BookingConfirm = () => {
                             }
                             variant="outlined"
                             fullWidth
+                            value={userInfo?.user.fullName}
                         />
 
                         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
@@ -104,6 +111,7 @@ const BookingConfirm = () => {
                                 variant="outlined"
                                 type="tel"
                                 sx={{ flex: 1 }}
+                                value={userInfo?.user.phoneNumber}
                             />
                         </Box>
 
@@ -117,6 +125,7 @@ const BookingConfirm = () => {
                             variant="outlined"
                             fullWidth
                             type="email"
+                            value={userInfo?.user.email}
                         />
                         <Box
                             sx={{
