@@ -8,20 +8,22 @@ import SearchingPage from "./pages/SearchingPage";
 import "react-toastify/dist/ReactToastify.css";
 import { ToastContainer } from "react-toastify";
 import BookingConfirm from "./pages/BookingConfirm";
+import PaymentMethod from "./pages/PaymentMethod";
 
 function App() {
     return (
         <BrowserRouter>
             <div>
                 <Provider store={store}>
-                        <div className='text-sm'>
-                            <ToastContainer />
-                        </div>
+                    <div className="text-sm">
+                        <ToastContainer />
+                    </div>
                     <Routes>
                         <Route path="/" element={<Home />} />
                         <Route path="/activate" element={<AccountActivation />} />
                         <Route path="/search" element={<SearchingPage />} />
                         <Route path="/bookingConfirm" element={<BookingConfirm />} />
+                        <Route path="/paymentMethod" element={<PaymentMethod />} />
                     </Routes>
                 </Provider>
             </div>
