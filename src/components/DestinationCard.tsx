@@ -5,25 +5,34 @@ import CardMedia from "@mui/material/CardMedia";
 import Typography from "@mui/material/Typography";
 import CardActionArea from "@mui/material/CardActionArea";
 
-export default function MultiActionAreaCard() {
+type DestinationCardProps = {
+    routeImage: string;
+    routeName: string;
+    price: number;
+};
+
+const DestinationCard: React.FC<DestinationCardProps> = ({ routeImage, routeName, price }) => {
+    const formattedPrice = new Intl.NumberFormat("en-US").format(price);
     return (
-        <Card sx={{ maxWidth: 343, my: 2 }}>
-            <CardActionArea>
+        <Card sx={{ width: 320, height: 300, my: 2, display: 'flex', flexDirection: 'column', alignItems: "center", justifyContent: "center" }}>
+            <CardActionArea sx={{ height: '100%' }}>
                 <CardMedia
                     component="img"
-                    height="140"
-                    image="	https://f1e425bd6cd9ac6.cmccloud.com.vn/cms-tool/destination/images/5/img_hero.png?v1"
+                    image={routeImage}
                     alt="Destination image"
+                    sx={{ objectFit: 'cover', height: "210px", width: '320px' }}
                 />
-                <CardContent>
+                <CardContent sx={{ flexGrow: 1 }}>
                     <Typography gutterBottom variant="h5" component="div">
-                        Sài Gòn - Nha Trang
+                        {routeName}
                     </Typography>
                     <Typography variant="body2" sx={{ color: "text.secondary" }}>
-                        Từ 140.000
+                        Từ {formattedPrice} VND
                     </Typography>
                 </CardContent>
             </CardActionArea>
         </Card>
     );
-}
+};
+
+export default DestinationCard;
