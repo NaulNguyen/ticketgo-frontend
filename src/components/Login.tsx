@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import { Box, Button, CircularProgress, TextField, Typography } from '@mui/material';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import { loginValidationSchema } from "../schemas";
@@ -6,8 +6,8 @@ import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import UserService from "../service/UserService";
 import Cookies from 'js-cookie';
-import { loginRequest, loginSuccess, loginFailure } from '../actions/login.action';
 import { useDispatch } from 'react-redux';
+import { asyncUserInfor } from '../actions/user.action';
 
 interface LoginProps {
   onClose: () => void;
@@ -20,40 +20,45 @@ const Login: React.FC<LoginProps> = ({ onClose, onRegisterClick }) => {
     const dispatch = useDispatch();
 
     const handleSubmit = async (values: { email: string; password: string; }) => {
-      dispatch(loginRequest());
-      setLoading(true);
-      try {
-          const response = await UserService.login(values); // Now this returns the full response
-          if (response.status === 200) {
-            const { accessToken, refreshToken } = response.data;
-            Cookies.set('accessToken', accessToken);
-            Cookies.set('refreshToken', refreshToken);
-            const userInfoResponse = await UserService.fetchUserInfor();
-            dispatch(loginSuccess(userInfoResponse));
-            onClose();
-            toast.success("Đăng nhập thành công");
+        setLoading(true);
+        try {
+            const response = await UserService.login(values); 
+            if (response.status === 200) {
+                const { accessToken, refreshToken} = response.data;
+                Cookies.set('accessToken', accessToken);
+                Cookies.set('refreshToken', refreshToken);
+                onClose();
+                toast.success("Đăng nhập thành công");
+            }
+        } catch (error: any) {
+            if (error.response) {
+                const { status, data } = error.response;
+                if (status === 401) {
+                    toast.error(data.message || "Vui lòng kiểm tra email hoặc mật khẩu của bạn.");
+                } else if (status === 400) {
+                    toast.error(data.message || "Email không được để trống.");
+                } else {
+                    toast.error(data.message || "Đã xảy ra lỗi không xác định.");
+                }
+            } else {
+                toast.error("Login failed: " + (error.message || "An unknown error occurred"));
+            }
+        } finally {
+            setLoading(false);
         }
-      } catch (error: any) {
-          if (error.response) {
-              const { status, data } = error.response;
-              if (status === 401) {
-                  toast.error(data.message || "Vui lòng kiểm tra email hoặc mật khẩu của bạn.");
-                  dispatch(loginFailure(data.message));
-              } else if (status === 400) {
-                  toast.error(data.message || "Email không được để trống.");
-                  dispatch(loginFailure(data.message));
-              } else {
-                  toast.error(data.message || "Đã xảy ra lỗi không xác định.");
-                  dispatch(loginFailure(data.message));
-              }
-          } else {
-              toast.error("Login failed: " + (error.message || "An unknown error occurred"));
-              dispatch(loginFailure(error.message));
-          }
-      } finally {
-          setLoading(false);
-      }
-  };
+    };
+
+    useEffect(() => {
+        const fetchUserInfo = async () => {
+            try {
+                const userInfoResponse = await UserService.fetchUserInfor();
+                dispatch(asyncUserInfor(userInfoResponse)); 
+            } catch (error) {
+                console.error("Failed to fetch user info", error);
+            }
+        };
+        fetchUserInfo(); 
+    }, [dispatch])
   
     return (
         <Box 
