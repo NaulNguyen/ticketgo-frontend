@@ -22,9 +22,10 @@ import LoyaltyIcon from "@mui/icons-material/Loyalty";
 import CommentIcon from "@mui/icons-material/Comment";
 import Cookies from "js-cookie";
 import { useDispatch } from "react-redux";
-import { logout } from "../actions/login.action";
+import { asyncUserInfor, logout } from "../actions/user.action";
 import { toast } from "react-toastify";
 import { useLocation, useNavigate } from "react-router-dom";
+import UserService from "../service/UserService";
 
 const Header = () => {
     const [modalState, setModalState] = useState({ isRegisterOpen: false, isLoginOpen: false });
@@ -41,6 +42,7 @@ const Header = () => {
 
     const { getUserInfor } = useAppAccessor();
     const userInfo = getUserInfor();
+    console.log(userInfo);
 
     const handleAvatarClick = (event: React.MouseEvent<HTMLElement>) => {
         setAnchorEl(event.currentTarget);
@@ -107,6 +109,18 @@ const Header = () => {
             setTimeoutModalOpen(true);
         }
     }, [isPaymentMethod, timeLeft]);
+
+    useEffect(() => {
+        const fetchUserInfo = async () => {
+            try {
+                const userInfoResponse = await UserService.fetchUserInfor();
+                dispatch(asyncUserInfor(userInfoResponse)); 
+            } catch (error) {
+                console.error("Failed to fetch user info", error);
+            }
+        };
+        fetchUserInfo(); 
+    }, [dispatch])
 
     const handleCloseTimeoutModal = () => {
         setTimeoutModalOpen(false);
@@ -186,7 +200,7 @@ const Header = () => {
                     </Button>
                 </Box>
             </Modal>
-            {userInfo.isAuthenticated ? (
+            {userInfo?.isAuthenticated ? (
                 <IconButton
                     onClick={handleAvatarClick}
                     aria-controls={open ? "account-menu" : undefined}
