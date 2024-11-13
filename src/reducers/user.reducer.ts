@@ -1,7 +1,7 @@
-import { LOGIN_REQUEST, LOGIN_SUCCESS, LOGIN_FAILURE, LOGOUT } from "../actions/actionsType";
-import { LoginState } from "../global";
+import { LOGOUT, ASYNC_USER_INFOR, BOOKING } from "../actions/actionsType";
+import { Booking, UserState } from "../global";
 
-const initialState: LoginState = {
+const initialState: UserState = {
     isAuthenticated: false,
     isLoading: false,
     error: "",
@@ -13,22 +13,24 @@ const initialState: LoginState = {
         phoneNumber: "",
         dateOfBirth: "",
     },
+    booking: [] as Booking[],
 };
 
-const loginReducer = (state = initialState, action: any): LoginState => {
+const userReducer = (state = initialState, action: any): UserState => {
     switch (action.type) {
-        case LOGIN_REQUEST:
-            return { ...state, isLoading: true, error: "" };
-        case LOGIN_SUCCESS:
+        case ASYNC_USER_INFOR:
             return {
                 ...state,
                 isAuthenticated: true,
                 isLoading: false,
                 error: "",
-                user: { ...action.payload.data }, 
+                user: { ...action.payload.data },
             };
-        case LOGIN_FAILURE:
-            return { ...state, isLoading: false, error: action.payload };
+        case BOOKING:
+            return {
+                ...state,
+                booking: [...state.booking, action.payload],
+            };
         case LOGOUT:
             return { ...initialState };
         default:
@@ -36,4 +38,4 @@ const loginReducer = (state = initialState, action: any): LoginState => {
     }
 };
 
-export default loginReducer;
+export default userReducer;

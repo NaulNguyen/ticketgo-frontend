@@ -1,5 +1,3 @@
-export const LOGIN_REQUEST = "LOGIN_REQUEST";
-export const LOGIN_SUCCESS = "LOGIN_SUCCESS";
-export const LOGIN_FAILURE = "LOGIN_FAILURE";
+export const ASYNC_USER_INFOR = "ASYNC_USER_INFOR"; 
 export const LOGOUT = "LOGOUT";
-export const GET_USER_INFOR = "GET_USER_INFOR"; 
+export const BOOKING = "BOOKING";

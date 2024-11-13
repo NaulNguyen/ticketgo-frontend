@@ -1,12 +1,13 @@
 export type GlobalState = {
-    login: LoginState;
+    user: UserState;
 };
 
-export type LoginState = {
+export type UserState = {
     isAuthenticated: boolean;
     isLoading: boolean;
     error: string;
     user: UserInformation;
+    booking : Booking[];
 };
 
 export type UserInformation = {
@@ -18,13 +19,9 @@ export type UserInformation = {
     dateOfBirth: string;
 };
 
-export type BusCompany = {
-    email: string;
-    role: string;
-    imageUrl: string;
-    busCompanyName: string;
-    contactEmail: string;
-    address: string;
-    description: string;
-    isAuthenticated: boolean;
-}
+export type Booking = {
+    ticketCodes: string[]; 
+    pickupStopId: string;
+    dropOffStopId: string;
+    scheduleId: string;
+};

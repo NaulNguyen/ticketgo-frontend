@@ -3,7 +3,7 @@ import { GlobalState } from "../global";
 
 const useAppAccessor = () => {
     const getUserInfor = useSelector((state: GlobalState) => {
-        return state.login;
+        return state.user;
     });
 
     return {

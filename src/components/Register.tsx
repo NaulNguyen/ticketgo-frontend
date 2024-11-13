@@ -133,6 +133,7 @@ const Registration: React.FC<RegistrationProps> = ({ onClose, onLoginClick }) =>
                                     const isoDate = e.target.value;
                                     setFieldValue("dateOfBirth", isoDate); 
                                 }}
+                                format="dd/MM/yyyy"
                                 error={touched.dateOfBirth && !!errors.dateOfBirth}
                                 helperText={touched.dateOfBirth && errors.dateOfBirth}
                                 fullWidth
