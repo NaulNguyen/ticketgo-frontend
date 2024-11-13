@@ -6,9 +6,11 @@ import useAppAccessor from "../hook/useAppAccessor";
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import { useDispatch } from "react-redux";
+import { booking } from "../actions/user.action";
 
 interface Seat {
-    seatId: number;
+    ticketCode: string;
     seatNumber: string;
     isAvailable: boolean;
 }
@@ -41,10 +43,12 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
     const [routeStops, setRouteStops] = useState<RouteStopsData | null>(null);
     const [selectedPickup, setSelectedPickup] = useState<number | null>(null);
     const [selectedDropoff, setSelectedDropoff] = useState<number | null>(null);
+    const [isBookingSaved, setIsBookingSaved] = useState(false);
 
     const steps = ['Chổ mong muốn', 'Điểm đón trả'];
     const priceFormatted = new Intl.NumberFormat('en-US').format(price);
     const navigate = useNavigate();
+    const dispatch = useDispatch();
 
     
     const { getUserInfor } = useAppAccessor();
@@ -64,6 +68,10 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
     
     const handleDropoffChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setSelectedDropoff(Number(event.target.value));
+    };
+
+    const calculateTotalPrice = () => {
+        return selectedSeats.length * price;
     };
 
     useEffect(() => {
@@ -89,7 +97,11 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
             }
         };
         fetchSeatsData();
-    }, [scheduleId, userInfo.isAuthenticated]);
+
+        const intervalId = setInterval(fetchSeatsData, 3000);
+
+        return () => clearInterval(intervalId);
+    }, [scheduleId]);
 
     useEffect(() => {
         if (activeStep === 1) {
@@ -105,16 +117,33 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
         }
     }, [scheduleId, activeStep]);
 
+
+    useEffect(() => {
+        const saveBooking = async () => {
+            if (selectedSeats.length > 0 && selectedPickup !== null && selectedDropoff !== null) {
+                const bookingData = {
+                    scheduleId,
+                    ticketCodes: selectedSeats.map(seat => seat.ticketCode),
+                    pickupStopId: selectedPickup,
+                    dropOffStopId: selectedDropoff,
+                };
+
+                dispatch(booking(bookingData));
+                setIsBookingSaved(true);
+            }
+        };
+
+        if (activeStep === 2 && !isBookingSaved) {
+            saveBooking();
+        }
+    }, [activeStep, selectedSeats, selectedPickup, selectedDropoff, scheduleId, isBookingSaved, dispatch]);
+
     const toggleSeatSelection = (seat: Seat) => {
-        if (selectedSeats.some(s => s.seatId === seat.seatId)) {
-            setSelectedSeats(prev => prev.filter(s => s.seatId !== seat.seatId));
+        if (selectedSeats.some(s => s.ticketCode === seat.ticketCode)) {
+            setSelectedSeats(prev => prev.filter(s => s.ticketCode !== seat.ticketCode));
         } else {
             setSelectedSeats(prev => [...prev, seat]);
         }
-    };
-
-    const calculateTotalPrice = () => {
-        return selectedSeats.length * price;
     };
 
     const renderSeats = (seats: Seat[][]) => (
@@ -122,7 +151,7 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
             <Box key={rowIndex} display="flex" gap={2} mt={1}>
                 {row.map(seat => (
                     <Tooltip
-                    key={seat.seatId}
+                    key={seat.ticketCode}
                     title={`Mã ghế: ${seat.seatNumber} - Giá: ${priceFormatted}đ`}
                     placement="top"
                     arrow
@@ -143,9 +172,13 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
                         sx={{ cursor: seat.isAvailable ? "pointer" : "not-allowed" }} 
                         onClick={() => seat.isAvailable && toggleSeatSelection(seat)}
                     >
-                        {selectedSeats.some(s => s.seatId === seat.seatId) 
-                            ? <SelectedSeat /> 
-                            : (seat.isAvailable ? <EmptySeat /> : <BlockedSeat />)}
+                        {selectedSeats.some((s) => s.ticketCode === seat.ticketCode) ? (
+                                <SelectedSeat />
+                            ) : seat.isAvailable ? (
+                                <EmptySeat />
+                            ) : (
+                                <BlockedSeat />
+                            )}
                     </Box>
                 </Tooltip>
                 ))}
