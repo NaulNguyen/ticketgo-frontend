@@ -8,6 +8,7 @@ import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { useLocation, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
+import { toast } from "react-toastify";
 
 const cities = ["Sài Gòn", "Vũng Tàu", "Đà Lạt", "Nha Trang", "Phan Thiết"];
 
@@ -53,7 +54,7 @@ const Search = () => {
 
             navigate(`/search?${params}`);
         } else {
-            alert("Please fill in all fields.");
+            toast.warn("Please fill in all fields.");
         }
     };
 
