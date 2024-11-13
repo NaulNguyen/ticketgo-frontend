@@ -1,29 +1,36 @@
-import React, { useState } from "react";
-import { DestinationCard, Header, Search } from "../components";
-import { IconButton, Container, Typography, Box } from "@mui/material";
-import ArrowBackIosIcon from "@mui/icons-material/ArrowBackIos";
-import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
+import React, { useEffect, useState } from "react";
+import { DestinationCard, Footer, Header, Search } from "../components";
+import { Typography, Box } from "@mui/material";
+import axios from "axios";
 
+type RouteData = {
+    routeImage: string;
+    routeName: string;
+    price: number;
+};
 const Home = () => {
-    const [index, setIndex] = useState(0);
-    const totalCards = 9;
-    const cardsToShow = 7;
+    const [routes, setRoutes] = useState<RouteData[]>([]);
 
-    const handlePrev = () => {
-        if (index > 0) setIndex(index - 1);
-    };
+    useEffect(() => {
+        const fetchRoutes = async () => {
+            try {
+                const response = await axios.get("http://localhost:8080/api/v1/routes/popular");
+                const data = response.data;
+                if (data.status === 200) {
+                    setRoutes(data.data); 
+                } else {
+                    console.error("Failed to fetch routes data");
+                }
+            } catch (error) {
+                console.error("Error fetching data:", error);
+            }
+        };
 
-    const handleNext = () => {
-        if (index < totalCards - cardsToShow) setIndex(index + 1);
-    };
-
-    const handleKeyDown = (e: any) => {
-        if (e.key === "ArrowLeft") handlePrev();
-        if (e.key === "ArrowRight") handleNext();
-    };
+        fetchRoutes();
+    }, []);
 
     return (
-        <div onKeyDown={handleKeyDown} tabIndex={0}>
+        <div style={{ backgroundColor: "#f0f0f0" }}>
             <Header />
             <div className="relative">
                 <img
@@ -33,35 +40,32 @@ const Home = () => {
                 />
                 <Search />
             </div>
-            <Container>
+            <Box>
                 <Typography variant="h6" fontWeight="bold" ml={5} mt={2}>
                     <span className="border-2 border-cyan-500 mr-2"></span>Tuyến đường phổ biến
                 </Typography>
-                <Box display="flex" alignItems="center">
-                    <IconButton onClick={handlePrev} disabled={index === 0}>
-                        <ArrowBackIosIcon />
-                    </IconButton>
-                    <Box sx={{ display: "flex", overflow: "hidden", gap: 2 }}>
-                        <Box
-                            sx={{
-                                display: "flex",
-                                transform: `translateX(-${index * 100}%)`,
-                                transition: "transform 0.5s ease",
-                                width: `${(totalCards * 100) / cardsToShow}%`,
-                                gap: 2,
-                            }}>
-                            {Array.from({ length: totalCards }, (_, i) => (
-                                <Box key={i} sx={{ flex: "1 0 auto" }}>
-                                    <DestinationCard />
-                                </Box>
-                            ))}
+                <Box
+                    sx={{
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        flexWrap: "wrap",  
+                        gap: 2, 
+                        mt: 2,
+                    }}
+                >
+                    {routes.map((route, i) => (
+                        <Box key={i} ml={1}>
+                            <DestinationCard
+                                routeImage={route.routeImage}
+                                routeName={route.routeName}
+                                price={route.price}
+                            />
                         </Box>
-                    </Box>
-                    <IconButton onClick={handleNext} disabled={index >= totalCards - cardsToShow}>
-                        <ArrowForwardIosIcon />
-                    </IconButton>
+                    ))}
                 </Box>
-            </Container>
+            </Box>
+            <Footer />
         </div>
     );
 };
