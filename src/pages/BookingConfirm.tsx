@@ -49,7 +49,9 @@ const BookingConfirm = () => {
 
     const { getUserInfor } = useAppAccessor();
     const userInfo = getUserInfor();
-
+    const [fullName, setFullName] = useState(userInfo?.user.fullName || '');
+    const [phoneNumber, setPhoneNumber] = useState(userInfo?.user.phoneNumber || '');
+    const [email, setEmail] = useState(userInfo?.user.email || '');
     const [showPriceDetails, setShowPriceDetails] = useState(false);
     const [openModal, setOpenModal] = useState(false);
     const [estimatedPrice, setEstimatedPrice] = useState<EstimatedPrice>({
@@ -83,7 +85,9 @@ const BookingConfirm = () => {
                 });
             
                 if (response.status === 200) {
-                    navigate("/paymentMethod");
+                    navigate("/paymentMethod", { 
+                        state: { fullName, phoneNumber, email }
+                    });
                 } 
                 else if (response.status === 400) {
                     setOpenModal(true);
@@ -127,6 +131,14 @@ const BookingConfirm = () => {
     
         fetchTotalPrice();
       }, [userInfo]);
+
+    useEffect(() => {
+        if (userInfo) {
+            setFullName(userInfo.user.fullName);
+            setPhoneNumber(userInfo.user.phoneNumber);
+            setEmail(userInfo.user.email);
+        }
+    }, [userInfo]);
     
       useEffect(() => {
         const fetchTripInfo = async () => {
@@ -210,7 +222,8 @@ const BookingConfirm = () => {
                             }
                             variant="outlined"
                             fullWidth
-                            value={userInfo?.user.fullName}
+                            value={fullName}
+                            onChange={(e) => setFullName(e.target.value)}
                         />
 
                         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
@@ -228,7 +241,8 @@ const BookingConfirm = () => {
                                 variant="outlined"
                                 type="tel"
                                 sx={{ flex: 1 }}
-                                value={userInfo?.user.phoneNumber}
+                                value={phoneNumber}
+                                onChange={(e) => setPhoneNumber(e.target.value)}
                             />
                         </Box>
 
@@ -242,7 +256,8 @@ const BookingConfirm = () => {
                             variant="outlined"
                             fullWidth
                             type="email"
-                            value={userInfo?.user.email}
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
                         />
                         <Box
                             sx={{
