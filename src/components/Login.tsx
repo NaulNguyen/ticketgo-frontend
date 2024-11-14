@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, { useState} from 'react';
 import { Box, Button, CircularProgress, TextField, Typography } from '@mui/material';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import { loginValidationSchema } from "../schemas";
@@ -27,6 +27,8 @@ const Login: React.FC<LoginProps> = ({ onClose, onRegisterClick }) => {
                 const { accessToken, refreshToken} = response.data;
                 Cookies.set('accessToken', accessToken);
                 Cookies.set('refreshToken', refreshToken);
+                const userInfoResponse = await UserService.fetchUserInfor();
+                dispatch(asyncUserInfor(userInfoResponse)); 
                 onClose();
                 toast.success("Đăng nhập thành công");
             }
@@ -47,18 +49,6 @@ const Login: React.FC<LoginProps> = ({ onClose, onRegisterClick }) => {
             setLoading(false);
         }
     };
-
-    useEffect(() => {
-        const fetchUserInfo = async () => {
-            try {
-                const userInfoResponse = await UserService.fetchUserInfor();
-                dispatch(asyncUserInfor(userInfoResponse)); 
-            } catch (error) {
-                console.error("Failed to fetch user info", error);
-            }
-        };
-        fetchUserInfo(); 
-    }, [dispatch])
   
     return (
         <Box 
