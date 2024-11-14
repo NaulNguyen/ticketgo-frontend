@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { DestinationCard, Footer, Header, Search } from "../components";
 import { Typography, Box } from "@mui/material";
+import { useNavigate } from "react-router-dom"; // Import useNavigate for navigation
 import axios from "axios";
 
 type RouteData = {
@@ -8,8 +9,10 @@ type RouteData = {
     routeName: string;
     price: number;
 };
+
 const Home = () => {
     const [routes, setRoutes] = useState<RouteData[]>([]);
+    const navigate = useNavigate();
 
     useEffect(() => {
         const fetchRoutes = async () => {
@@ -28,6 +31,12 @@ const Home = () => {
 
         fetchRoutes();
     }, []);
+
+    const handleRouteClick = (routeName: string) => {
+        const today = new Date().toISOString().split("T")[0];
+        const [departureLocation, arrivalLocation] = routeName.split(" - ");
+        navigate(`/search?departureLocation=${departureLocation}&arrivalLocation=${arrivalLocation}&departureDate=${today}&sortBy=departureTime&sortDirection=asc&pageNumber=1&pageSize=5`);
+    };
 
     return (
         <div style={{ backgroundColor: "#f0f0f0" }}>
@@ -55,7 +64,7 @@ const Home = () => {
                     }}
                 >
                     {routes.map((route, i) => (
-                        <Box key={i} ml={1}>
+                        <Box key={i} ml={1} onClick={() => handleRouteClick(route.routeName)}>
                             <DestinationCard
                                 routeImage={route.routeImage}
                                 routeName={route.routeName}
