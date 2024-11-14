@@ -5,7 +5,6 @@ export type GlobalState = {
 export type UserState = {
     isAuthenticated: boolean;
     isLoading: boolean;
-    error: string;
     user: UserInformation;
     booking : Booking[];
 };
