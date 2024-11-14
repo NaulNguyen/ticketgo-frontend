@@ -4,7 +4,6 @@ import { Booking, UserState } from "../global";
 const initialState: UserState = {
     isAuthenticated: false,
     isLoading: false,
-    error: "",
     user: {
         email: "",
         role: "",
@@ -23,7 +22,6 @@ const userReducer = (state = initialState, action: any): UserState => {
                 ...state,
                 isAuthenticated: true,
                 isLoading: false,
-                error: "",
                 user: { ...action.payload.data },
             };
         case BOOKING:
