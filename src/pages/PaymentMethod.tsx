@@ -20,6 +20,7 @@ import useAppAccessor from "../hook/useAppAccessor";
 import { axiosWithJWT } from "../config/axiosConfig";
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import { useLocation } from 'react-router-dom';
 
 interface EstimatedPrice {
     totalPrice: number;
@@ -38,8 +39,10 @@ interface TripInfo {
     dropoffLocation: string;
 }
 const PaymentMethod = () => {
+    const location = useLocation();
     const [showPriceDetails, setShowPriceDetails] = useState(false);
     const [paymentProcessing, setPaymentProcessing] = useState(false);
+    const { fullName, phoneNumber, email } = location.state || {};
     const [estimatedPrice, setEstimatedPrice] = useState<EstimatedPrice>({
         totalPrice: 0,
         unitPrice: 0,
@@ -69,7 +72,7 @@ const PaymentMethod = () => {
         const dropOffStopId = lastBooking?.dropOffStopId;
     
         try {
-            await axiosWithJWT.post('http://localhost:8080/api/v1/payment/vnpay', {
+            const response = await axiosWithJWT.post('http://localhost:8080/api/v1/payment/vnpay', {
                 contactName: userInfo?.user?.fullName,
                 contactEmail: userInfo?.user?.email,
                 contactPhone: userInfo?.user?.phoneNumber,
@@ -77,12 +80,16 @@ const PaymentMethod = () => {
                 dropoffStopId: dropOffStopId,
                 totalPrice: estimatedPrice.totalPrice,
             });
+            
+            const paymentUrl = response.data;
+    
+            window.location.href = paymentUrl;
         } catch (error) {
             console.error('Payment failed', error);
         } finally {
             setPaymentProcessing(false);
         }
-      };
+    };
 
     const departureTime = new Date(tripInfo.departureTime);
     const formattedDepartureTime = departureTime && !isNaN(departureTime.getTime())
@@ -227,7 +234,7 @@ const PaymentMethod = () => {
                                                 fontSize: "16px",
                                                 marginBottom: 2,
                                             }}>
-                                            {userInfo.user.fullName}
+                                            {fullName}
                                         </Typography>
                                     </Box>
                                     <Box display="flex" justifyContent="space-between">
@@ -238,7 +245,7 @@ const PaymentMethod = () => {
                                                 fontSize: "16px",
                                                 marginBottom: 2,
                                             }}>
-                                            {userInfo.user.phoneNumber}
+                                            {phoneNumber}
                                         </Typography>
                                     </Box>
                                     <Box display="flex" justifyContent="space-between">
@@ -249,7 +256,7 @@ const PaymentMethod = () => {
                                                 fontSize: "16px",
                                                 marginBottom: 2,
                                             }}>
-                                            {userInfo.user.email}
+                                            {email}
                                         </Typography>
                                     </Box>
                                 </Box>
