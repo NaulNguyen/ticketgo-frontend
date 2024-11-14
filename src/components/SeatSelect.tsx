@@ -45,7 +45,7 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
     const [selectedDropoff, setSelectedDropoff] = useState<number | null>(null);
     const [isBookingSaved, setIsBookingSaved] = useState(false);
 
-    const steps = ['Chổ mong muốn', 'Điểm đón trả'];
+    const steps = ['Chỗ mong muốn', 'Điểm đón trả'];
     const priceFormatted = new Intl.NumberFormat('en-US').format(price);
     const navigate = useNavigate();
     const dispatch = useDispatch();
@@ -75,15 +75,10 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
     };
 
     useEffect(() => {
-        if (activeStep >= 2) {
-            if (userInfo.isAuthenticated) {
-                navigate('/bookingConfirm');
-            } else {
-                toast.warn('Vui lòng đăng nhập để tiếp tục đặt vé');
-            }
-            setActiveStep(0);
+        if (activeStep === 2) {
+            navigate('/bookingConfirm');
         }
-    }, [activeStep, userInfo.isAuthenticated, navigate]);
+    }, [activeStep, navigate]);
 
     useEffect(() => {
         const fetchSeatsData = async () => {
@@ -139,6 +134,10 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
     }, [activeStep, selectedSeats, selectedPickup, selectedDropoff, scheduleId, isBookingSaved, dispatch]);
 
     const toggleSeatSelection = (seat: Seat) => {
+        if (!userInfo.isAuthenticated) {
+            toast.warn('Vui lòng đăng nhập để chọn ghế');
+            return;
+        }
         if (selectedSeats.some(s => s.ticketCode === seat.ticketCode)) {
             setSelectedSeats(prev => prev.filter(s => s.ticketCode !== seat.ticketCode));
         } else {
