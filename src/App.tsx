@@ -2,13 +2,10 @@ import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Provider } from "react-redux";
 import store from "./store";
-import { Home } from "./pages";
+import { BookingConfirm, Home, PaymentMethod, SearchingPage, ThankyouPage } from "./pages";
 import AccountActivation from "./components/AccountActivation";
-import SearchingPage from "./pages/SearchingPage";
 import "react-toastify/dist/ReactToastify.css";
 import { ToastContainer } from "react-toastify";
-import BookingConfirm from "./pages/BookingConfirm";
-import PaymentMethod from "./pages/PaymentMethod";
 
 function App() {
     return (
@@ -24,6 +21,7 @@ function App() {
                         <Route path="/search" element={<SearchingPage />} />
                         <Route path="/bookingConfirm" element={<BookingConfirm />} />
                         <Route path="/paymentMethod" element={<PaymentMethod />} />
+                        <Route path="/thankyou" element={<ThankyouPage />} />
                     </Routes>
                 </Provider>
             </div>
