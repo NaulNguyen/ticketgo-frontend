@@ -19,10 +19,10 @@ function App() {
                         <Route path="/" element={<Home />} />
                         <Route path="/activate" element={<AccountActivation />} />
                         <Route path="/search" element={<SearchingPage />} />
-                        <Route path="/bookingConfirm" element={<BookingConfirm />} />
-                        <Route path="/paymentMethod" element={<PaymentMethod />} />
+                        <Route path="/booking-confirm" element={<BookingConfirm />} />
+                        <Route path="/payment-method" element={<PaymentMethod />} />
                         <Route path="/thankyou" element={<ThankyouPage />} />
-                        <Route path="/bookingHistory" element={<BookingHistory />} />
+                        <Route path="/booking-history" element={<BookingHistory />} />
                     </Routes>
                 </Provider>
             </div>
