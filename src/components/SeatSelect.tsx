@@ -76,7 +76,7 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
 
     useEffect(() => {
         if (activeStep === 2) {
-            navigate('/bookingConfirm');
+            navigate('/booking-confirm');
         }
     }, [activeStep, navigate]);
 
@@ -92,8 +92,9 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
             }
         };
         fetchSeatsData();
+        console.log("fetching seat data");
 
-        const intervalId = setInterval(fetchSeatsData, 3000);
+        const intervalId = setInterval(fetchSeatsData, 1000);
 
         return () => clearInterval(intervalId);
     }, [scheduleId]);
