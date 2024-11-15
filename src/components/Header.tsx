@@ -38,11 +38,10 @@ const Header = () => {
     const navigate = useNavigate();
     const location = useLocation();
 
-    const isPaymentMethod = location.pathname === "/paymentMethod";
+    const isPaymentMethod = location.pathname === "/payment-method";
 
     const { getUserInfor } = useAppAccessor();
     const userInfo = getUserInfor();
-    console.log(userInfo);
 
     const handleAvatarClick = (event: React.MouseEvent<HTMLElement>) => {
         setAnchorEl(event.currentTarget);
@@ -132,6 +131,10 @@ const Header = () => {
         const minutes = Math.floor(time / 60);
         const seconds = time % 60;
         return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
+    };
+
+    const handleNavigateBookingHistoryClick = () => {
+        navigate("/booking-history");
     };
 
     return (
@@ -272,7 +275,10 @@ const Header = () => {
                     </ListItemIcon>
                     Thông tin tài khoản
                 </MenuItem>
-                <MenuItem sx={{ paddingX: "20px", paddingY: "10px" }}>
+                <MenuItem 
+                    sx={{ paddingX: "20px", paddingY: "10px" }}
+                    onClick={handleNavigateBookingHistoryClick}
+                >
                     <ListItemIcon>
                         <LoyaltyIcon fontSize="small" />
                     </ListItemIcon>
