@@ -128,11 +128,9 @@ const PaymentMethod = () => {
 
     useEffect(() => {
         const handleBeforeUnload = (e :any) => {
-            if (paymentProcessing) {
-                e.preventDefault();
-                e.returnValue = ""; // Trigger the browser's confirmation dialog
-                setIsModalOpen(true); // Show custom modal for confirmation
-            }
+            e.preventDefault();
+            e.returnValue = ""; // Trigger the browser's confirmation dialog
+            setIsModalOpen(true); // Show custom modal for confirmation
         };
 
         // Add event listener
@@ -142,7 +140,28 @@ const PaymentMethod = () => {
         return () => {
             window.removeEventListener("beforeunload", handleBeforeUnload);
         };
-    }, [paymentProcessing]);
+    }, []);
+
+
+    useEffect(() => {
+        // Listen for popstate events (history navigation like back/forward)
+        const handlePopState = (e: PopStateEvent) => {
+            window.history.pushState(null, "/payment-method", window.location.href); // Push a new state to prevent going back
+            setIsModalOpen(true); // Show the custom modal for confirmation
+        };
+    
+        // Push a new state initially to ensure there's a state in history
+        window.history.pushState(null, "/payment-method", window.location.href);
+    
+        // Add event listener for when the user tries to navigate back
+        window.addEventListener("popstate", handlePopState);
+    
+        // Cleanup when the component is unmounted
+        return () => {
+            window.removeEventListener("popstate", handlePopState);
+        };
+    }, []);
+
 
     const handleConfirmExit = async () => {
         try {
@@ -377,7 +396,7 @@ const PaymentMethod = () => {
                         </Typography>
                         <Box sx={{ display: "flex", justifyContent: "center", mt: 3, gap: 2, flexDirection: "column" }}>
                             <Button color="error" onClick={handleConfirmExit} sx={{color: "#2474e5",textTransform: "none", textDecoration: "underline"}}>
-                                Quay lại
+                                Xác nhận
                             </Button>
                             <Button variant="outlined" onClick={handleContinuePayment} sx={{backgroundColor: "rgb(255, 211, 51)", textTransform: "none",
                                 color: "black", border: "none"}}>
