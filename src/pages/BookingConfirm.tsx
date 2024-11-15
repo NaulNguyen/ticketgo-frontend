@@ -9,24 +9,17 @@ import {
     DialogActions,
     DialogContent,
     DialogTitle,
-    Divider,
     FormControl,
-    IconButton,
     MenuItem,
     Select,
     TextField,
     Typography,
 } from "@mui/material";
 import ArrowBackIosIcon from "@mui/icons-material/ArrowBackIos";
-import { LocationRoute } from "../components/IconSVG";
 import HealthAndSafetyIcon from "@mui/icons-material/HealthAndSafety";
-import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
-import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
-import DirectionsBusIcon from "@mui/icons-material/DirectionsBus";
 import useAppAccessor from "../hook/useAppAccessor";
 import { axiosWithJWT } from "../config/axiosConfig";
-import { format } from 'date-fns';
-import { vi } from 'date-fns/locale';
+import TripSummary from "../components/TripSummary";
 
 interface EstimatedPrice {
     totalPrice: number;
@@ -52,7 +45,6 @@ const BookingConfirm = () => {
     const [fullName, setFullName] = useState(userInfo?.user.fullName || '');
     const [phoneNumber, setPhoneNumber] = useState(userInfo?.user.phoneNumber || '');
     const [email, setEmail] = useState(userInfo?.user.email || '');
-    const [showPriceDetails, setShowPriceDetails] = useState(false);
     const [openModal, setOpenModal] = useState(false);
     const [estimatedPrice, setEstimatedPrice] = useState<EstimatedPrice>({
         totalPrice: 0,
@@ -69,10 +61,6 @@ const BookingConfirm = () => {
         dropoffTime: "",
         dropoffLocation: "",
     });
-
-    const handlePriceBoxClick = () => {
-        setShowPriceDetails((prev) => !prev);
-    };
 
     const handleContinueClick = async () => {
         const lastBooking = userInfo?.booking[userInfo.booking.length - 1]; 
@@ -102,15 +90,6 @@ const BookingConfirm = () => {
         setOpenModal(false);
         navigate(-1);
     };
-
-    const departureTime = new Date(tripInfo.departureTime);
-    const formattedDepartureTime = departureTime && !isNaN(departureTime.getTime())
-    ? format(departureTime, 'EEE, dd/MM/yyyy', { locale: vi })
-    : "Ngày không hợp lệ";
-    const formatTime = (time: string) => {
-        const date = new Date(time);
-        return !isNaN(date.getTime()) ? format(date, 'HH:mm') : null; 
-      };
 
       useEffect(() => {
         const fetchTotalPrice = async () => {
@@ -278,172 +257,10 @@ const BookingConfirm = () => {
                         </Box>
                     </Box>
 
-                    {/* Trip Summary and Details Box */}
-                    <Box
-                        sx={{
-                            width: "375px",
-                            padding: 2,
-                            borderRadius: 2,
-                        }}>
-                        <Box
-                            sx={{
-                                backgroundColor: "white",
-                                alignItems: "center",
-                                padding: 2,
-                                borderRadius: "8px",
-                                border: "1px solid #e0e0e0",
-                                cursor: "pointer",
-                            }}
-                            onClick={handlePriceBoxClick}>
-                            <Box
-                                sx={{
-                                    display: "flex",
-                                    justifyContent: "space-between",
-                                    alignItems: "center",
-                                }}>
-                                <Typography sx={{ fontWeight: "700", fontSize: "18px" }}>
-                                    Tạm tính
-                                </Typography>
-                                <Box
-                                    sx={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                    }}>
-                                    <Typography
-                                        sx={{
-                                            fontWeight: "bold",
-                                            color: "#2474e5",
-                                            fontSize: "18px",
-                                        }}>
-                                        {new Intl.NumberFormat("en-US").format(estimatedPrice.totalPrice)}đ
-                                    </Typography>
-                                    <IconButton
-                                        sx={{
-                                            "&:hover": {
-                                                backgroundColor: "transparent",
-                                            },
-                                            padding: "0",
-                                        }}>
-                                        {showPriceDetails ? (
-                                            <KeyboardArrowUpIcon />
-                                        ) : (
-                                            <KeyboardArrowDownIcon />
-                                        )}
-                                    </IconButton>
-                                </Box>
-                            </Box>
-                            {showPriceDetails && (
-                                <Box
-                                    sx={{
-                                        marginTop: 2,
-                                        display: "flex",
-                                        justifyContent: "space-between",
-                                    }}>
-                                    <Typography sx={{ fontSize: "14px" }}>Giá vé</Typography>
-                                    <Box
-                                        display="flex"
-                                        flexDirection="column"
-                                        justifyContent="flex-end"
-                                        alignItems="flex-end">
-                                            <Typography sx={{ fontSize: "14px" }}>
-                                                {new Intl.NumberFormat("en-US").format(estimatedPrice.unitPrice)}đ x {estimatedPrice.quantity}
-                                            </Typography>
-                                        <Typography
-                                            sx={{ fontSize: "12px", color: "rgb(133, 133, 133)" }}>
-                                            Mã ghế/giường: {estimatedPrice.seatNumbers.join(", ")}
-                                        </Typography>
-                                    </Box>
-                                </Box>
-                            )}
-                        </Box>
-
-                        <Box
-                            sx={{
-                                marginTop: 2,
-                                backgroundColor: "white",
-                                padding: "20px",
-                                borderRadius: "8px",
-                                border: "1px solid #e0e0e0",
-                                minHeight: "300px",
-                            }}>
-                            <Typography
-                                sx={{ fontWeight: "bold", fontSize: "18px", marginBottom: 2 }}>
-                                Thông tin chuyến đi
-                            </Typography>
-
-                            <Box
-                                sx={{
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    borderRadius: "8px",
-                                    border: "1px solid #e0e0e0",
-                                    fontSize: "12px",
-                                }}>
-                                <Box display="flex" alignItems="center" gap={1}>
-                                    <DirectionsBusIcon sx={{ color: "#2474e5", ml: 1 }} />
-                                    <Typography sx={{ fontWeight: "700", paddingY: "12px" }}>
-                                        {formattedDepartureTime}
-                                    </Typography>
-                                </Box>
-                                <Divider />
-
-                                <Box
-                                    sx={{
-                                        display: "flex",
-                                        gap: 2,
-                                        alignItems: "center",
-                                        paddingX: "12px",
-                                        paddingTop: "12px",
-                                    }}>
-                                    <img
-                                        src="https://static.vexere.com/production/images/1682389349632.jpeg"
-                                        alt="xe"
-                                        style={{
-                                            height: "36px",
-                                            width: "58px",
-                                            borderRadius: 4,
-                                        }}
-                                    />
-                                    <Box>
-                                        <Typography sx={{ fontWeight: "700" }}>
-                                            {tripInfo.licensePlate}
-                                        </Typography>
-                                        <Typography sx={{ color: "gray", fontSize: "14px" }}>
-                                            {tripInfo.busType}
-                                        </Typography>
-                                    </Box>
-                                </Box>
-
-                                <Divider sx={{ marginY: 2 }} />
-
-                                <Box
-                                    sx={{
-                                        display: "flex",
-                                        justifyContent: "center",
-                                        alignItems: "center",
-                                        paddingBottom: "12px",
-                                        paddingX: "12px",
-                                        gap: "15px",
-                                    }}>
-                                    <Box display="flex" flexDirection="column" gap={3.5}>
-                                        <Typography sx={{ fontWeight: "bold" }}>{formatTime(tripInfo.pickupTime)}</Typography>
-                                        <Typography sx={{ fontWeight: "bold" }}>{formatTime(tripInfo.dropoffTime)}</Typography>
-                                    </Box>
-
-                                    <LocationRoute />
-
-                                    <Box display="flex" flexDirection="column" gap={3.5}>
-                                        <Typography sx={{ fontWeight: "700" }}>
-                                            {tripInfo.pickupLocation}
-                                        </Typography>
-                                        <Typography sx={{ fontWeight: "700" }}>
-                                            {tripInfo.dropoffLocation}
-                                        </Typography>
-                                    </Box>
-                                </Box>
-                            </Box>
-                        </Box>
-                    </Box>
+                    <TripSummary 
+                        tripInfo={tripInfo}
+                        estimatedPrice={estimatedPrice}
+                    />
                 </Container>
             </Container>
         </div>
