@@ -70,17 +70,14 @@ const BookingConfirm = () => {
             try {
                 const response = await axiosWithJWT.post("http://localhost:8080/api/v1/seats/reserve", {
                     ticketCodes: allTicketCodes 
-                });
-            
+                });            
                 if (response.status === 200) {
-                    navigate("/paymentMethod", { 
+                    navigate("/payment-method", { 
                         state: { fullName, phoneNumber, email }
                     });
-                } 
-                else if (response.status === 400) {
-                    setOpenModal(true);
                 }
             } catch (error) {
+                setOpenModal(true);
                 console.error("Error reserving seat:", error);
             }
         }
@@ -296,27 +293,22 @@ const BookingConfirm = () => {
             </Box>
             <Dialog 
                 open={openModal} 
-                onClose={handleCloseModal} 
-                sx={{ 
-                    position: "absolute",
-                    top: "50%",
-                    left: "50%",
-                    transform: "translate(-50%, -50%)",
-                    width: "90%",
-                    maxWidth: "520px",
-                    height: "200px",
-                    bgcolor: "white",
-                    boxShadow: 24,
-                    p: 4,
-                    borderRadius: "10px",
-                    textAlign: "center",
-                    outline: "none",
-                }}>
-                    <DialogTitle variant="h6" sx={{ mb: 2, fontWeight: "700" }}>Tiếc quá!</DialogTitle>
-                    <DialogContent sx={{ mb: 3, fontSize: "14px" }}>
-                        Chỗ bạn chọn đã có người khác nhanh tay mua rồi, bạn hãy chọn chỗ khác nhé!
-                    </DialogContent>
-                    <DialogActions>
+                onClose={handleCloseModal}
+                PaperProps={{
+                    sx: {
+                        width: "90%",
+                        maxWidth: "520px",
+                        padding: 4,
+                        borderRadius: "10px",
+                        textAlign: "center",
+                    },
+                }}
+            >
+                <DialogTitle sx={{fontWeight: "700" }}>Tiếc quá!</DialogTitle>
+                <DialogContent sx={{ fontSize: "14px" }}>
+                    Chỗ bạn chọn đã có người khác nhanh tay mua rồi, bạn hãy chọn chỗ khác nhé!
+                </DialogContent>
+                <DialogActions>
                     <Button 
                         onClick={handleCloseModal} 
                         variant="contained"
@@ -328,10 +320,10 @@ const BookingConfirm = () => {
                             fontWeight: "bold",
                             "&:hover": { backgroundColor: "#2474e5" },
                         }}
-                        >
+                    >
                         OK
                     </Button>
-                    </DialogActions>
+                </DialogActions>
             </Dialog>
         </>
     );
