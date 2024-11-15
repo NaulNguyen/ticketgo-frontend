@@ -276,7 +276,7 @@ const Header = () => {
                     <ListItemIcon>
                         <LoyaltyIcon fontSize="small" />
                     </ListItemIcon>
-                    Đơn hàng của tôi
+                    Lịch sử đặt vé
                 </MenuItem>
                 <MenuItem sx={{ paddingX: "20px", paddingY: "10px" }}>
                     <ListItemIcon>
