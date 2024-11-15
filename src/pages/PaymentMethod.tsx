@@ -4,23 +4,19 @@ import {
     Box,
     Button,
     Container,
-    Divider,
     FormControlLabel,
-    IconButton,
+    Modal,
     Radio,
     RadioGroup,
     Typography,
 } from "@mui/material";
-import { LocationRoute } from "../components/IconSVG";
 import HealthAndSafetyIcon from "@mui/icons-material/HealthAndSafety";
-import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
-import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
-import DirectionsBusIcon from "@mui/icons-material/DirectionsBus";
 import useAppAccessor from "../hook/useAppAccessor";
 import { axiosWithJWT } from "../config/axiosConfig";
-import { format } from 'date-fns';
-import { vi } from 'date-fns/locale';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { toast } from "react-toastify";
+import ArrowBackIosIcon from "@mui/icons-material/ArrowBackIos";
+import TripSummary from "../components/TripSummary";
 
 interface EstimatedPrice {
     totalPrice: number;
@@ -40,9 +36,10 @@ interface TripInfo {
 }
 const PaymentMethod = () => {
     const location = useLocation();
-    const [showPriceDetails, setShowPriceDetails] = useState(false);
+    const navigate = useNavigate();
     const [paymentProcessing, setPaymentProcessing] = useState(false);
     const { fullName, phoneNumber, email } = location.state || {};
+    const [isModalOpen, setIsModalOpen] = useState(false);
     const [estimatedPrice, setEstimatedPrice] = useState<EstimatedPrice>({
         totalPrice: 0,
         unitPrice: 0,
@@ -61,10 +58,6 @@ const PaymentMethod = () => {
     const { getUserInfor } = useAppAccessor();
     const userInfo = getUserInfor();
 
-    const handlePriceBoxClick = () => {
-        setShowPriceDetails((prev) => !prev);
-    };
-
     const handlePaymentClick = async () => {
         setPaymentProcessing(true);
         const lastBooking = userInfo?.booking[userInfo.booking.length - 1]; // Get the most recent booking
@@ -73,9 +66,9 @@ const PaymentMethod = () => {
     
         try {
             const response = await axiosWithJWT.post('http://localhost:8080/api/v1/payment/vnpay', {
-                contactName: userInfo?.user?.fullName,
-                contactEmail: userInfo?.user?.email,
-                contactPhone: userInfo?.user?.phoneNumber,
+                contactName: fullName,
+                contactEmail: email,
+                contactPhone: phoneNumber,
                 pickupStopId: pickupStopId,
                 dropoffStopId: dropOffStopId,
                 totalPrice: estimatedPrice.totalPrice,
@@ -90,15 +83,6 @@ const PaymentMethod = () => {
             setPaymentProcessing(false);
         }
     };
-
-    const departureTime = new Date(tripInfo.departureTime);
-    const formattedDepartureTime = departureTime && !isNaN(departureTime.getTime())
-    ? format(departureTime, 'EEE, dd/MM/yyyy', { locale: vi })
-    : "Ngày không hợp lệ";
-    const formatTime = (time: string) => {
-        const date = new Date(time);
-        return !isNaN(date.getTime()) ? format(date, 'HH:mm') : null; 
-      };
 
       useEffect(() => {
         const fetchTotalPrice = async () => {
@@ -142,6 +126,40 @@ const PaymentMethod = () => {
         fetchTripInfo();
       }, [userInfo]);
 
+    useEffect(() => {
+        const handleBeforeUnload = (e :any) => {
+            if (paymentProcessing) {
+                e.preventDefault();
+                e.returnValue = ""; // Trigger the browser's confirmation dialog
+                setIsModalOpen(true); // Show custom modal for confirmation
+            }
+        };
+
+        // Add event listener
+        window.addEventListener("beforeunload", handleBeforeUnload);
+
+        // Clean up the event listener on unmount
+        return () => {
+            window.removeEventListener("beforeunload", handleBeforeUnload);
+        };
+    }, [paymentProcessing]);
+
+    const handleConfirmExit = async () => {
+        try {
+            await axiosWithJWT.post("http://localhost:8080/api/v1/seats/cancel-reserve");
+            toast.success("Đã hủy chỗ đặt thành công");
+        } catch (error) {
+            console.error("Error canceling reservation:", error);
+        } finally {
+            setIsModalOpen(false);
+            navigate("/"); // Navigate back to the previous page
+        }
+    };
+
+    const handleContinuePayment = () => {
+        setIsModalOpen(false);
+    };
+
     return (
         <>
             <div
@@ -158,6 +176,17 @@ const PaymentMethod = () => {
                         justifyContent: "center",
                         alignItems: "flex-start",
                     }}>
+                        <Button
+                            startIcon={<ArrowBackIosIcon sx={{ fontSize: "8px", color: "#484848" }} />}
+                            sx={{
+                                fontSize: "16px",
+                                textTransform: "none",
+                                fontWeight: "bold",
+                                "&:hover": { backgroundColor: "transparent" },
+                            }}
+                            onClick={() => setIsModalOpen(true)}>
+                            Quay lại
+                        </Button>
                     <Container
                         sx={{
                             display: "flex",
@@ -264,171 +293,10 @@ const PaymentMethod = () => {
                         </Box>
 
                         {/* Trip Summary and Details Box */}
-                        <Box
-                        sx={{
-                            width: "375px",
-                            padding: 2,
-                            borderRadius: 2,
-                        }}>
-                        <Box
-                            sx={{
-                                backgroundColor: "white",
-                                alignItems: "center",
-                                padding: 2,
-                                borderRadius: "8px",
-                                border: "1px solid #e0e0e0",
-                                cursor: "pointer",
-                            }}
-                            onClick={handlePriceBoxClick}>
-                            <Box
-                                sx={{
-                                    display: "flex",
-                                    justifyContent: "space-between",
-                                    alignItems: "center",
-                                }}>
-                                <Typography sx={{ fontWeight: "700", fontSize: "18px" }}>
-                                    Tạm tính
-                                </Typography>
-                                <Box
-                                    sx={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                    }}>
-                                    <Typography
-                                        sx={{
-                                            fontWeight: "bold",
-                                            color: "#2474e5",
-                                            fontSize: "18px",
-                                        }}>
-                                        {new Intl.NumberFormat("en-US").format(estimatedPrice.totalPrice)}đ
-                                    </Typography>
-                                    <IconButton
-                                        sx={{
-                                            "&:hover": {
-                                                backgroundColor: "transparent",
-                                            },
-                                            padding: "0",
-                                        }}>
-                                        {showPriceDetails ? (
-                                            <KeyboardArrowUpIcon />
-                                        ) : (
-                                            <KeyboardArrowDownIcon />
-                                        )}
-                                    </IconButton>
-                                </Box>
-                            </Box>
-                            {showPriceDetails && (
-                                <Box
-                                    sx={{
-                                        marginTop: 2,
-                                        display: "flex",
-                                        justifyContent: "space-between",
-                                    }}>
-                                    <Typography sx={{ fontSize: "14px" }}>Giá vé</Typography>
-                                    <Box
-                                        display="flex"
-                                        flexDirection="column"
-                                        justifyContent="flex-end"
-                                        alignItems="flex-end">
-                                            <Typography sx={{ fontSize: "14px" }}>
-                                                {new Intl.NumberFormat("en-US").format(estimatedPrice.unitPrice)}đ x {estimatedPrice.quantity}
-                                            </Typography>
-                                        <Typography
-                                            sx={{ fontSize: "12px", color: "rgb(133, 133, 133)" }}>
-                                            Mã ghế/giường: {estimatedPrice.seatNumbers.join(", ")}
-                                        </Typography>
-                                    </Box>
-                                </Box>
-                            )}
-                        </Box>
-
-                        <Box
-                            sx={{
-                                marginTop: 2,
-                                backgroundColor: "white",
-                                padding: "20px",
-                                borderRadius: "8px",
-                                border: "1px solid #e0e0e0",
-                                minHeight: "300px",
-                            }}>
-                            <Typography
-                                sx={{ fontWeight: "bold", fontSize: "18px", marginBottom: 2 }}>
-                                Thông tin chuyến đi
-                            </Typography>
-
-                            <Box
-                                sx={{
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    borderRadius: "8px",
-                                    border: "1px solid #e0e0e0",
-                                    fontSize: "12px",
-                                }}>
-                                <Box display="flex" alignItems="center" gap={1}>
-                                    <DirectionsBusIcon sx={{ color: "#2474e5", ml: 1 }} />
-                                    <Typography sx={{ fontWeight: "700", paddingY: "12px" }}>
-                                        {formattedDepartureTime}
-                                    </Typography>
-                                </Box>
-                                <Divider />
-
-                                <Box
-                                    sx={{
-                                        display: "flex",
-                                        gap: 2,
-                                        alignItems: "center",
-                                        paddingX: "12px",
-                                        paddingTop: "12px",
-                                    }}>
-                                    <img
-                                        src="https://static.vexere.com/production/images/1682389349632.jpeg"
-                                        alt="xe"
-                                        style={{
-                                            height: "36px",
-                                            width: "58px",
-                                            borderRadius: 4,
-                                        }}
-                                    />
-                                    <Box>
-                                        <Typography sx={{ fontWeight: "700" }}>
-                                            {tripInfo.licensePlate}
-                                        </Typography>
-                                        <Typography sx={{ color: "gray", fontSize: "14px" }}>
-                                            {tripInfo.busType}
-                                        </Typography>
-                                    </Box>
-                                </Box>
-
-                                <Divider sx={{ marginY: 2 }} />
-
-                                <Box
-                                    sx={{
-                                        display: "flex",
-                                        justifyContent: "center",
-                                        alignItems: "center",
-                                        paddingBottom: "12px",
-                                        paddingX: "12px",
-                                        gap: "15px",
-                                    }}>
-                                    <Box display="flex" flexDirection="column" gap={3.5}>
-                                        <Typography sx={{ fontWeight: "bold" }}>{formatTime(tripInfo.pickupTime)}</Typography>
-                                        <Typography sx={{ fontWeight: "bold" }}>{formatTime(tripInfo.dropoffTime)}</Typography>
-                                    </Box>
-
-                                    <LocationRoute />
-
-                                    <Box display="flex" flexDirection="column" gap={3.5}>
-                                        <Typography sx={{ fontWeight: "700" }}>
-                                            {tripInfo.pickupLocation}
-                                        </Typography>
-                                        <Typography sx={{ fontWeight: "700" }}>
-                                            {tripInfo.dropoffLocation}
-                                        </Typography>
-                                    </Box>
-                                </Box>
-                            </Box>
-                        </Box>
-                    </Box>
+                        <TripSummary
+                            tripInfo={tripInfo}
+                            estimatedPrice={estimatedPrice}
+                        />    
                     </Container>
                 </Container>
             </div> 
@@ -478,6 +346,47 @@ const PaymentMethod = () => {
                         </Typography>
                     </Box>
                 </Box>
+                <Modal
+                    open={isModalOpen}
+                    onClose={handleContinuePayment}
+                    aria-labelledby="confirm-exit-title"
+                    aria-describedby="confirm-exit-description"
+                >
+                    <Box
+                        sx={{
+                            position: "absolute",
+                            top: "50%",
+                            left: "50%",
+                            transform: "translate(-50%, -50%)",
+                            width: "90%",
+                            maxWidth: "520px",
+                            height: "250px",
+                            bgcolor: "white",
+                            boxShadow: 24,
+                            p: 4,
+                            borderRadius: "10px",
+                            textAlign: "center",
+                            outline: "none",
+                        }}
+                    >
+                        <Typography id="confirm-exit-title" variant="h6" fontWeight={700}>
+                            Bạn có chắc muốn thoát?
+                        </Typography>
+                        <Typography id="confirm-exit-description" sx={{ mt: 2 }}>
+                            Nếu bạn không tiến hành thanh toán thì chỗ đặt sẽ bị hủy và bạn cần đặt vé mới!
+                        </Typography>
+                        <Box sx={{ display: "flex", justifyContent: "center", mt: 3, gap: 2, flexDirection: "column" }}>
+                            <Button color="error" onClick={handleConfirmExit} sx={{color: "#2474e5",textTransform: "none", textDecoration: "underline"}}>
+                                Quay lại
+                            </Button>
+                            <Button variant="outlined" onClick={handleContinuePayment} sx={{backgroundColor: "rgb(255, 211, 51)", textTransform: "none",
+                                color: "black", border: "none"}}>
+                                Tiếp tục thanh toán
+                            </Button>
+                        </Box>
+                    </Box>
+                </Modal>
+
         </>
     );
 };
