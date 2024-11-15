@@ -313,7 +313,7 @@ const SearchingPage = () => {
                                 </Box>
                             ))
                         ) : (
-                            <Typography>No search results found.</Typography>
+                            <Typography>Không tìm thấy kết quả phù hợp.</Typography>
                         )}
                     </Box>
                 </div>
