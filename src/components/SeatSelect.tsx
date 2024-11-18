@@ -1,4 +1,4 @@
-import { Box, Button, Divider, Radio, Step, StepLabel, Stepper, Tooltip, Typography } from "@mui/material";
+import { Box, Button, Divider, Modal, Radio, Step, StepLabel, Stepper, Tooltip, Typography } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import { BlockedSeat, EmptySeat, SelectedSeat, Wheel } from "./IconSVG";
 import axios from "axios";
@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useDispatch } from "react-redux";
 import { booking } from "../actions/user.action";
+import { axiosWithJWT } from "../config/axiosConfig";
 
 interface Seat {
     ticketCode: string;
@@ -39,11 +40,13 @@ interface RouteStop {
 const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
     const [seatsData, setSeatsData] = useState<FloorData | null>(null);
     const [selectedSeats, setSelectedSeats] = useState<Seat[]>([]);
+    const [selectedSeat, setSelectedSeat] = useState<Seat | null>(null);
     const [activeStep, setActiveStep] = React.useState(0);
     const [routeStops, setRouteStops] = useState<RouteStopsData | null>(null);
     const [selectedPickup, setSelectedPickup] = useState<number | null>(null);
     const [selectedDropoff, setSelectedDropoff] = useState<number | null>(null);
     const [isBookingSaved, setIsBookingSaved] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     const steps = ['Chỗ mong muốn', 'Điểm đón trả'];
     const priceFormatted = new Intl.NumberFormat('en-US').format(price);
@@ -92,8 +95,6 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
             }
         };
         fetchSeatsData();
-        console.log("fetching seat data");
-
         const intervalId = setInterval(fetchSeatsData, 1000);
 
         return () => clearInterval(intervalId);
@@ -136,15 +137,38 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
 
     const toggleSeatSelection = (seat: Seat) => {
         if (!userInfo.isAuthenticated) {
-            toast.warn('Vui lòng đăng nhập để chọn ghế');
+            toast.warn("Vui lòng đăng nhập để chọn ghế");
             return;
         }
-        if (selectedSeats.some(s => s.ticketCode === seat.ticketCode)) {
-            setSelectedSeats(prev => prev.filter(s => s.ticketCode !== seat.ticketCode));
-        } else {
-            setSelectedSeats(prev => [...prev, seat]);
-        }
+        setSelectedSeat(seat); // Set the clicked seat
     };
+    
+    useEffect(() => {
+        const checkPaymentStatus = async () => {
+            if (!selectedSeat) return; // Exit if no seat is selected
+    
+            try {
+                const response = await axiosWithJWT.get("http://localhost:8080/api/v1/bookings/in-progress");
+    
+                if (response.data) {
+                    setIsModalOpen(true);
+                } else {
+                    if (selectedSeats.some((s) => s.ticketCode === selectedSeat.ticketCode)) {
+                        setSelectedSeats((prev) => prev.filter((s) => s.ticketCode !== selectedSeat.ticketCode));
+                    } else {
+                        setSelectedSeats((prev) => [...prev, selectedSeat]);
+                    }
+                }
+            } catch (error) {
+                console.error("Error checking payment status:", error);
+                toast.error("Không thể kiểm tra trạng thái thanh toán. Vui lòng thử lại sau.");
+            } finally {
+                setSelectedSeat(null); // Reset the selected seat after processing
+            }
+        };
+    
+        checkPaymentStatus();
+    }, [selectedSeat, selectedSeats]);
 
     const renderSeats = (seats: Seat[][]) => (
         seats.map((row, rowIndex) => (
@@ -417,7 +441,7 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
                                 {new Intl.NumberFormat("en-US").format(calculateTotalPrice())}đ
                             </span>
                         </div>
-                        {(selectedSeats.length > 0 && activeStep === 0) || 
+                        {(selectedSeats.length > 0 && activeStep === 0 && !isModalOpen) || 
                             (activeStep === 1 && selectedPickup && selectedDropoff) ? (
                                 <Button
                                     sx={{
@@ -435,7 +459,51 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
                     </Box>
                 </Box>
             </Box>
-
+            <Modal
+                open={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                aria-labelledby="confirm-exit-title"
+                aria-describedby="confirm-exit-description"
+            >
+                <Box
+                    sx={{
+                        position: "absolute",
+                        top: "50%",
+                        left: "50%",
+                        transform: "translate(-50%, -50%)",
+                        width: "90%",
+                        maxWidth: "520px",
+                        height: "200px",
+                        bgcolor: "white",
+                        boxShadow: 24,
+                        p: 4,
+                        borderRadius: "10px",
+                        textAlign: "center",
+                        outline: "none",
+                    }}
+                >
+                    <Typography id="confirm-exit-title" variant="h6" fontWeight={700}>
+                        Bạn có đặt chỗ chưa hoàn tất
+                    </Typography>
+                    <Typography id="confirm-exit-description" sx={{ mt: 2 }}>
+                        Vui lòng hoàn tất giao dịch trước khi đặt vé mới!
+                    </Typography>
+                    <Box sx={{ display: "flex", justifyContent: "center", mt: 3, gap: 2, flexDirection: "column" }}>
+                        <Button
+                            variant="outlined"
+                            onClick={() => setIsModalOpen(false)}
+                            sx={{
+                                backgroundColor: "rgb(255, 211, 51)",
+                                textTransform: "none",
+                                color: "black",
+                                border: "none",
+                            }}
+                        >
+                            Tiếp tục thanh toán
+                        </Button>
+                    </Box>
+                </Box>
+            </Modal>
         </Box>
     );
 };
