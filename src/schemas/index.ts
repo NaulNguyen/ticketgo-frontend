@@ -23,3 +23,8 @@ export const loginValidationSchema = Yup.object().shape({
     .required("Mật khẩu là bắt buộc"),
   });
 
+export const forgotPasswordValidationSchema = Yup.object().shape({
+    forgotPasswordEmail: Yup.string().email("Email không hợp lệ").required("Email là bắt buộc"),
+  });
+
+
