@@ -46,6 +46,25 @@ class UserService {
             throw err;
         }
     }
+
+    static async loginWithGoogle (googleToken: string) {
+        try {
+            const response = await axios.post(`${UserService.BASE_URL}/api/v1/auth/google-login`, { token: googleToken });
+            return response;
+        } catch (error) {
+            throw error;
+        }
+    };
+
+    static async forgotPassword (data: { email: string }) {
+        const response = await axios.post('http://localhost:8080/api/v1/auth/forgot-password', data);
+        return response;
+    };
+
+    static async resetPassword (data: { password: string, token: string }) {
+        const response = await axios.post('http://localhost:8080/api/v1/auth/reset-password', data);
+        return response;
+    };
 }
 
 export default UserService;
