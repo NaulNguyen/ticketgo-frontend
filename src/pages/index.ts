@@ -4,6 +4,8 @@ export { default as PaymentMethod } from "./PaymentMethod";
 export { default as ThankyouPage } from "./ThankyouPage";
 export { default as SearchingPage } from "./SearchingPage";
 export { default as BookingHistory } from "./BookingHistory";
+export { default as ResetPassword } from "./ResetPassword";
+
 
 
 
