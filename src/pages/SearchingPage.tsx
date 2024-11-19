@@ -313,7 +313,7 @@ const SearchingPage = () => {
                                 </Box>
                             ))
                         ) : (
-                            <Typography>Rất tiếc, hiện không có chuyến xe nào cho ngày bạn chọn.</Typography>
+                            <Typography>Rất tiếc, hiện không có chuyến xe nào phù hợp với tiêu chí của bạn.</Typography>
                         )}
                     </Box>
                 </div>

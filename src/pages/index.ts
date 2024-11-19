@@ -5,6 +5,7 @@ export { default as ThankyouPage } from "./ThankyouPage";
 export { default as SearchingPage } from "./SearchingPage";
 export { default as BookingHistory } from "./BookingHistory";
 export { default as ResetPassword } from "./ResetPassword";
+export { default as ResendEmail } from "./ResendEmail";
 
 
 

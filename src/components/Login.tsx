@@ -19,6 +19,7 @@ import { asyncUserInfor } from "../actions/user.action";
 import GoogleLoginButton from "./GoogleLoginButton";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
+import { useNavigate } from "react-router-dom";
 
 interface LoginProps {
   onClose: () => void;
@@ -29,6 +30,7 @@ const Login: React.FC<LoginProps> = ({ onClose, onRegisterClick }) => {
   const [loading, setLoading] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   const handleLogin = async (values: { email: string; password: string }) => {
     setLoading(true);
@@ -54,11 +56,14 @@ const Login: React.FC<LoginProps> = ({ onClose, onRegisterClick }) => {
         try {
         const response = await UserService.forgotPassword({ email: values.forgotPasswordEmail });
         if (response.status === 201) {
-            toast.success("Đã gửi link để đặt lại mật khẩu thành công.");
+            toast.success("Email khôi phục mật khẩu đã được gửi");
+            toast.info("Vui lòng kiểm tra email của bạn")
+            navigate("/resend-email", { state: { email: values.forgotPasswordEmail, from: "forgotPassword" } });
             setShowForgotPassword(false);
+            onClose();
         }
         } catch (error: any) {
-        toast.error(error.response?.data?.message || "Đã xảy ra lỗi khi gửi email.");
+          toast.error("Email không tồn tại trong hệ thống");
         }
     };
 

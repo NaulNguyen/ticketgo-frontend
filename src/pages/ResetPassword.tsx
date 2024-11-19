@@ -20,16 +20,23 @@ const ResetPassword = () => {
             toast.error("Vui lòng nhập mật khẩu mới.");
             return;
         }
-
+    
+        // Validate password length and composition
+        const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$/;
+        if (!passwordRegex.test(newPassword)) {
+            toast.error("Mật khẩu phải ít nhất 6 ký tự bao gồm chữ cái và số.");
+            return;
+        }
+    
         setLoading(true);
         setError('');
-
+    
         try {
             const response = await UserService.resetPassword({
                 password: newPassword,
                 token: token || '',
             });
-
+    
             if (response.status === 201) {
                 toast.success('Đặt lại mật khẩu mới thành công.');
                 navigate('/'); // Redirect to homepage after success
