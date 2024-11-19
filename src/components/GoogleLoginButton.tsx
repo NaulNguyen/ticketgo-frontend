@@ -7,26 +7,26 @@ import Cookies from 'js-cookie';
 import { useDispatch } from 'react-redux';
 import { asyncUserInfor } from '../actions/user.action';
 
-const GoogleLoginButton: React.FC = () => {
+interface GoogleLoginButtonProps {
+    onClose: () => void;
+}
+const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({onClose}) => {
     const dispatch = useDispatch();
 
     const handleGoogleLoginSuccess = async (response: any) => {
         try {
-            console.log("Response:", response);
-
+            
             const googleToken = response.access_token;
-            console.log("Google token:", googleToken);
             const googleResponse = await UserService.loginWithGoogle(googleToken);
-
-            if (googleResponse.status === 200) {
-                const { accessToken, refreshToken } = googleResponse.data;
+            
+            if (googleResponse.data.status === 200) {
+                const { accessToken, refreshToken } = googleResponse.data.data;
                 Cookies.set('accessToken', accessToken);
                 Cookies.set('refreshToken', refreshToken);
-        
                 const userInfoResponse = await UserService.fetchUserInfor();
                 dispatch(asyncUserInfor(userInfoResponse));
-        
                 toast.success("Đăng nhập với Google thành công");
+                onClose();
             }
         } catch (error: any) {
             const errorMessage = error?.message || "Có lỗi xảy ra";

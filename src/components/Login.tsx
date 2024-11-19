@@ -172,7 +172,7 @@ const Login: React.FC<LoginProps> = ({ onClose, onRegisterClick }) => {
                   Quên mật khẩu?
                 </Button>
                 <Divider sx={{ marginBottom: 2, marginTop: 1 }}>Hoặc</Divider>
-                <GoogleLoginButton />
+                <GoogleLoginButton onClose={onClose}/>
                 <Typography variant="body2" paddingTop={2} sx={{ fontSize: "1rem" }}>
                   Bạn chưa có tài khoản?{" "}
                   <Box
