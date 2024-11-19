@@ -40,6 +40,7 @@ const PaymentMethod = () => {
     const [paymentProcessing, setPaymentProcessing] = useState(false);
     const { fullName, phoneNumber, email } = location.state || {};
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isNavigating, setIsNavigating] = useState(false);
     const [estimatedPrice, setEstimatedPrice] = useState<EstimatedPrice>({
         totalPrice: 0,
         unitPrice: 0,
@@ -59,6 +60,7 @@ const PaymentMethod = () => {
     const userInfo = getUserInfor();
 
     const handlePaymentClick = async () => {
+        setIsNavigating(true);
         setPaymentProcessing(true);
         const lastBooking = userInfo?.booking[userInfo.booking.length - 1]; // Get the most recent booking
         const pickupStopId = lastBooking?.pickupStopId;
@@ -79,6 +81,7 @@ const PaymentMethod = () => {
             window.location.href = paymentUrl;
         } catch (error) {
             console.error('Payment failed', error);
+            setIsNavigating(false);
         } finally {
             setPaymentProcessing(false);
         }
@@ -127,40 +130,32 @@ const PaymentMethod = () => {
       }, [userInfo]);
 
     useEffect(() => {
-        const handleBeforeUnload = (e :any) => {
-            e.preventDefault();
-            e.returnValue = ""; // Trigger the browser's confirmation dialog
-            setIsModalOpen(true); // Show custom modal for confirmation
+        const handleBeforeUnload = (e: any) => {
+            if (!isNavigating) { // Chỉ xử lý nếu không đang điều hướng
+                e.preventDefault();
+                setIsModalOpen(true); // Hiển thị modal tùy chỉnh
+            }
         };
-
-        // Add event listener
         window.addEventListener("beforeunload", handleBeforeUnload);
-
-        // Clean up the event listener on unmount
         return () => {
             window.removeEventListener("beforeunload", handleBeforeUnload);
         };
-    }, []);
+    }, [isNavigating]);
 
 
     useEffect(() => {
-        // Listen for popstate events (history navigation like back/forward)
         const handlePopState = (e: PopStateEvent) => {
-            window.history.pushState(null, "/payment-method", window.location.href); // Push a new state to prevent going back
-            setIsModalOpen(true); // Show the custom modal for confirmation
+            if (!isNavigating) { // Chỉ xử lý nếu không đang điều hướng
+                window.history.pushState(null, "/payment-method", window.location.href); // Ngăn quay lại trang trước
+                setIsModalOpen(true); // Hiển thị modal tùy chỉnh
+            }
         };
-    
-        // Push a new state initially to ensure there's a state in history
         window.history.pushState(null, "/payment-method", window.location.href);
-    
-        // Add event listener for when the user tries to navigate back
         window.addEventListener("popstate", handlePopState);
-    
-        // Cleanup when the component is unmounted
         return () => {
             window.removeEventListener("popstate", handlePopState);
         };
-    }, []);
+    }, [isNavigating]);
 
 
     const handleConfirmExit = async () => {

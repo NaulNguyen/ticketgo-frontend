@@ -16,11 +16,6 @@ const ResendEmail = () => {
                 if (response.status === 201) {
                     toast.success("Email khôi phục mật khẩu đã được gửi");
                 }
-            } else if (from === "register") {
-                // const response = await UserService.resendActivationEmail({ email });
-                // if (response.status === 201) {
-                //     toast.success("Email kích hoạt tài khoản đã được gửi lại");
-                // }
             }
         } catch (error: any) {
             toast.error("Có lỗi xảy ra khi gửi email");

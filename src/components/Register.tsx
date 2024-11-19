@@ -5,6 +5,7 @@ import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { userValidationSchema } from "../schemas";
 import UserService from "../service/UserService";
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
 interface RegistrationProps {
     onClose: () => void;
@@ -14,6 +15,7 @@ interface RegistrationProps {
 const Registration: React.FC<RegistrationProps> = ({ onClose, onLoginClick }) => {
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
+    const navigate = useNavigate();
 
     const togglePasswordVisibility = () => {
         setShowPassword(!showPassword);
@@ -23,10 +25,15 @@ const Registration: React.FC<RegistrationProps> = ({ onClose, onLoginClick }) =>
     const handleUserSubmit = async (values: any) => {
         setLoading(true);
         try {
-            await UserService.register(values);  
-            onClose();
-            toast.success("Đăng ký tài khoản thành công");
-            toast.info("Vui lòng kiểm tra email để kích hoạt tài khoản!")
+            const response = await UserService.register(values);  
+            if (response.data.status === 200) {
+                onClose();
+                toast.success("Đăng ký tài khoản thành công");
+                toast.info("Vui lòng kiểm tra email để kích hoạt tài khoản!")
+            } else if (response.data.status === 409) {
+                toast.error("Tài khoản với email này đã tồn tại.");
+                toast.warn("Vui lòng chọn một email khác!");
+            }
         } catch (error) {
             toast.error(`User registration failed: ${error}`);
         } finally {

@@ -29,12 +29,13 @@ const AccountActivation = () => {
                             }
                         );
                         if (response.data.status === 200) {
-                            toast.success(response.data.message);
+                            toast.success("Tài khoản của bạn đã được kích hoạt thành công");
+                            toast.info("Vui lòng đăng nhập để sử dụng dịch vụ")
                             setTimeout(() => navigate("/"), 3000);
                         } else if (response.data.status === 410) {
-                            toast.error(response.data.message);
+                            toast.error("Đường link đã hết hạn. Vui lòng chọn gửi lại đường link mới!");
                         } else if (response.data.status === 409) {
-                            toast.warn(response.data.message);
+                            toast.warn("Tài khoản này đã được kích hoạt");
                         }
                     } catch (error) {
                         console.error("Lỗi khi kích hoạt tài khoản:", error);
