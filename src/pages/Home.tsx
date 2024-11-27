@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { DestinationCard, Footer, Header, Search } from "../components";
-import { Typography, Box } from "@mui/material";
-import { useNavigate } from "react-router-dom"; // Import useNavigate for navigation
+import { Typography, Box, Skeleton, Fade } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 type RouteData = {
@@ -10,8 +10,16 @@ type RouteData = {
     price: number;
 };
 
+type HomepageData = {
+    description: string;
+    bannerUrl: string;
+};
+
 const Home = () => {
     const [routes, setRoutes] = useState<RouteData[]>([]);
+    const [homepageData, setHomepageData] = useState<HomepageData | null>(null);
+    const [loadingRoutes, setLoadingRoutes] = useState(true);
+    const [loadingHomepage, setLoadingHomepage] = useState(true);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -20,16 +28,35 @@ const Home = () => {
                 const response = await axios.get("http://localhost:8080/api/v1/routes/popular");
                 const data = response.data;
                 if (data.status === 200) {
-                    setRoutes(data.data); 
+                    setRoutes(data.data);
                 } else {
                     console.error("Failed to fetch routes data");
                 }
             } catch (error) {
-                console.error("Error fetching data:", error);
+                console.error("Error fetching routes data:", error);
+            } finally {
+                setLoadingRoutes(false);
+            }
+        };
+
+        const fetchHomepageData = async () => {
+            try {
+                const response = await axios.get("http://localhost:8080/api/v1/homepage");
+                const data = response.data;
+                if (data.status === 200) {
+                    setHomepageData(data.data);
+                } else {
+                    console.error("Failed to fetch homepage data");
+                }
+            } catch (error) {
+                console.error("Error fetching homepage data:", error);
+            } finally {
+                setLoadingHomepage(false);
             }
         };
 
         fetchRoutes();
+        fetchHomepageData();
     }, []);
 
     const handleRouteClick = (routeName: string) => {
@@ -42,11 +69,24 @@ const Home = () => {
         <div style={{ backgroundColor: "#f0f0f0" }}>
             <Header />
             <div className="relative">
-                <img
-                    src="https://static.vexere.com/production/banners/1209/leader-board-vn.jpg"
-                    alt="Banner"
-                    className="w-full h-[480px] object-cover"
-                />
+                {loadingHomepage ? (
+                    <Skeleton
+                        variant="rectangular"
+                        width="100%"
+                        height={480}
+                        animation="wave"
+                    />
+                ) : (
+                    homepageData && (
+                        <Fade in={!loadingHomepage} timeout={800}>
+                            <img
+                                src={homepageData.bannerUrl}
+                                alt="Homepage Banner"
+                                className="w-full h-[480px] object-cover"
+                            />
+                        </Fade>
+                    )
+                )}
                 <Search />
             </div>
             <Box>
@@ -58,20 +98,36 @@ const Home = () => {
                         display: "flex",
                         justifyContent: "center",
                         alignItems: "center",
-                        flexWrap: "wrap",  
-                        gap: 2, 
+                        flexWrap: "wrap",
+                        gap: 2,
                         mt: 2,
                     }}
                 >
-                    {routes.map((route, i) => (
-                        <Box key={i} ml={1} onClick={() => handleRouteClick(route.routeName)}>
-                            <DestinationCard
-                                routeImage={route.routeImage}
-                                routeName={route.routeName}
-                                price={route.price}
-                            />
-                        </Box>
-                    ))}
+                    {loadingRoutes
+                        ? Array.from({ length: 4 }).map((_, i) => (
+                              <Box key={i} ml={1}>
+                                  <Skeleton
+                                      variant="rectangular"
+                                      width={250}
+                                      height={150}
+                                      animation="wave"
+                                      sx={{ borderRadius: 1 }}
+                                  />
+                                  <Skeleton width="60%" sx={{ mt: 1 }} />
+                                  <Skeleton width="40%" />
+                              </Box>
+                          ))
+                        : routes.map((route, i) => (
+                              <Fade in={!loadingRoutes} timeout={800} key={i}>
+                                  <Box ml={1} onClick={() => handleRouteClick(route.routeName)}>
+                                      <DestinationCard
+                                          routeImage={route.routeImage}
+                                          routeName={route.routeName}
+                                          price={route.price}
+                                      />
+                                  </Box>
+                              </Fade>
+                          ))}
                 </Box>
             </Box>
             <Footer />

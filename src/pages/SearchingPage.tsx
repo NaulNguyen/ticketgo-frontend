@@ -11,6 +11,7 @@ import {
     RadioGroup,
     Typography,
     Pagination,
+    Skeleton,
 } from "@mui/material";
 import StarIcon from "@mui/icons-material/Star";
 import SeatSelect from "../components/SeatSelect";
@@ -61,7 +62,8 @@ const SearchingPage = () => {
     });
     const [sortBy, setSortBy] = useState("departureDate");
     const [sortDirection, setSortDirection] = useState("asc");
-    const [currentPage, setCurrentPage] = useState(1); 
+    const [currentPage, setCurrentPage] = useState(1);
+    const [searchLoading, setSearchLoading] = useState(false) 
 
     const handleToggleDetails = (id: string) => {
         setExpandedId(prev => (prev === id ? null : id));
@@ -110,6 +112,7 @@ const SearchingPage = () => {
 
     useEffect(() => {
         const fetchSearchResults = async () => {
+            setSearchLoading(true);
             const searchParams = new URLSearchParams(location.search);
             const params = {
                 departureLocation: searchParams.get("departureLocation") || "",
@@ -125,6 +128,8 @@ const SearchingPage = () => {
                 setSearchResults(response.data);
             } catch (error) {
                 console.error("Error fetching search results:", error);
+            } finally {
+                setSearchLoading(false);
             }
         };
         fetchSearchResults();
@@ -180,7 +185,54 @@ const SearchingPage = () => {
                     
                     {/* Search Results */}
                     <Box display="flex" flexDirection="column" width="100%">
-                        {searchResults.data?.length > 0 ? (
+                        {searchLoading ? (
+                            // Hiển thị Skeleton khi dữ liệu đang tải
+                            Array.from({ length: 4 }).map((_, index) => (
+                                <Box
+                                    key={index}
+                                    mb={3}
+                                    sx={{
+                                        backgroundColor: "white",
+                                        p: 3,
+                                        borderRadius: 2,
+                                        boxShadow: 2,
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        gap: 2,
+                                        width: "100%",
+                                        minHeight: "270px",
+                                    }}
+                                >
+                                    <Box display="flex" gap={2} height="full">
+                                        {/* Skeleton for image */}
+                                        <Skeleton
+                                            variant="rectangular"
+                                            width={200}
+                                            height={220}
+                                            animation="wave" // Add animation here
+                                            sx={{ borderRadius: "8px" }}
+                                        />
+                                        <Box
+                                            display="flex"
+                                            flexDirection="column"
+                                            className="w-full"
+                                            gap={1}
+                                            justifyContent="space-around"
+                                        >
+                                            {/* Skeleton for text information */}
+                                            <Skeleton variant="text" width="60%" height={30} animation="wave" />
+                                            <Skeleton variant="text" width="40%" animation="wave" />
+                                            <Skeleton variant="text" width="30%" sx={{ mb: 2 }} animation="wave" />
+                                            <Box display="flex" justifyContent="space-between">
+                                                <Skeleton variant="text" width="50%" animation="wave" />
+                                                <Skeleton variant="text" width="30%" animation="wave" />
+                                            </Box>
+                                        </Box>
+                                    </Box>
+                                </Box>
+                            ))
+                        ) : searchResults.data?.length > 0 ? (
+                            // Hiển thị dữ liệu khi đã tải xong
                             searchResults.data.map((result) => (
                                 <Box
                                     key={result.scheduleId}
@@ -295,13 +347,16 @@ const SearchingPage = () => {
                                                             onClick={() => handleSelectTrip(result.scheduleId)}
                                                             sx={{
                                                                 textTransform: "none",
-                                                                backgroundColor: seatSelectId === result.scheduleId ? "rgb(192, 192, 192)" : "rgb(255, 199, 0)",
+                                                                backgroundColor:
+                                                                    seatSelectId === result.scheduleId
+                                                                        ? "rgb(192, 192, 192)"
+                                                                        : "rgb(255, 199, 0)",
                                                                 color: "black",
                                                                 p: "8px 16px",
                                                                 fontWeight: "bold",
                                                             }}
                                                         >
-                                                            {seatSelectId  === result.scheduleId ? "Đóng" : "Chọn chuyến"}
+                                                            {seatSelectId === result.scheduleId ? "Đóng" : "Chọn chuyến"}
                                                         </Button>
                                                     </Box>
                                                 </Box>
@@ -309,13 +364,14 @@ const SearchingPage = () => {
                                         </Box>
                                     </Box>
                                     {expandedId === result.scheduleId && <Details scheduleId={result.scheduleId} />}
-                                    { seatSelectId  === result.scheduleId && <SeatSelect scheduleId={result.scheduleId} price={result.price}/>}
+                                    {seatSelectId === result.scheduleId && <SeatSelect scheduleId={result.scheduleId} price={result.price} />}
                                 </Box>
                             ))
                         ) : (
                             <Typography>Rất tiếc, hiện không có chuyến xe nào phù hợp với tiêu chí của bạn.</Typography>
                         )}
                     </Box>
+
                 </div>
 
                 {/* Pagination */}
