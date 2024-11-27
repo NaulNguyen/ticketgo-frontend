@@ -58,22 +58,22 @@ const BookingHistory = () => {
             {bookingHistoryData.length > 0 ? 
                 (bookingHistoryData.map((booking) => (
                     <Box
-                        key={booking.ticketCode}
-                        sx={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                            borderRadius: '8px',
-                            border: '1px solid #e0e0e0',
-                            fontSize: '12px',
-                            backgroundColor: 'white',
-                            width: '60%',
-                            margin: '16px auto',
-                        }}
-                        >
-                        <Box sx={{ width: '100%' }}>
-                            <Typography
+                    key={booking.ticketCode}
+                    sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        borderRadius: '8px',
+                        border: '1px solid #e0e0e0',
+                        fontSize: '12px',
+                        backgroundColor: 'white',
+                        width: '60%',
+                        margin: '16px auto',
+                    }}
+                >
+                    <Box sx={{ width: '100%' }}>
+                        <Typography
                             sx={{
                                 fontWeight: 'bold',
                                 backgroundColor: '#2474e5',
@@ -82,39 +82,55 @@ const BookingHistory = () => {
                                 textAlign: 'center',
                                 borderTopLeftRadius: '4px',
                                 borderTopRightRadius: '4px',
+                                display: 'flex', 
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                paddingLeft: '374px',
                             }}
+                        >
+                            <span>{booking.ticketCode}</span>
+                            <Typography
+                                sx={{
+                                    fontWeight: 'bold',
+                                    backgroundColor: '#4caf50',
+                                    color: 'white',
+                                    padding: '4px 12px',
+                                    borderRadius: '4px',
+                                    display: 'inline-block',
+                                }}
                             >
-                            Ticket Code: {booking.ticketCode}
+                                {booking.status} {/* Aligned to the right */}
                             </Typography>
-                            <Box padding={2} gap={2} display="flex" flex={1}>
-                            <Box flex={1}>
-                                <Typography sx={{ fontWeight: 'bold' }}>Biển số xe: {booking.licensePlate}</Typography>
-                                <Typography sx={{ fontWeight: 'bold' }}>Số ghế: {booking.seatNumber}</Typography>
-                                <Typography sx={{ fontWeight: 'bold' }}>Thời gian đón dự kiến: {booking.pickupTime}</Typography>
-                                <Typography sx={{ fontWeight: 'bold' }}>Địa điểm đón: {booking.pickupLocation}</Typography>
-                                <Typography sx={{ fontWeight: 'bold' }}>Địa điểm trả: {booking.dropoffLocation}</Typography>
+                        </Typography>
+                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3, paddingY: 2 }}>
+                                    <Typography sx={{ fontWeight: 'bold', marginRight: '8px' }}><span className='font-thin'>Địa điểm đón:</span> {booking.pickupLocation}</Typography>
+                                    {/* Bus icon */}
+                                    <svg width="40px" height="40px" viewBox="0 -2.03 20.051 20.051" xmlns="http://www.w3.org/2000/svg">
+                                        <g id="bus" transform="translate(-2 -4)">
+                                            <path id="secondary" fill="#2ca9bc" d="M21,11H3v5a1,1,0,0,0,1,1H5a2,2,0,0,1,4,0h6a2,2,0,0,1,4,0h1a1,1,0,0,0,1-1V11Z"/>
+                                            <path id="primary" d="M4.91,17H4a1,1,0,0,1-1-1V6A1,1,0,0,1,4,5H18.28a1,1,0,0,1,.95.68L21,10.85l.05.31V16a1,1,0,0,1-1,1h-.91" fill="none" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+                                            <path id="primary-2" data-name="primary" d="M3,11H21m-6,6H9.08M9,11h6V5H9Zm0,6a2,2,0,1,1-2-2A2,2,0,0,1,9,17Zm10,0a2,2,0,1,1-2-2A2,2,0,0,1,19,17Z" fill="none" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+                                            <path d="M-3,21 H50" stroke="black" stroke-dasharray="2,1"/>
+                                        </g>
+                                    </svg>
+                                    <Typography sx={{ fontWeight: 'bold', marginLeft: '8px' }}><span className='font-thin'>Địa điểm trả:</span> {booking.dropoffLocation}</Typography>
+                                </Box>
+                        <Box padding={2} gap={2} display="flex" flex={1}>
+                            <Box flex={1} pl={5}>
+                                <Typography sx={{ fontWeight: 'bold', marginBottom: 2 }}><span className='font-thin'>Biển số xe: </span>{booking.licensePlate}</Typography>
+                                <Typography sx={{ fontWeight: 'bold', marginBottom: 2  }}><span className='font-thin'>Số ghế:</span> {booking.seatNumber}</Typography>
+                                <Typography sx={{ fontWeight: 'bold' }}><span className='font-thin'>Thời gian đón dự kiến: </span>{booking.pickupTime}</Typography>
                             </Box>
                             <Divider orientation="vertical" flexItem />
                             <Box flex={1}>
-                                <Typography sx={{ fontWeight: 'bold' }}>Tên Liên Lạc: {booking.contactName}</Typography>
-                                <Typography sx={{ fontWeight: 'bold' }}>Email: {booking.contactEmail}</Typography>
-                                <Typography sx={{ fontWeight: 'bold' }}>Giá: {formatPrice(booking.price)} VND</Typography>
-                                <Typography
-                                    sx={{
-                                        fontWeight: 'bold',
-                                        backgroundColor: '#4caf50',
-                                        color: 'white',           
-                                        padding: '4px 8px',       
-                                        borderRadius: '4px',      
-                                        display: 'inline-block',  
-                                    }}
-                                >
-                                    Trạng thái: {booking.status}
-                                </Typography>
-                            </Box>
+                                <Typography sx={{ fontWeight: 'bold', marginBottom: 2  }}><span className='font-thin'>Tên Liên Lạc:</span> {booking.contactName}</Typography>
+                                <Typography sx={{ fontWeight: 'bold', marginBottom: 2  }}><span className='font-thin'>Email:</span> {booking.contactEmail}</Typography>
+                                <Typography sx={{ fontWeight: 'bold' }}><span className='font-thin'>Giá:</span> {formatPrice(booking.price)} VND</Typography>
                             </Box>
                         </Box>
                     </Box>
+                </Box>
+                
                 ))
                 ) : (
                     <Box
