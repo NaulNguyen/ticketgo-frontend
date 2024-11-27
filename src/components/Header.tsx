@@ -139,6 +139,10 @@ const Header = () => {
         navigate("/booking-history");
     };
 
+    const handleNavigateProfilesClick = () => {
+        navigate("/profile");
+    }
+
     console.log("userinfo", userInfo);
 
     return (
@@ -273,7 +277,10 @@ const Header = () => {
                 }}
                 transformOrigin={{ horizontal: "right", vertical: "top" }}
                 anchorOrigin={{ horizontal: "right", vertical: "bottom" }}>
-                <MenuItem sx={{ paddingX: "20px", paddingY: "10px" }}>
+                <MenuItem 
+                    sx={{ paddingX: "20px", paddingY: "10px" }}
+                    onClick={handleNavigateProfilesClick}
+                >
                     <ListItemIcon>
                         <PersonIcon fontSize="small" />
                     </ListItemIcon>

@@ -2,7 +2,7 @@ import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Provider } from "react-redux";
 import store from "./store";
-import { BookingConfirm, BookingHistory, Home, PaymentMethod, ResendEmail, ResetPassword, SearchingPage, ThankyouPage } from "./pages";
+import { BookingConfirm, BookingHistory, Home, PaymentMethod, Profile, ResendEmail, ResetPassword, SearchingPage, ThankyouPage } from "./pages";
 import AccountActivation from "./components/AccountActivation";
 import "react-toastify/dist/ReactToastify.css";
 import { ToastContainer } from "react-toastify";
@@ -27,6 +27,7 @@ function App() {
                             <Route path="/booking-history" element={<BookingHistory />} />
                             <Route path="/reset-password" element={<ResetPassword />} />
                             <Route path="/resend-email" element={<ResendEmail />} />
+                            <Route path="/profile" element={<Profile />} />
                         </Routes>
                     </Provider>
                 </div>
