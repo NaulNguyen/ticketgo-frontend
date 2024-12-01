@@ -27,13 +27,4 @@ export const forgotPasswordValidationSchema = Yup.object().shape({
     forgotPasswordEmail: Yup.string().email("Email không hợp lệ").required("Email là bắt buộc"),
   });
 
-export const profileValidationSchema = Yup.object().shape({
-    fullName: Yup.string().required("Tên là bắt buộc"),
-    phoneNumber: Yup.string()
-        .matches(/^\d{10}$/, "Số điện thoại phải có 10 ký tự")
-        .required("Số điện thoại là bắt buộc"),
-    dateOfBirth: Yup.date().required("Ngày sinh là bắt buộc").nullable(),
-    email: Yup.string().email("Email không hợp lệ").required("Email là bắt buộc"),
-});
-
 
