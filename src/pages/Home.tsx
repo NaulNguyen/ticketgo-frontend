@@ -129,6 +129,38 @@ const Home = () => {
                               </Fade>
                           ))}
                 </Box>
+                <Typography variant="h6" fontWeight="bold" ml={5} mt={2}>
+                    <span className="border-2 border-cyan-500 mr-2"></span>Về chúng tôi
+                </Typography>
+                <Box sx={{ px: 5, py: 2 }}>
+                    {loadingHomepage ? (
+                        <Skeleton width="80%" sx={{ mb: 1 }} />
+                    ) : (
+                        homepageData && (
+                            <Box display="flex" justifyContent='space-between' 
+                                sx={{
+                                    backgroundColor: "#ffffff",
+                                    borderRadius: 1,
+                                    padding: 2,
+                                    boxShadow: 1,
+                                }}
+                            >
+                                <Typography variant="body1" color="textSecondary">
+                                    <span
+                                        dangerouslySetInnerHTML={{
+                                            __html: homepageData.description
+                                                .replace(
+                                                    "Nhà xe TicketGo",
+                                                    '<span class="font-pacifico text-3xl text-black">TicketGo </span>'
+                                                )
+                                                .replace(/\n\n/g, '<br /><br />'),
+                                        }}
+                                    />
+                                </Typography>
+                            </Box>
+                        )
+                    )}
+                </Box>
             </Box>
             <Footer />
         </div>
