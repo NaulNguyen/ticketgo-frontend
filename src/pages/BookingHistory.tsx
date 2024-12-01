@@ -92,7 +92,11 @@ const BookingHistory = () => {
                             <Typography
                                 sx={{
                                     fontWeight: 'bold',
-                                    backgroundColor: '#4caf50',
+                                    backgroundColor: 
+                                        booking.status === 'Đã xác nhận' ? '#b3e5fc' :  // Light blue
+                                        booking.status === 'Đã hoàn thành' ? '#4caf50' :  // Green
+                                        booking.status === 'Đã hủy' ? '#f44336' :  // Red
+                                        booking.status === 'Đã hoàn tiền' ? '#ffeb3b' : 'transparent',  // Yellow
                                     color: 'white',
                                     padding: '4px 12px',
                                     borderRadius: '4px',
