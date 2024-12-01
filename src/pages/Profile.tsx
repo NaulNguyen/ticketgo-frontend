@@ -1,34 +1,72 @@
-import React from "react";
-import { useFormik } from "formik";
+import React, { useState } from "react";
 import { Box, TextField, Button, Avatar } from "@mui/material";
-import { profileValidationSchema } from "../schemas";
 import { Footer, Header } from "../components";
 import useAppAccessor from "../hook/useAppAccessor";
+import { toast } from "react-toastify";
+import { useDispatch } from "react-redux";
+import { axiosWithJWT } from "../config/axiosConfig";
+import { ASYNC_USER_INFOR } from "../actions/actionsType";
+import UserService from "../service/UserService";
 
 const Profile = () => {
     const { getUserInfor } = useAppAccessor();
     const userInfo = getUserInfor().user;
 
-    // UseEffect to set initialValues when userInfo is available
-    const formik = useFormik({
-        initialValues: {
-            fullName: userInfo?.fullName || "",
-            phone: userInfo?.phoneNumber || "",
-            dateOfBirth: userInfo?.dateOfBirth || "",
-            email: userInfo?.email || "",
-        },
-        enableReinitialize: true, // Allow form to reinitialize when initialValues change
-        validationSchema: profileValidationSchema,
-        onSubmit: (values) => {
-            console.log("Updated Profile Data:", values);
-            // API call to update the profile data
-        },
+    const dispatch = useDispatch();
+
+    const [formValues, setFormValues] = useState({
+        fullName: userInfo.fullName || "",
+        phoneNumber: userInfo.phoneNumber || "",
+        dateOfBirth: userInfo.dateOfBirth || "",
     });
 
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        setFormValues((prevValues) => ({
+            ...prevValues,
+            [name]: value,
+        }));
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+    
+        const updatedValues = Object.fromEntries(
+            Object.entries(formValues).filter(([_, value]) => value !== "")
+        );
+    
+        try {
+            const updateResponse = await axiosWithJWT.post("http://localhost:8080/api/v1/users", updatedValues);
+            if (updateResponse.status === 200) {
+                toast.success("Cập nhật thông tin cá nhân thành công");
+    
+                try {
+                    const updatedUserInfo = await UserService.fetchUserInfor(); 
+                    console.log("updatedUserInfo", updatedUserInfo);
+                    dispatch({
+                        type: ASYNC_USER_INFOR,
+                         payload: { 
+                        data: {
+                            ...userInfo, // Giữ lại các trường cũ
+                            ...updatedUserInfo, // Cập nhật thông tin mới từ server
+                            ...updatedValues, // Ghi đè các giá trị từ formValues
+                        },
+                    },
+                    });
+                } catch (error) {
+                    console.error("Lỗi khi tải thông tin mới:", error);
+                }
+            } else {
+                toast.error("Cập nhật thông tin cá nhân thất bại");
+            }
+        } catch (error) {
+            console.error("API error:", error);
+        }
+    };
+    
+
     return (
-        <Box sx={{
-            backgroundColor: "#f0f0f0"
-        }}>
+        <Box sx={{ backgroundColor: "#f0f0f0" }}>
             <Header />
             <Box
                 sx={{
@@ -48,28 +86,22 @@ const Profile = () => {
                         alt="User Avatar"
                     />
                 </Box>
-                <form onSubmit={formik.handleSubmit}>
+                <form onSubmit={handleSubmit}>
                     <TextField
                         fullWidth
                         margin="normal"
                         label="Họ tên"
                         name="fullName"
-                        value={formik.values.fullName}
-                        onChange={formik.handleChange}
-                        onBlur={formik.handleBlur}
-                        error={formik.touched.fullName && Boolean(formik.errors.fullName)}
-                        helperText={formik.touched.fullName && formik.errors.fullName}
+                        value={formValues.fullName || userInfo.fullName}
+                        onChange={handleChange}
                     />
                     <TextField
                         fullWidth
                         margin="normal"
                         label="Số điện thoại"
-                        name="phone"
-                        value={formik.values.phone}
-                        onChange={formik.handleChange}
-                        onBlur={formik.handleBlur}
-                        error={formik.touched.phone && Boolean(formik.errors.phone)}
-                        helperText={formik.touched.phone && formik.errors.phone}
+                        name="phoneNumber"
+                        value={formValues.phoneNumber || userInfo.phoneNumber}
+                        onChange={handleChange}
                     />
                     <TextField
                         fullWidth
@@ -78,34 +110,23 @@ const Profile = () => {
                         name="dateOfBirth"
                         type="date"
                         InputLabelProps={{ shrink: true }}
-                        value={formik.values.dateOfBirth}
-                        onChange={formik.handleChange}
-                        onBlur={formik.handleBlur}
-                        error={formik.touched.dateOfBirth && Boolean(formik.errors.dateOfBirth)}
-                        helperText={formik.touched.dateOfBirth && formik.errors.dateOfBirth}
+                        value={formValues.dateOfBirth || userInfo.dateOfBirth}
+                        onChange={handleChange}
                     />
                     <TextField
                         fullWidth
                         margin="normal"
                         label="Email"
                         name="email"
-                        type="email"
-                        value={formik.values.email}
-                        onChange={formik.handleChange}
-                        onBlur={formik.handleBlur}
-                        error={formik.touched.email && Boolean(formik.errors.email)}
-                        helperText={formik.touched.email && formik.errors.email}
+                        value={userInfo.email}
+                        disabled
                     />
                     <Button
                         fullWidth
                         variant="contained"
                         color="primary"
                         type="submit"
-                        sx={{ 
-                            marginTop: 2,
-                            textTransform: "none",
-                            fontWeight: "700", 
-                        }}
+                        sx={{ marginTop: 2 }}
                     >
                         Lưu Thay Đổi
                     </Button>
