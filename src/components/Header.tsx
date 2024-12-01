@@ -114,7 +114,6 @@ const Header = () => {
         const fetchUserInfo = async () => {
             try {
                 const userInfoResponse = await UserService.fetchUserInfor();
-                console.log(userInfoResponse);
                 dispatch(asyncUserInfor(userInfoResponse)); 
             } catch (error) {
                 console.error("Failed to fetch user info", error);
@@ -142,8 +141,6 @@ const Header = () => {
     const handleNavigateProfilesClick = () => {
         navigate("/profile");
     }
-
-    console.log("userinfo", userInfo);
 
     return (
         <header className="flex justify-between items-center px-6 py-4 bg-[#0d47a1] shadow-md">
@@ -286,9 +283,9 @@ const Header = () => {
                     </ListItemIcon>
                     Thông tin tài khoản
                 </MenuItem>
-                {userInfo.user.role ==="CUSTOMER" &&
+                {userInfo.user.role ==="ROLE_CUSTOMER" &&
                     (
-                        <React.Fragment>
+                        <Box>
                             <MenuItem 
                                 sx={{ paddingX: "20px", paddingY: "10px" }}
                                 onClick={handleNavigateBookingHistoryClick}
@@ -304,10 +301,10 @@ const Header = () => {
                                 </ListItemIcon>
                                 Nhận xét chuyến đi
                             </MenuItem>
-                        </React.Fragment>
+                        </Box>
                     )
                 }
-                {userInfo.user.role === "ADMIN" && (
+                {userInfo.user.role === "ROLE_BUS_COMPANY" && (
                     <MenuItem sx={{ paddingX: "20px", paddingY: "10px" }}>
                         <ListItemIcon>
                             <DashboardIcon fontSize="small" />
