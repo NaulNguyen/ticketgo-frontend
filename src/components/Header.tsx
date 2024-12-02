@@ -142,6 +142,10 @@ const Header = () => {
         navigate("/profile");
     };
 
+    const handleNavigateDashboardClick = () => {
+        navigate("/dashboard");
+    };
+
     return (
         <header className="flex justify-between items-center px-6 py-4 bg-[#0d47a1] shadow-md">
             <div className="flex items-center cursor-pointer" onClick={handleNavigateClick}>
@@ -301,7 +305,9 @@ const Header = () => {
                     </Box>
                 )}
                 {userInfo.user.role === "ROLE_BUS_COMPANY" && (
-                    <MenuItem sx={{ paddingX: "20px", paddingY: "10px" }}>
+                    <MenuItem
+                        sx={{ paddingX: "20px", paddingY: "10px" }}
+                        onClick={handleNavigateDashboardClick}>
                         <ListItemIcon>
                             <DashboardIcon fontSize="small" />
                         </ListItemIcon>

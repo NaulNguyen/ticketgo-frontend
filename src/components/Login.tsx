@@ -20,7 +20,6 @@ import GoogleLoginButton from "./Customer/GoogleLoginButton";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import ArrowBackIosIcon from "@mui/icons-material/ArrowBackIos";
 import { useNavigate } from "react-router-dom";
-import { jwtDecode } from "jwt-decode";
 
 interface LoginProps {
     onClose: () => void;
