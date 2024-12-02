@@ -14,13 +14,22 @@ type DestinationCardProps = {
 const DestinationCard: React.FC<DestinationCardProps> = ({ routeImage, routeName, price }) => {
     const formattedPrice = new Intl.NumberFormat("en-US").format(price);
     return (
-        <Card sx={{ width: 320, height: 300, my: 2, display: 'flex', flexDirection: 'column', alignItems: "center", justifyContent: "center" }}>
-            <CardActionArea sx={{ height: '100%' }}>
+        <Card
+            sx={{
+                width: 320,
+                height: 300,
+                my: 2,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+            }}>
+            <CardActionArea sx={{ height: "100%" }}>
                 <CardMedia
                     component="img"
                     image={routeImage}
                     alt="Destination image"
-                    sx={{ objectFit: 'cover', height: "210px", width: '320px' }}
+                    sx={{ objectFit: "cover", height: "210px", width: "320px" }}
                 />
                 <CardContent sx={{ flexGrow: 1 }}>
                     <Typography gutterBottom variant="h5" component="div">

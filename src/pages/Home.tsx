@@ -25,7 +25,9 @@ const Home = () => {
     useEffect(() => {
         const fetchRoutes = async () => {
             try {
-                const response = await axios.get("http://localhost:8080/api/v1/routes/popular");
+                const response = await axios.get(
+                    "https://ticketgo-app-a139ba17185b.herokuapp.com/api/v1/routes/popular"
+                );
                 const data = response.data;
                 if (data.status === 200) {
                     setRoutes(data.data);
@@ -41,7 +43,9 @@ const Home = () => {
 
         const fetchHomepageData = async () => {
             try {
-                const response = await axios.get("http://localhost:8080/api/v1/homepage");
+                const response = await axios.get(
+                    "https://ticketgo-app-a139ba17185b.herokuapp.com/api/v1/homepage"
+                );
                 const data = response.data;
                 if (data.status === 200) {
                     setHomepageData(data.data);
@@ -62,7 +66,9 @@ const Home = () => {
     const handleRouteClick = (routeName: string) => {
         const today = new Date().toISOString().split("T")[0];
         const [departureLocation, arrivalLocation] = routeName.split(" - ");
-        navigate(`/search?departureLocation=${departureLocation}&arrivalLocation=${arrivalLocation}&departureDate=${today}&sortBy=departureTime&sortDirection=asc&pageNumber=1&pageSize=5`);
+        navigate(
+            `/search?departureLocation=${departureLocation}&arrivalLocation=${arrivalLocation}&departureDate=${today}&sortBy=departureTime&sortDirection=asc&pageNumber=1&pageSize=5`
+        );
     };
 
     return (
@@ -70,12 +76,7 @@ const Home = () => {
             <Header />
             <div className="relative">
                 {loadingHomepage ? (
-                    <Skeleton
-                        variant="rectangular"
-                        width="100%"
-                        height={480}
-                        animation="wave"
-                    />
+                    <Skeleton variant="rectangular" width="100%" height={480} animation="wave" />
                 ) : (
                     homepageData && (
                         <Fade in={!loadingHomepage} timeout={800}>
@@ -101,8 +102,7 @@ const Home = () => {
                         flexWrap: "wrap",
                         gap: 2,
                         mt: 2,
-                    }}
-                >
+                    }}>
                     {loadingRoutes
                         ? Array.from({ length: 4 }).map((_, i) => (
                               <Box key={i} ml={1}>
@@ -137,14 +137,15 @@ const Home = () => {
                         <Skeleton width="80%" sx={{ mb: 1 }} />
                     ) : (
                         homepageData && (
-                            <Box display="flex" justifyContent='space-between' 
+                            <Box
+                                display="flex"
+                                justifyContent="space-between"
                                 sx={{
                                     backgroundColor: "#ffffff",
                                     borderRadius: 1,
                                     padding: 2,
                                     boxShadow: 1,
-                                }}
-                            >
+                                }}>
                                 <Typography variant="body1" color="textSecondary">
                                     <span
                                         dangerouslySetInnerHTML={{
@@ -153,7 +154,7 @@ const Home = () => {
                                                     "Nhà xe TicketGo",
                                                     '<span class="font-pacifico text-3xl text-black">TicketGo </span>'
                                                 )
-                                                .replace(/\n\n/g, '<br /><br />'),
+                                                .replace(/\n\n/g, "<br /><br />"),
                                         }}
                                     />
                                 </Typography>

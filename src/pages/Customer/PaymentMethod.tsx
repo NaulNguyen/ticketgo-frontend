@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Header } from "../components";
+import { Header } from "../../components";
 import {
     Box,
     Button,
@@ -11,12 +11,12 @@ import {
     Typography,
 } from "@mui/material";
 import HealthAndSafetyIcon from "@mui/icons-material/HealthAndSafety";
-import useAppAccessor from "../hook/useAppAccessor";
-import { axiosWithJWT } from "../config/axiosConfig";
-import { useLocation, useNavigate } from 'react-router-dom';
+import useAppAccessor from "../../hook/useAppAccessor";
+import { axiosWithJWT } from "../../config/axiosConfig";
+import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import ArrowBackIosIcon from "@mui/icons-material/ArrowBackIos";
-import TripSummary from "../components/TripSummary";
+import TripSummary from "../../components/Customer/TripSummary";
 
 interface EstimatedPrice {
     totalPrice: number;
@@ -65,73 +65,83 @@ const PaymentMethod = () => {
         const lastBooking = userInfo?.booking[userInfo.booking.length - 1]; // Get the most recent booking
         const pickupStopId = lastBooking?.pickupStopId;
         const dropOffStopId = lastBooking?.dropOffStopId;
-    
+
         try {
-            const response = await axiosWithJWT.post('http://localhost:8080/api/v1/payment/vnpay', {
-                contactName: fullName,
-                contactEmail: email,
-                contactPhone: phoneNumber,
-                pickupStopId: pickupStopId,
-                dropoffStopId: dropOffStopId,
-                totalPrice: estimatedPrice.totalPrice,
-            });
-            
+            const response = await axiosWithJWT.post(
+                "https://ticketgo-app-a139ba17185b.herokuapp.com/api/v1/payment/vnpay",
+                {
+                    contactName: fullName,
+                    contactEmail: email,
+                    contactPhone: phoneNumber,
+                    pickupStopId: pickupStopId,
+                    dropoffStopId: dropOffStopId,
+                    totalPrice: estimatedPrice.totalPrice,
+                }
+            );
+
             const paymentUrl = response.data;
-    
+
             window.location.href = paymentUrl;
         } catch (error) {
-            console.error('Payment failed', error);
+            console.error("Payment failed", error);
             setIsNavigating(false);
         } finally {
             setPaymentProcessing(false);
         }
     };
 
-      useEffect(() => {
+    useEffect(() => {
         const fetchTotalPrice = async () => {
-          const lastBooking = userInfo?.booking[userInfo.booking.length - 1]; // Get the most recent booking
-          const allTicketCodes = lastBooking?.ticketCodes || []; // Get ticketCodes for the latest booking
-    
-          if (allTicketCodes.length > 0) {
-            try {
-              const response = await axiosWithJWT.post("http://localhost:8080/api/v1/bookings/estimated-prices", {
-                ticketCodes: allTicketCodes 
-              });
-              setEstimatedPrice(response.data.data);
-            } catch (error) {
-              console.error("Error fetching estimated prices:", error);
+            const lastBooking = userInfo?.booking[userInfo.booking.length - 1]; // Get the most recent booking
+            const allTicketCodes = lastBooking?.ticketCodes || []; // Get ticketCodes for the latest booking
+
+            if (allTicketCodes.length > 0) {
+                try {
+                    const response = await axiosWithJWT.post(
+                        "https://ticketgo-app-a139ba17185b.herokuapp.com/api/v1/bookings/estimated-prices",
+                        {
+                            ticketCodes: allTicketCodes,
+                        }
+                    );
+                    setEstimatedPrice(response.data.data);
+                } catch (error) {
+                    console.error("Error fetching estimated prices:", error);
+                }
             }
-          }
         };
-    
+
         fetchTotalPrice();
-      }, [userInfo]);
-    
-      useEffect(() => {
+    }, [userInfo]);
+
+    useEffect(() => {
         const fetchTripInfo = async () => {
-          const lastBooking = userInfo?.booking[userInfo.booking.length - 1]; // Get the most recent booking
-          const pickupStopId = lastBooking?.pickupStopId;
-          const dropOffStopId = lastBooking?.dropOffStopId;
-          const scheduleId = lastBooking?.scheduleId;
-    
-          if (pickupStopId && dropOffStopId && scheduleId) {
-            try {
-              const response = await axiosWithJWT.get("http://localhost:8080/api/v1/bookings/trip-info", {
-                params: { pickupStopId, dropOffStopId, scheduleId }
-              });
-              setTripInfo(response.data.data);
-            } catch (error) {
-              console.error("Error fetching trip info:", error);
+            const lastBooking = userInfo?.booking[userInfo.booking.length - 1]; // Get the most recent booking
+            const pickupStopId = lastBooking?.pickupStopId;
+            const dropOffStopId = lastBooking?.dropOffStopId;
+            const scheduleId = lastBooking?.scheduleId;
+
+            if (pickupStopId && dropOffStopId && scheduleId) {
+                try {
+                    const response = await axiosWithJWT.get(
+                        "https://ticketgo-app-a139ba17185b.herokuapp.com/api/v1/bookings/trip-info",
+                        {
+                            params: { pickupStopId, dropOffStopId, scheduleId },
+                        }
+                    );
+                    setTripInfo(response.data.data);
+                } catch (error) {
+                    console.error("Error fetching trip info:", error);
+                }
             }
-          }
         };
-    
+
         fetchTripInfo();
-      }, [userInfo]);
+    }, [userInfo]);
 
     useEffect(() => {
         const handleBeforeUnload = (e: any) => {
-            if (!isNavigating) { // Chỉ xử lý nếu không đang điều hướng
+            if (!isNavigating) {
+                // Chỉ xử lý nếu không đang điều hướng
                 e.preventDefault();
                 setIsModalOpen(true); // Hiển thị modal tùy chỉnh
             }
@@ -142,10 +152,10 @@ const PaymentMethod = () => {
         };
     }, [isNavigating]);
 
-
     useEffect(() => {
         const handlePopState = (e: PopStateEvent) => {
-            if (!isNavigating) { // Chỉ xử lý nếu không đang điều hướng
+            if (!isNavigating) {
+                // Chỉ xử lý nếu không đang điều hướng
                 window.history.pushState(null, "/payment-method", window.location.href); // Ngăn quay lại trang trước
                 setIsModalOpen(true); // Hiển thị modal tùy chỉnh
             }
@@ -157,10 +167,11 @@ const PaymentMethod = () => {
         };
     }, [isNavigating]);
 
-
     const handleConfirmExit = async () => {
         try {
-            await axiosWithJWT.post("http://localhost:8080/api/v1/seats/cancel-reserve");
+            await axiosWithJWT.post(
+                "https://ticketgo-app-a139ba17185b.herokuapp.com/api/v1/seats/cancel-reserve"
+            );
             toast.success("Đã hủy chỗ đặt thành công");
         } catch (error) {
             console.error("Error canceling reservation:", error);
@@ -190,17 +201,17 @@ const PaymentMethod = () => {
                         justifyContent: "center",
                         alignItems: "flex-start",
                     }}>
-                        <Button
-                            startIcon={<ArrowBackIosIcon sx={{ fontSize: "8px", color: "#484848" }} />}
-                            sx={{
-                                fontSize: "16px",
-                                textTransform: "none",
-                                fontWeight: "bold",
-                                "&:hover": { backgroundColor: "transparent" },
-                            }}
-                            onClick={() => setIsModalOpen(true)}>
-                            Quay lại
-                        </Button>
+                    <Button
+                        startIcon={<ArrowBackIosIcon sx={{ fontSize: "8px", color: "#484848" }} />}
+                        sx={{
+                            fontSize: "16px",
+                            textTransform: "none",
+                            fontWeight: "bold",
+                            "&:hover": { backgroundColor: "transparent" },
+                        }}
+                        onClick={() => setIsModalOpen(true)}>
+                        Quay lại
+                    </Button>
                     <Container
                         sx={{
                             display: "flex",
@@ -221,7 +232,9 @@ const PaymentMethod = () => {
                                     width: "700px",
                                     minHeight: "fit-content",
                                 }}>
-                                <Typography variant="h5" sx={{ fontWeight: "bold", fontSize: "18px" }}>
+                                <Typography
+                                    variant="h5"
+                                    sx={{ fontWeight: "bold", fontSize: "18px" }}>
                                     Phương thức thanh toán
                                 </Typography>
                                 <RadioGroup>
@@ -265,7 +278,9 @@ const PaymentMethod = () => {
                                     width: "700px",
                                     minHeight: "fit-content",
                                 }}>
-                                <Typography variant="h5" sx={{ fontWeight: "bold", fontSize: "18px" }}>
+                                <Typography
+                                    variant="h5"
+                                    sx={{ fontWeight: "bold", fontSize: "18px" }}>
                                     Thông tin liên hệ
                                 </Typography>
                                 <Box>
@@ -307,100 +322,115 @@ const PaymentMethod = () => {
                         </Box>
 
                         {/* Trip Summary and Details Box */}
-                        <TripSummary
-                            tripInfo={tripInfo}
-                            estimatedPrice={estimatedPrice}
-                        />    
+                        <TripSummary tripInfo={tripInfo} estimatedPrice={estimatedPrice} />
                     </Container>
                 </Container>
-            </div> 
+            </div>
+            <Box
+                sx={{
+                    width: "100%",
+                    backgroundColor: "white",
+                    position: "fixed",
+                    bottom: 0,
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    padding: "20px",
+                    height: "100px",
+                }}>
+                <Box sx={{ textAlign: "center", marginRight: "20px" }}>
+                    <Button
+                        variant="contained"
+                        size="medium"
+                        sx={{
+                            py: 1.5,
+                            backgroundColor: "rgb(255, 211, 51)",
+                            color: "black",
+                            textTransform: "none",
+                            fontSize: "16px",
+                            width: "700px",
+                            fontWeight: "bold",
+                            marginBottom: "8px",
+                        }}
+                        startIcon={<HealthAndSafetyIcon />}
+                        onClick={handlePaymentClick}
+                        disabled={paymentProcessing}>
+                        Thanh toán
+                    </Button>
+                    <Typography variant="body2" sx={{ fontSize: "14px", color: "gray" }}>
+                        Bằng việc nhấn nút Thanh toán, bạn đồng ý với Chính sách bảo mật thanh toán
+                    </Typography>
+                </Box>
+
+                <Box marginBottom={3}>
+                    <Typography variant="body2" sx={{ fontSize: "14px", color: "gray" }}>
+                        Bạn sẽ sớm nhận được biển số xe, số điện thoại tài xế
+                    </Typography>
+                    <Typography variant="body2" sx={{ fontSize: "14px", color: "gray" }}>
+                        và dễ dàng thay đổi điểm đón trả sau khi đặt.
+                    </Typography>
+                </Box>
+            </Box>
+            <Modal
+                open={isModalOpen}
+                onClose={handleContinuePayment}
+                aria-labelledby="confirm-exit-title"
+                aria-describedby="confirm-exit-description">
                 <Box
                     sx={{
-                        width: "100%",
-                        backgroundColor: "white",
-                        position: "fixed",
-                        bottom: 0, 
-                        display: "flex",
-                        justifyContent: "center",
-                        alignItems: "center",
-                        padding: "20px",
-                        height: "100px", 
+                        position: "absolute",
+                        top: "50%",
+                        left: "50%",
+                        transform: "translate(-50%, -50%)",
+                        width: "90%",
+                        maxWidth: "520px",
+                        height: "250px",
+                        bgcolor: "white",
+                        boxShadow: 24,
+                        p: 4,
+                        borderRadius: "10px",
+                        textAlign: "center",
+                        outline: "none",
                     }}>
-                    <Box sx={{ textAlign: "center", marginRight: "20px" }}>
-                        <Button
-                            variant="contained"
-                            size="medium"
-                            sx={{
-                                py: 1.5,
-                                backgroundColor: "rgb(255, 211, 51)",
-                                color: "black",
-                                textTransform: "none",
-                                fontSize: "16px",
-                                width: "700px",
-                                fontWeight: "bold",
-                                marginBottom: "8px",
-                            }}
-                            startIcon={<HealthAndSafetyIcon />}
-                            onClick={handlePaymentClick}
-                            disabled={paymentProcessing}
-                            >
-                            Thanh toán
-                        </Button>
-                        <Typography variant="body2" sx={{ fontSize: "14px", color: "gray" }}>
-                            Bằng việc nhấn nút Thanh toán, bạn đồng ý với Chính sách bảo mật thanh toán
-                        </Typography>
-                    </Box>
-
-                    <Box marginBottom={3}>
-                        <Typography variant="body2" sx={{ fontSize: "14px", color: "gray" }}>
-                            Bạn sẽ sớm nhận được biển số xe, số điện thoại tài xế
-                        </Typography>
-                        <Typography variant="body2" sx={{ fontSize: "14px", color: "gray" }}>
-                            và dễ dàng thay đổi điểm đón trả sau khi đặt.
-                        </Typography>
-                    </Box>
-                </Box>
-                <Modal
-                    open={isModalOpen}
-                    onClose={handleContinuePayment}
-                    aria-labelledby="confirm-exit-title"
-                    aria-describedby="confirm-exit-description"
-                >
+                    <Typography id="confirm-exit-title" variant="h6" fontWeight={700}>
+                        Bạn có chắc muốn thoát?
+                    </Typography>
+                    <Typography id="confirm-exit-description" sx={{ mt: 2 }}>
+                        Nếu bạn không tiến hành thanh toán thì chỗ đặt sẽ bị hủy và bạn cần đặt vé
+                        mới!
+                    </Typography>
                     <Box
                         sx={{
-                            position: "absolute",
-                            top: "50%",
-                            left: "50%",
-                            transform: "translate(-50%, -50%)",
-                            width: "90%",
-                            maxWidth: "520px",
-                            height: "250px",
-                            bgcolor: "white",
-                            boxShadow: 24,
-                            p: 4,
-                            borderRadius: "10px",
-                            textAlign: "center",
-                            outline: "none",
-                        }}
-                    >
-                        <Typography id="confirm-exit-title" variant="h6" fontWeight={700}>
-                            Bạn có chắc muốn thoát?
-                        </Typography>
-                        <Typography id="confirm-exit-description" sx={{ mt: 2 }}>
-                            Nếu bạn không tiến hành thanh toán thì chỗ đặt sẽ bị hủy và bạn cần đặt vé mới!
-                        </Typography>
-                        <Box sx={{ display: "flex", justifyContent: "center", mt: 3, gap: 2, flexDirection: "column" }}>
-                            <Button color="error" onClick={handleConfirmExit} sx={{color: "#2474e5",textTransform: "none", textDecoration: "underline"}}>
-                                Xác nhận
-                            </Button>
-                            <Button variant="outlined" onClick={handleContinuePayment} sx={{backgroundColor: "rgb(255, 211, 51)", textTransform: "none",
-                                color: "black", border: "none"}}>
-                                Tiếp tục thanh toán
-                            </Button>
-                        </Box>
+                            display: "flex",
+                            justifyContent: "center",
+                            mt: 3,
+                            gap: 2,
+                            flexDirection: "column",
+                        }}>
+                        <Button
+                            color="error"
+                            onClick={handleConfirmExit}
+                            sx={{
+                                color: "#2474e5",
+                                textTransform: "none",
+                                textDecoration: "underline",
+                            }}>
+                            Xác nhận
+                        </Button>
+                        <Button
+                            variant="outlined"
+                            onClick={handleContinuePayment}
+                            sx={{
+                                backgroundColor: "rgb(255, 211, 51)",
+                                textTransform: "none",
+                                color: "black",
+                                border: "none",
+                            }}>
+                            Tiếp tục thanh toán
+                        </Button>
                     </Box>
-                </Modal>
-
+                </Box>
+            </Modal>
         </>
     );
 };

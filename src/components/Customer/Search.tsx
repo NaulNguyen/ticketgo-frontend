@@ -41,7 +41,7 @@ const Search = () => {
 
     const handleSearch = () => {
         if (departure && destination && selectedDate) {
-            const formattedDate = format(selectedDate, 'yyyy-MM-dd'); 
+            const formattedDate = format(selectedDate, "yyyy-MM-dd");
             const params = new URLSearchParams({
                 departureLocation: departure,
                 arrivalLocation: destination,
@@ -64,15 +64,13 @@ const Search = () => {
                 isHome
                     ? "absolute inset-0 flex justify-center items-center text-white text-3xl font-bold"
                     : "w-full text-white text-3xl font-bold pt-6"
-            }`}
-        >
+            }`}>
             <div
                 className={`${
                     isHome
                         ? "bg-white p-6 rounded-lg shadow-lg w-full max-w-5xl border border-gray-300"
                         : "bg-white p-6 rounded-lg shadow-lg border border-gray-300"
-                }`}
-            >
+                }`}>
                 <div className="flex items-center space-x-4">
                     {/* Nơi xuất phát */}
                     <Autocomplete
@@ -165,8 +163,7 @@ const Search = () => {
                                 color: "black",
                                 textTransform: "none",
                                 fontSize: "16px",
-                            }}
-                        >
+                            }}>
                             Tìm kiếm
                         </Button>
                     </div>

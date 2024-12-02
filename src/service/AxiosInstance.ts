@@ -1,26 +1,26 @@
-import axios from 'axios';
+import axios from "axios";
 
 // Function to save the new access token
-const saveNewAccessToken = (newAccessToken : any) => {
-    localStorage.setItem('token', newAccessToken);
+const saveNewAccessToken = (newAccessToken: any) => {
+    localStorage.setItem("token", newAccessToken);
 };
 
 const AxiosInstance = axios.create({
-    baseURL: 'http://localhost:8080'
+    baseURL: "https://ticketgo-app-a139ba17185b.herokuapp.com",
 });
 
 // Add a response interceptor to handle token expiration
 AxiosInstance.interceptors.response.use(
-    response => response,
-    async error => {
+    (response) => response,
+    async (error) => {
         const originalRequest = error.config;
         if (error.response) {
             console.error("Access token expired. Attempting to refresh token...");
 
             try {
-                const refreshToken = localStorage.getItem('refreshToken'); // Assuming you store refresh token in local storage
-                const refreshResponse = await AxiosInstance.post('/auth/refresh', {
-                    refreshToken: refreshToken
+                const refreshToken = localStorage.getItem("refreshToken"); // Assuming you store refresh token in local storage
+                const refreshResponse = await AxiosInstance.post("/auth/refresh", {
+                    refreshToken: refreshToken,
                 });
 
                 const newAccessToken = refreshResponse.data.token;
@@ -29,13 +29,13 @@ AxiosInstance.interceptors.response.use(
                 saveNewAccessToken(newAccessToken);
 
                 // Set new access token in the original request headers
-                originalRequest.headers['Authorization'] = `Bearer ${newAccessToken}`;
+                originalRequest.headers["Authorization"] = `Bearer ${newAccessToken}`;
 
                 // Retry the original request with the new token
                 return AxiosInstance(originalRequest);
             } catch (refreshError) {
                 console.error("Refresh token expired or invalid. Redirecting to login.");
-                window.location.href = '/login';
+                window.location.href = "/login";
             }
         }
         return Promise.reject(error);

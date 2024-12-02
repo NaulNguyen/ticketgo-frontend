@@ -1,35 +1,41 @@
 import React, { useState } from "react";
-import { Grid, TextField, Button, IconButton, InputAdornment, Typography, Box, CircularProgress } from "@mui/material";
+import {
+    Grid,
+    TextField,
+    Button,
+    IconButton,
+    InputAdornment,
+    Typography,
+    Box,
+    CircularProgress,
+} from "@mui/material";
 import { Formik, Form, Field } from "formik";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { userValidationSchema } from "../schemas";
 import UserService from "../service/UserService";
 import { toast } from "react-toastify";
-import { useNavigate } from "react-router-dom";
 
 interface RegistrationProps {
     onClose: () => void;
-    onLoginClick: () => void; 
-  }
+    onLoginClick: () => void;
+}
 
 const Registration: React.FC<RegistrationProps> = ({ onClose, onLoginClick }) => {
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
-    const navigate = useNavigate();
 
     const togglePasswordVisibility = () => {
         setShowPassword(!showPassword);
     };
 
-
     const handleUserSubmit = async (values: any) => {
         setLoading(true);
         try {
-            const response = await UserService.register(values);  
+            const response = await UserService.register(values);
             if (response.data.status === 200) {
                 onClose();
                 toast.success("Đăng ký tài khoản thành công");
-                toast.info("Vui lòng kiểm tra email để kích hoạt tài khoản!")
+                toast.info("Vui lòng kiểm tra email để kích hoạt tài khoản!");
             } else if (response.data.status === 409) {
                 toast.error("Tài khoản với email này đã tồn tại.");
                 toast.warn("Vui lòng chọn một email khác!");
@@ -40,7 +46,6 @@ const Registration: React.FC<RegistrationProps> = ({ onClose, onLoginClick }) =>
             setLoading(false);
         }
     };
-    
 
     return (
         <Formik
@@ -56,7 +61,7 @@ const Registration: React.FC<RegistrationProps> = ({ onClose, onLoginClick }) =>
                 handleUserSubmit(values);
                 actions.resetForm();
             }}>
-            {({  handleSubmit, handleChange, setFieldValue, values, errors, touched  }) => (
+            {({ handleSubmit, handleChange, setFieldValue, values, errors, touched }) => (
                 <Form onSubmit={handleSubmit}>
                     <Grid container spacing={2}>
                         <Grid item xs={12}>
@@ -138,13 +143,13 @@ const Registration: React.FC<RegistrationProps> = ({ onClose, onLoginClick }) =>
                                 value={values.dateOfBirth}
                                 onChange={(e: any) => {
                                     const isoDate = e.target.value;
-                                    setFieldValue("dateOfBirth", isoDate); 
+                                    setFieldValue("dateOfBirth", isoDate);
                                 }}
                                 format="dd/MM/yyyy"
                                 error={touched.dateOfBirth && !!errors.dateOfBirth}
                                 helperText={touched.dateOfBirth && errors.dateOfBirth}
                                 fullWidth
-                                InputLabelProps={{ shrink: true }} 
+                                InputLabelProps={{ shrink: true }}
                                 required
                             />
                         </Grid>
@@ -155,27 +160,27 @@ const Registration: React.FC<RegistrationProps> = ({ onClose, onLoginClick }) =>
                                 color="primary"
                                 fullWidth
                                 disabled={loading}
-                                startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}
-                            >
+                                startIcon={
+                                    loading ? <CircularProgress size={20} color="inherit" /> : null
+                                }>
                                 Đăng ký
                             </Button>
                         </Grid>
                     </Grid>
 
                     <Typography variant="body2" paddingTop={2} sx={{ fontSize: "1rem" }}>
-                        Bạn đã có tài khoản?{' '}
+                        Bạn đã có tài khoản?{" "}
                         <Box
                             component="span"
                             color="primary.main"
                             sx={{
-                            cursor: "pointer",
-                            textDecoration: "none",
-                            "&:hover": {
-                                textDecoration: "underline",
-                            },
+                                cursor: "pointer",
+                                textDecoration: "none",
+                                "&:hover": {
+                                    textDecoration: "underline",
+                                },
                             }}
-                            onClick={onLoginClick}
-                        >
+                            onClick={onLoginClick}>
                             Đăng nhập
                         </Box>
                     </Typography>

@@ -1,9 +1,9 @@
-import React from 'react';
-import { Footer, Header } from '../components';
-import { Box, Typography } from '@mui/material';
-import { useLocation } from 'react-router-dom';
-import { toast } from 'react-toastify';
-import UserService from '../service/UserService';
+import React from "react";
+import { Footer, Header } from "../../components";
+import { Box, Typography } from "@mui/material";
+import { useLocation } from "react-router-dom";
+import { toast } from "react-toastify";
+import UserService from "../../service/UserService";
 
 const ResendEmail = () => {
     const location = useLocation();
@@ -31,9 +31,8 @@ const ResendEmail = () => {
                 alignItems="center"
                 height="63vh"
                 sx={{
-                    backgroundColor: '#f0f0f0',
-                }}
-            >
+                    backgroundColor: "#f0f0f0",
+                }}>
                 <div className="w-fit h-fit p-5 rounded-md shadow-md bg-white flex flex-col justify-center items-center gap-2">
                     <Typography variant="h3" fontWeight="bold">
                         <span className="font-pacifico text-6xl">Thông báo</span>
@@ -48,18 +47,19 @@ const ResendEmail = () => {
                         </div>
                         <div className="flex flex-col justify-center items-center mt-4">
                             <Typography variant="body1" color="grey">
-                                Vui lòng kiểm tra hộp thư và xác nhận để hoàn tất quá trình đăng nhập.
+                                Vui lòng kiểm tra hộp thư và xác nhận để hoàn tất quá trình đăng
+                                nhập.
                             </Typography>
                             <Typography variant="body1" color="grey">
-                                Nếu bạn không nhận được email, hãy kiểm tra thư mục spam hoặc yêu cầu một email mới.
+                                Nếu bạn không nhận được email, hãy kiểm tra thư mục spam hoặc yêu
+                                cầu một email mới.
                             </Typography>
                         </div>
                     </div>
                     <div className="w-full h-[1px] bg-white-secondary"></div>
                     <div
                         className="w-fit h-fit px-10 py-2 bg-[#0369c3] hover:bg-[#0369a3] text-center text-white-primary font-bold rounded-sm cursor-pointer"
-                        onClick={handleResendEmail}
-                    >
+                        onClick={handleResendEmail}>
                         <span className="text-white">Gửi lại</span>
                     </div>
                 </div>

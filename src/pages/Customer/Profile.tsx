@@ -1,12 +1,12 @@
 import React, { useState } from "react";
 import { Box, TextField, Button, Avatar } from "@mui/material";
-import { Footer, Header } from "../components";
-import useAppAccessor from "../hook/useAppAccessor";
+import { Footer, Header } from "../../components";
+import useAppAccessor from "../../hook/useAppAccessor";
 import { toast } from "react-toastify";
 import { useDispatch } from "react-redux";
-import { axiosWithJWT } from "../config/axiosConfig";
-import { ASYNC_USER_INFOR } from "../actions/actionsType";
-import UserService from "../service/UserService";
+import { axiosWithJWT } from "../../config/axiosConfig";
+import { ASYNC_USER_INFOR } from "../../actions/actionsType";
+import UserService from "../../service/UserService";
 
 const Profile = () => {
     const { getUserInfor } = useAppAccessor();
@@ -30,28 +30,31 @@ const Profile = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-    
+
         const updatedValues = Object.fromEntries(
             Object.entries(formValues).filter(([_, value]) => value !== "")
         );
-    
+
         try {
-            const updateResponse = await axiosWithJWT.post("http://localhost:8080/api/v1/users", updatedValues);
+            const updateResponse = await axiosWithJWT.post(
+                "https://ticketgo-app-a139ba17185b.herokuapp.com/api/v1/users",
+                updatedValues
+            );
             if (updateResponse.status === 200) {
                 toast.success("Cập nhật thông tin cá nhân thành công");
-    
+
                 try {
-                    const updatedUserInfo = await UserService.fetchUserInfor(); 
+                    const updatedUserInfo = await UserService.fetchUserInfor();
                     console.log("updatedUserInfo", updatedUserInfo);
                     dispatch({
                         type: ASYNC_USER_INFOR,
-                         payload: { 
-                        data: {
-                            ...userInfo, // Giữ lại các trường cũ
-                            ...updatedUserInfo, // Cập nhật thông tin mới từ server
-                            ...updatedValues, // Ghi đè các giá trị từ formValues
+                        payload: {
+                            data: {
+                                ...userInfo, // Giữ lại các trường cũ
+                                ...updatedUserInfo, // Cập nhật thông tin mới từ server
+                                ...updatedValues, // Ghi đè các giá trị từ formValues
+                            },
                         },
-                    },
                     });
                 } catch (error) {
                     console.error("Lỗi khi tải thông tin mới:", error);
@@ -63,7 +66,6 @@ const Profile = () => {
             console.error("API error:", error);
         }
     };
-    
 
     return (
         <Box sx={{ backgroundColor: "#f0f0f0" }}>
@@ -77,8 +79,7 @@ const Profile = () => {
                     borderRadius: 2,
                     marginBottom: 5,
                     backgroundColor: "#ffffff",
-                }}
-            >
+                }}>
                 <Box display="flex" justifyContent="center" mb={3}>
                     <Avatar
                         src={userInfo?.imageUrl || ""}
@@ -126,8 +127,7 @@ const Profile = () => {
                         variant="contained"
                         color="primary"
                         type="submit"
-                        sx={{ marginTop: 2 }}
-                    >
+                        sx={{ marginTop: 2 }}>
                         Lưu Thay Đổi
                     </Button>
                 </form>

@@ -3,13 +3,13 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { Box, Typography } from "@mui/material";
 import axios from "axios";
 import { toast } from "react-toastify";
-import Footer from "./Footer";
-import Header from "./Header";
+import Footer from "../Footer";
+import Header from "../Header";
 
 const AccountActivation = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    const hasActivated = useRef(false); 
+    const hasActivated = useRef(false);
 
     const queryParams = new URLSearchParams(location.search);
     const token = queryParams.get("token");
@@ -20,7 +20,7 @@ const AccountActivation = () => {
                 if (token) {
                     try {
                         const response = await axios.put(
-                            "http://localhost:8080/api/v1/auth/activate",
+                            "https://ticketgo-app-a139ba17185b.herokuapp.com/api/v1/auth/activate",
                             { token },
                             {
                                 headers: {
@@ -30,10 +30,12 @@ const AccountActivation = () => {
                         );
                         if (response.data.status === 200) {
                             toast.success("Tài khoản của bạn đã được kích hoạt thành công");
-                            toast.info("Vui lòng đăng nhập để sử dụng dịch vụ")
+                            toast.info("Vui lòng đăng nhập để sử dụng dịch vụ");
                             setTimeout(() => navigate("/"), 3000);
                         } else if (response.data.status === 410) {
-                            toast.error("Đường link đã hết hạn. Vui lòng chọn gửi lại đường link mới!");
+                            toast.error(
+                                "Đường link đã hết hạn. Vui lòng chọn gửi lại đường link mới!"
+                            );
                         } else if (response.data.status === 409) {
                             toast.warn("Tài khoản này đã được kích hoạt");
                         }
@@ -45,7 +47,7 @@ const AccountActivation = () => {
             };
 
             activateAccount();
-            hasActivated.current = true; 
+            hasActivated.current = true;
         }
     }, [token, location.pathname, navigate]);
 
@@ -63,21 +65,21 @@ const AccountActivation = () => {
                     minHeight: "70vh",
                     textAlign: "center",
                     padding: "20px",
-                    backgroundColor: "#f0f0f0"
-                }}
-            >
+                    backgroundColor: "#f0f0f0",
+                }}>
                 <Box
                     sx={{
                         backgroundColor: "#ffffff",
                         padding: "30px",
                         borderRadius: "8px",
-                        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)"
-                    }}
-                >
+                        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+                    }}>
                     <Typography variant="h3" fontWeight="bold" mb={3}>
-                        <span className="font-pacifico text-6xl">Cảm ơn bạn đã đăng ký tài khoản với TicketGo!</span>
+                        <span className="font-pacifico text-6xl">
+                            Cảm ơn bạn đã đăng ký tài khoản với TicketGo!
+                        </span>
                     </Typography>
-                    <Typography variant="body1" fontSize="18px" >
+                    <Typography variant="body1" fontSize="18px">
                         Vui lòng chờ một chút trong khi chúng tôi kích hoạt tài khoản cho bạn.
                     </Typography>
                 </Box>

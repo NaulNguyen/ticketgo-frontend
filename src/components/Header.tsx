@@ -26,7 +26,7 @@ import { asyncUserInfor, logout } from "../actions/user.action";
 import { toast } from "react-toastify";
 import { useLocation, useNavigate } from "react-router-dom";
 import UserService from "../service/UserService";
-import DashboardIcon from '@mui/icons-material/Dashboard';
+import DashboardIcon from "@mui/icons-material/Dashboard";
 
 const Header = () => {
     const [modalState, setModalState] = useState({ isRegisterOpen: false, isLoginOpen: false });
@@ -114,13 +114,13 @@ const Header = () => {
         const fetchUserInfo = async () => {
             try {
                 const userInfoResponse = await UserService.fetchUserInfor();
-                dispatch(asyncUserInfor(userInfoResponse)); 
+                dispatch(asyncUserInfor(userInfoResponse));
             } catch (error) {
                 console.error("Failed to fetch user info", error);
             }
         };
-        fetchUserInfo(); 
-    }, [dispatch])
+        fetchUserInfo();
+    }, [dispatch]);
 
     const handleCloseTimeoutModal = () => {
         setTimeoutModalOpen(false);
@@ -140,7 +140,7 @@ const Header = () => {
 
     const handleNavigateProfilesClick = () => {
         navigate("/profile");
-    }
+    };
 
     return (
         <header className="flex justify-between items-center px-6 py-4 bg-[#0d47a1] shadow-md">
@@ -274,36 +274,32 @@ const Header = () => {
                 }}
                 transformOrigin={{ horizontal: "right", vertical: "top" }}
                 anchorOrigin={{ horizontal: "right", vertical: "bottom" }}>
-                <MenuItem 
+                <MenuItem
                     sx={{ paddingX: "20px", paddingY: "10px" }}
-                    onClick={handleNavigateProfilesClick}
-                >
+                    onClick={handleNavigateProfilesClick}>
                     <ListItemIcon>
                         <PersonIcon fontSize="small" />
                     </ListItemIcon>
                     Thông tin tài khoản
                 </MenuItem>
-                {userInfo.user.role ==="ROLE_CUSTOMER" &&
-                    (
-                        <Box>
-                            <MenuItem 
-                                sx={{ paddingX: "20px", paddingY: "10px" }}
-                                onClick={handleNavigateBookingHistoryClick}
-                            >
-                                <ListItemIcon>
-                                    <LoyaltyIcon fontSize="small" />
-                                </ListItemIcon>
-                                Lịch sử đặt vé
-                            </MenuItem>
-                            <MenuItem sx={{ paddingX: "20px", paddingY: "10px" }}>
-                                <ListItemIcon>
-                                    <CommentIcon fontSize="small" />
-                                </ListItemIcon>
-                                Nhận xét chuyến đi
-                            </MenuItem>
-                        </Box>
-                    )
-                }
+                {userInfo.user.role === "ROLE_CUSTOMER" && (
+                    <Box>
+                        <MenuItem
+                            sx={{ paddingX: "20px", paddingY: "10px" }}
+                            onClick={handleNavigateBookingHistoryClick}>
+                            <ListItemIcon>
+                                <LoyaltyIcon fontSize="small" />
+                            </ListItemIcon>
+                            Lịch sử đặt vé
+                        </MenuItem>
+                        <MenuItem sx={{ paddingX: "20px", paddingY: "10px" }}>
+                            <ListItemIcon>
+                                <CommentIcon fontSize="small" />
+                            </ListItemIcon>
+                            Nhận xét chuyến đi
+                        </MenuItem>
+                    </Box>
+                )}
                 {userInfo.user.role === "ROLE_BUS_COMPANY" && (
                     <MenuItem sx={{ paddingX: "20px", paddingY: "10px" }}>
                         <ListItemIcon>
