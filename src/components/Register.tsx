@@ -142,10 +142,23 @@ const Registration: React.FC<RegistrationProps> = ({ onClose, onLoginClick }) =>
                                 type="date"
                                 value={values.dateOfBirth}
                                 onChange={(e: any) => {
-                                    const isoDate = e.target.value;
-                                    setFieldValue("dateOfBirth", isoDate);
+                                    try {
+                                        const inputDate = e.target.value;
+                                        if (!inputDate) {
+                                            setFieldValue("dateOfBirth", "");
+                                            return;
+                                        }
+                                        const date = new Date(inputDate);
+                                        if (isNaN(date.getTime())) {
+                                            throw new Error("Invalid date");
+                                        }
+                                        const formattedDate = inputDate;
+                                        setFieldValue("dateOfBirth", formattedDate);
+                                    } catch (error) {
+                                        console.error("Date parsing error:", error);
+                                        setFieldValue("dateOfBirth", "");
+                                    }
                                 }}
-                                format="dd/MM/yyyy"
                                 error={touched.dateOfBirth && !!errors.dateOfBirth}
                                 helperText={touched.dateOfBirth && errors.dateOfBirth}
                                 fullWidth

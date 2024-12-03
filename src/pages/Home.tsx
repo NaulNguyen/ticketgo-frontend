@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, memo } from "react";
 import { DestinationCard, Footer, Header, Search } from "../components";
 import { Typography, Box, Skeleton, Fade } from "@mui/material";
 import { useNavigate } from "react-router-dom";
@@ -15,6 +15,12 @@ type HomepageData = {
     bannerUrl: string;
 };
 
+// Memoized components
+const MemoizedDestinationCard = memo(DestinationCard);
+const MemoizedFooter = memo(Footer);
+const MemoizedHeader = memo(Header);
+const MemoizedSearch = memo(Search);
+
 const Home = () => {
     const [routes, setRoutes] = useState<RouteData[]>([]);
     const [homepageData, setHomepageData] = useState<HomepageData | null>(null);
@@ -22,61 +28,92 @@ const Home = () => {
     const [loadingHomepage, setLoadingHomepage] = useState(true);
     const navigate = useNavigate();
 
-    useEffect(() => {
-        const fetchRoutes = async () => {
-            try {
-                const response = await axios.get(
-                    "http://localhost:8080/api/v1/routes/popular"
-                );
-                const data = response.data;
-                if (data.status === 200) {
-                    setRoutes(data.data);
-                } else {
-                    console.error("Failed to fetch routes data");
-                }
-            } catch (error) {
-                console.error("Error fetching routes data:", error);
-            } finally {
-                setLoadingRoutes(false);
+    // Memoized fetch functions
+    const fetchRoutes = useCallback(async () => {
+        try {
+            const response = await axios.get("http://localhost:8080/api/v1/routes/popular");
+            const data = response.data;
+            if (data.status === 200) {
+                setRoutes(data.data);
+            } else {
+                console.error("Failed to fetch routes data");
             }
-        };
-
-        const fetchHomepageData = async () => {
-            try {
-                const response = await axios.get(
-                    "http://localhost:8080/api/v1/homepage"
-                );
-                const data = response.data;
-                if (data.status === 200) {
-                    setHomepageData(data.data);
-                } else {
-                    console.error("Failed to fetch homepage data");
-                }
-            } catch (error) {
-                console.error("Error fetching homepage data:", error);
-            } finally {
-                setLoadingHomepage(false);
-            }
-        };
-
-        fetchRoutes();
-        fetchHomepageData();
+        } catch (error) {
+            console.error("Error fetching routes data:", error);
+        } finally {
+            setLoadingRoutes(false);
+        }
     }, []);
 
-    const handleRouteClick = (routeName: string) => {
-        const today = new Date().toISOString().split("T")[0];
-        const [departureLocation, arrivalLocation] = routeName.split(" - ");
-        navigate(
-            `/search?departureLocation=${departureLocation}&arrivalLocation=${arrivalLocation}&departureDate=${today}&sortBy=departureTime&sortDirection=asc&pageNumber=1&pageSize=5`
-        );
-    };
+    const fetchHomepageData = useCallback(async () => {
+        try {
+            const response = await axios.get("http://localhost:8080/api/v1/homepage");
+            const data = response.data;
+            if (data.status === 200) {
+                setHomepageData(data.data);
+            } else {
+                console.error("Failed to fetch homepage data");
+            }
+        } catch (error) {
+            console.error("Error fetching homepage data:", error);
+        } finally {
+            setLoadingHomepage(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        // Using Promise.all to fetch data in parallel
+        Promise.all([fetchRoutes(), fetchHomepageData()]);
+    }, [fetchRoutes, fetchHomepageData]);
+
+    const handleRouteClick = useCallback(
+        (routeName: string) => {
+            const today = new Date().toISOString().split("T")[0];
+            const [departureLocation, arrivalLocation] = routeName.split(" - ");
+            navigate(
+                `/search?departureLocation=${departureLocation}&arrivalLocation=${arrivalLocation}&departureDate=${today}&sortBy=departureTime&sortDirection=asc&pageNumber=1&pageSize=5`
+            );
+        },
+        [navigate]
+    );
+
+    // Memoized loading skeleton
+    const LoadingSkeleton = memo(() => (
+        <Box
+            sx={{
+                width: 250,
+                height: "fit-content",
+                bgcolor: "white",
+                borderRadius: 1,
+                p: 1,
+            }}>
+            <Skeleton
+                variant="rectangular"
+                width="100%"
+                height={150}
+                animation="wave"
+                sx={{ borderRadius: 1 }}
+            />
+            <Box sx={{ pt: 1 }}>
+                <Skeleton width="80%" height={24} />
+                <Skeleton width="50%" height={20} />
+            </Box>
+        </Box>
+    ));
 
     return (
         <div style={{ backgroundColor: "#f0f0f0" }}>
-            <Header />
+            <MemoizedHeader />
             <div className="relative">
                 {loadingHomepage ? (
-                    <Skeleton variant="rectangular" width="100%" height={480} animation="wave" />
+                    <Box sx={{ width: "100%", height: 480 }}>
+                        <Skeleton
+                            variant="rectangular"
+                            width="100%"
+                            height="100%"
+                            animation="wave"
+                        />
+                    </Box>
                 ) : (
                     homepageData && (
                         <Fade in={!loadingHomepage} timeout={800}>
@@ -84,11 +121,12 @@ const Home = () => {
                                 src={homepageData.bannerUrl}
                                 alt="Homepage Banner"
                                 className="w-full h-[480px] object-cover"
+                                loading="lazy"
                             />
                         </Fade>
                     )
                 )}
-                <Search />
+                <MemoizedSearch />
             </div>
             <Box>
                 <Typography variant="h6" fontWeight="bold" ml={5} mt={2}>
@@ -102,25 +140,14 @@ const Home = () => {
                         flexWrap: "wrap",
                         gap: 2,
                         mt: 2,
+                        px: 3,
                     }}>
                     {loadingRoutes
-                        ? Array.from({ length: 4 }).map((_, i) => (
-                              <Box key={i} ml={1}>
-                                  <Skeleton
-                                      variant="rectangular"
-                                      width={250}
-                                      height={150}
-                                      animation="wave"
-                                      sx={{ borderRadius: 1 }}
-                                  />
-                                  <Skeleton width="60%" sx={{ mt: 1 }} />
-                                  <Skeleton width="40%" />
-                              </Box>
-                          ))
+                        ? Array.from({ length: 4 }).map((_, i) => <LoadingSkeleton key={i} />)
                         : routes.map((route, i) => (
                               <Fade in={!loadingRoutes} timeout={800} key={i}>
-                                  <Box ml={1} onClick={() => handleRouteClick(route.routeName)}>
-                                      <DestinationCard
+                                  <Box onClick={() => handleRouteClick(route.routeName)}>
+                                      <MemoizedDestinationCard
                                           routeImage={route.routeImage}
                                           routeName={route.routeName}
                                           price={route.price}
@@ -134,7 +161,12 @@ const Home = () => {
                 </Typography>
                 <Box sx={{ px: 5, py: 2 }}>
                     {loadingHomepage ? (
-                        <Skeleton width="80%" sx={{ mb: 1 }} />
+                        <Box sx={{ bgcolor: "white", p: 2, borderRadius: 1 }}>
+                            <Skeleton variant="text" width="90%" height={25} />
+                            <Skeleton variant="text" width="85%" height={25} />
+                            <Skeleton variant="text" width="88%" height={25} />
+                            <Skeleton variant="text" width="80%" height={25} />
+                        </Box>
                     ) : (
                         homepageData && (
                             <Box
@@ -163,9 +195,9 @@ const Home = () => {
                     )}
                 </Box>
             </Box>
-            <Footer />
+            <MemoizedFooter />
         </div>
     );
 };
 
-export default Home;
+export default memo(Home);
