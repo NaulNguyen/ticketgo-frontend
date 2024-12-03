@@ -68,7 +68,7 @@ const PaymentMethod = () => {
 
         try {
             const response = await axiosWithJWT.post(
-                "https://ticketgo-app-a139ba17185b.herokuapp.com/api/v1/payment/vnpay",
+                "http://localhost:8080/api/v1/payment/vnpay",
                 {
                     contactName: fullName,
                     contactEmail: email,
@@ -98,7 +98,7 @@ const PaymentMethod = () => {
             if (allTicketCodes.length > 0) {
                 try {
                     const response = await axiosWithJWT.post(
-                        "https://ticketgo-app-a139ba17185b.herokuapp.com/api/v1/bookings/estimated-prices",
+                        "http://localhost:8080/api/v1/bookings/estimated-prices",
                         {
                             ticketCodes: allTicketCodes,
                         }
@@ -123,7 +123,7 @@ const PaymentMethod = () => {
             if (pickupStopId && dropOffStopId && scheduleId) {
                 try {
                     const response = await axiosWithJWT.get(
-                        "https://ticketgo-app-a139ba17185b.herokuapp.com/api/v1/bookings/trip-info",
+                        "http://localhost:8080/api/v1/bookings/trip-info",
                         {
                             params: { pickupStopId, dropOffStopId, scheduleId },
                         }
@@ -170,7 +170,7 @@ const PaymentMethod = () => {
     const handleConfirmExit = async () => {
         try {
             await axiosWithJWT.post(
-                "https://ticketgo-app-a139ba17185b.herokuapp.com/api/v1/seats/cancel-reserve"
+                "http://localhost:8080/api/v1/seats/cancel-reserve"
             );
             toast.success("Đã hủy chỗ đặt thành công");
         } catch (error) {

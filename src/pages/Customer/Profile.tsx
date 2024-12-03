@@ -37,7 +37,7 @@ const Profile = () => {
 
         try {
             const updateResponse = await axiosWithJWT.post(
-                "https://ticketgo-app-a139ba17185b.herokuapp.com/api/v1/users",
+                "http://localhost:8080/api/v1/users",
                 updatedValues
             );
             if (updateResponse.status === 200) {

@@ -69,7 +69,7 @@ const BookingConfirm = () => {
         if (allTicketCodes.length > 0) {
             try {
                 const response = await axiosWithJWT.post(
-                    "https://ticketgo-app-a139ba17185b.herokuapp.com/api/v1/seats/reserve",
+                    "http://localhost:8080/api/v1/seats/reserve",
                     {
                         ticketCodes: allTicketCodes,
                     }
@@ -99,7 +99,7 @@ const BookingConfirm = () => {
             if (allTicketCodes.length > 0) {
                 try {
                     const response = await axiosWithJWT.post(
-                        "https://ticketgo-app-a139ba17185b.herokuapp.com/api/v1/bookings/estimated-prices",
+                        "http://localhost:8080/api/v1/bookings/estimated-prices",
                         {
                             ticketCodes: allTicketCodes,
                         }
@@ -132,7 +132,7 @@ const BookingConfirm = () => {
             if (pickupStopId && dropOffStopId && scheduleId) {
                 try {
                     const response = await axiosWithJWT.get(
-                        "https://ticketgo-app-a139ba17185b.herokuapp.com/api/v1/bookings/trip-info",
+                        "http://localhost:8080/api/v1/bookings/trip-info",
                         {
                             params: { pickupStopId, dropOffStopId, scheduleId },
                         }

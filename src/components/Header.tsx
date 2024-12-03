@@ -146,8 +146,10 @@ const Header = () => {
         navigate("/dashboard");
     };
 
+    console.log('userInfor: ',userInfo);
+
     return (
-        <header className="flex justify-between items-center px-6 py-4 bg-[#0d47a1] shadow-md">
+        <header className="flex justify-between items-center px-6 py-4 bg-[#0d47a1] shadow-md z-10">
             <div className="flex items-center cursor-pointer" onClick={handleNavigateClick}>
                 <span className="font-pacifico text-4xl text-white">TicketGo</span>
             </div>

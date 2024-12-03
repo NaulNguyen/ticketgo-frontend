@@ -2,7 +2,7 @@ import axios from "axios";
 import { axiosWithJWT } from "../config/axiosConfig";
 
 class UserService {
-    static BASE_URL = "https://ticketgo-app-a139ba17185b.herokuapp.com";
+    static BASE_URL = "http://localhost:8080";
 
     static async register(userData: any) {
         try {
@@ -60,7 +60,7 @@ class UserService {
 
     static async forgotPassword(data: { email: string }) {
         const response = await axios.post(
-            "https://ticketgo-app-a139ba17185b.herokuapp.com/api/v1/auth/forgot-password",
+            "http://localhost:8080/api/v1/auth/forgot-password",
             data
         );
         return response;
@@ -68,7 +68,7 @@ class UserService {
 
     static async resetPassword(data: { password: string; token: string }) {
         const response = await axios.post(
-            "https://ticketgo-app-a139ba17185b.herokuapp.com/api/v1/auth/reset-password",
+            "http://localhost:8080/api/v1/auth/reset-password",
             data
         );
         return response;

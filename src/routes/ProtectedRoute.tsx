@@ -9,12 +9,12 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
-    const token = Cookies.get("jwt");
+    const token = Cookies.get("accessToken");
 
     if (token) {
         try {
             const decodedToken: { role: string } = jwtDecode(token);
-
+            console.log(decodedToken);
             if (allowedRoles.includes(decodedToken.role)) {
                 return <>{children}</>; // Render children if role is valid
             }

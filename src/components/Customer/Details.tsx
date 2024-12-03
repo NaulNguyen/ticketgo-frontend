@@ -57,7 +57,7 @@ const Details: React.FC<DetailsProps> = ({ scheduleId }) => {
         const fetchRouteStops = async () => {
             try {
                 const response = await axios.get(
-                    `https://ticketgo-app-a139ba17185b.herokuapp.com/api/v1/route-stops?scheduleId=${scheduleId}`
+                    `http://localhost:8080/api/v1/route-stops?scheduleId=${scheduleId}`
                 );
                 setRouteStops(response.data.data);
             } catch (error) {
@@ -75,7 +75,7 @@ const Details: React.FC<DetailsProps> = ({ scheduleId }) => {
             const fetchPolicies = async () => {
                 try {
                     const response = await axios.get(
-                        "https://ticketgo-app-a139ba17185b.herokuapp.com/api/v1/policies"
+                        "http://localhost:8080/api/v1/policies"
                     );
                     setPolicies(response.data.data);
                 } catch (err) {
@@ -87,7 +87,7 @@ const Details: React.FC<DetailsProps> = ({ scheduleId }) => {
             const fetchAmenities = async () => {
                 try {
                     const response = await axios.get(
-                        "https://ticketgo-app-a139ba17185b.herokuapp.com/api/v1/amenities"
+                        "http://localhost:8080/api/v1/amenities"
                     );
                     setAmenities(response.data.data);
                 } catch (err) {

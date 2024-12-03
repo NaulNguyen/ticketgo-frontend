@@ -2,7 +2,7 @@ import axios, { AxiosRequestConfig } from "axios";
 import Cookies from "js-cookie";
 import { toast } from "react-toastify";
 
-const API_URL = "https://ticketgo-app-a139ba17185b.herokuapp.com";
+const API_URL = "http://localhost:8080";
 
 // Axios instances
 const axiosWithJWT = axios.create({

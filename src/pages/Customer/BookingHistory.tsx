@@ -28,7 +28,7 @@ const BookingHistory = () => {
         const fetchBookingHistory = async () => {
             try {
                 const response = await axiosWithJWT.get(
-                    "https://ticketgo-app-a139ba17185b.herokuapp.com/api/v1/bookings/history?pageNumber=1&pageSize=5"
+                    "http://localhost:8080/api/v1/bookings/history?pageNumber=1&pageSize=5"
                 );
                 setBookingHistoryData(response.data.data);
             } catch (err) {
