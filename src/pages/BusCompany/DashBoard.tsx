@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
     Header,
     StatisticsChart,
@@ -17,7 +17,6 @@ import {
     ListItemIcon,
     ListItemText,
 } from "@mui/material";
-import { axiosWithJWT } from "../../config/axiosConfig";
 import { ExpandLess, ExpandMore } from "@mui/icons-material";
 import StackedLineChartIcon from "@mui/icons-material/StackedLineChart";
 import DirectionsBusIcon from "@mui/icons-material/DirectionsBus";
@@ -25,35 +24,10 @@ import RouteIcon from "@mui/icons-material/Route";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import PeopleIcon from "@mui/icons-material/People";
 
-interface AdminData {
-    busCompanyName: string;
-    address: string;
-    contactEmail: string;
-    contactPhone: string;
-    description: string;
-    email: string;
-    imageUrl: string;
-    role: string;
-}
-
 const DashBoard = () => {
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [statsOpen, setStatsOpen] = useState(false);
     const [selectedSubIndex, setSelectedSubIndex] = useState(0);
-
-    const [adminData, setAdminData] = useState<AdminData | null>(null);
-
-    useEffect(() => {
-        const fetchAdminData = async () => {
-            try {
-                const res = await axiosWithJWT.get("http://localhost:8080/api/v1/users/me");
-                setAdminData(res.data.data);
-            } catch (err: any) {
-                console.error("Error fetching admin data:", err);
-            }
-        };
-        fetchAdminData();
-    }, []);
 
     const menuItems = [
         { text: "Báo cáo thống kê", icon: <StackedLineChartIcon /> },

@@ -18,25 +18,10 @@ import {
 import ArrowBackIosIcon from "@mui/icons-material/ArrowBackIos";
 import HealthAndSafetyIcon from "@mui/icons-material/HealthAndSafety";
 import useAppAccessor from "../../hook/useAppAccessor";
-import { axiosWithJWT } from "../../config/axiosConfig";
 import TripSummary from "../../components/Customer/TripSummary";
+import UserService from "../../service/UserService";
+import { EstimatedPrice, TripInfo } from "../../global";
 
-interface EstimatedPrice {
-    totalPrice: number;
-    unitPrice: number;
-    quantity: number;
-    seatNumbers: string[];
-}
-
-interface TripInfo {
-    departureTime: string;
-    licensePlate: string;
-    busType: string;
-    pickupTime: string;
-    pickupLocation: string;
-    dropoffTime: string;
-    dropoffLocation: string;
-}
 const BookingConfirm = () => {
     const navigate = useNavigate();
 
@@ -68,12 +53,7 @@ const BookingConfirm = () => {
 
         if (allTicketCodes.length > 0) {
             try {
-                const response = await axiosWithJWT.post(
-                    "http://localhost:8080/api/v1/seats/reserve",
-                    {
-                        ticketCodes: allTicketCodes,
-                    }
-                );
+                const response = await UserService.ticketReserve(allTicketCodes);
                 if (response.status === 200) {
                     navigate("/payment-method", {
                         state: { fullName, phoneNumber, email },
@@ -98,12 +78,7 @@ const BookingConfirm = () => {
 
             if (allTicketCodes.length > 0) {
                 try {
-                    const response = await axiosWithJWT.post(
-                        "http://localhost:8080/api/v1/bookings/estimated-prices",
-                        {
-                            ticketCodes: allTicketCodes,
-                        }
-                    );
+                    const response = await UserService.priceEstimate(allTicketCodes);
                     setEstimatedPrice(response.data.data);
                 } catch (error) {
                     console.error("Error fetching estimated prices:", error);
@@ -131,12 +106,7 @@ const BookingConfirm = () => {
 
             if (pickupStopId && dropOffStopId && scheduleId) {
                 try {
-                    const response = await axiosWithJWT.get(
-                        "http://localhost:8080/api/v1/bookings/trip-info",
-                        {
-                            params: { pickupStopId, dropOffStopId, scheduleId },
-                        }
-                    );
+                    const response = await UserService.tripInfor({ pickupStopId, dropOffStopId, scheduleId })
                     setTripInfo(response.data.data);
                 } catch (error) {
                     console.error("Error fetching trip info:", error);
@@ -278,7 +248,7 @@ const BookingConfirm = () => {
                     display: "flex",
                     justifyContent: "center",
                     alignItems: "center",
-                    padding: "20px",
+                    padding: "10px 20px",
                     height: "100px",
                 }}>
                 <Button

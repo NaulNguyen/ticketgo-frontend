@@ -12,6 +12,7 @@ import {
     DashBoard,
     NotFound,
     Profile,
+    BookingHistory,
 } from "../pages";
 
 function AppRoutes() {
@@ -23,6 +24,7 @@ function AppRoutes() {
             <Route path="/search" element={<SearchingPage />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/resend-email" element={<ResendEmail />} />
+            <Route path="/booking-history" element={<BookingHistory />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/404" element={<NotFound />} />
             <Route path="*" element={<NotFound />} />

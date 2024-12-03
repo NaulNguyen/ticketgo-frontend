@@ -1,22 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { Box, Divider, Typography } from "@mui/material";
 import { Footer, Header } from "../../components";
-import { axiosWithJWT } from "../../config/axiosConfig";
+import UserService from "../../service/UserService";
+import { BookingHistoryItem } from "../../global";
 
-interface BookingHistoryItem {
-    ticketCode: string;
-    contactName: string;
-    routeName: string;
-    departureDate: string;
-    pickupTime: string;
-    pickupLocation: string;
-    dropoffLocation: string;
-    seatNumber: string;
-    licensePlate: string;
-    contactEmail: string;
-    price: string;
-    status: string;
-}
 const BookingHistory = () => {
     const [bookingHistoryData, setBookingHistoryData] = useState<BookingHistoryItem[]>([]);
     const formatPrice = (price: string): string => {
@@ -27,9 +14,7 @@ const BookingHistory = () => {
     useEffect(() => {
         const fetchBookingHistory = async () => {
             try {
-                const response = await axiosWithJWT.get(
-                    "http://localhost:8080/api/v1/bookings/history?pageNumber=1&pageSize=5"
-                );
+                const response = await UserService.bookingHistory();
                 setBookingHistoryData(response.data.data);
             } catch (err) {
                 console.log("Failed to load booking history. Please try again later.");

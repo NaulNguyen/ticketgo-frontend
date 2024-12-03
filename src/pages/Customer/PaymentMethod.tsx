@@ -12,28 +12,13 @@ import {
 } from "@mui/material";
 import HealthAndSafetyIcon from "@mui/icons-material/HealthAndSafety";
 import useAppAccessor from "../../hook/useAppAccessor";
-import { axiosWithJWT } from "../../config/axiosConfig";
 import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import ArrowBackIosIcon from "@mui/icons-material/ArrowBackIos";
 import TripSummary from "../../components/Customer/TripSummary";
+import UserService from "../../service/UserService";
+import { EstimatedPrice, TripInfo } from "../../global";
 
-interface EstimatedPrice {
-    totalPrice: number;
-    unitPrice: number;
-    quantity: number;
-    seatNumbers: string[];
-}
-
-interface TripInfo {
-    departureTime: string;
-    licensePlate: string;
-    busType: string;
-    pickupTime: string;
-    pickupLocation: string;
-    dropoffTime: string;
-    dropoffLocation: string;
-}
 const PaymentMethod = () => {
     const location = useLocation();
     const navigate = useNavigate();
@@ -65,22 +50,9 @@ const PaymentMethod = () => {
         const lastBooking = userInfo?.booking[userInfo.booking.length - 1]; // Get the most recent booking
         const pickupStopId = lastBooking?.pickupStopId;
         const dropOffStopId = lastBooking?.dropOffStopId;
-
         try {
-            const response = await axiosWithJWT.post(
-                "http://localhost:8080/api/v1/payment/vnpay",
-                {
-                    contactName: fullName,
-                    contactEmail: email,
-                    contactPhone: phoneNumber,
-                    pickupStopId: pickupStopId,
-                    dropoffStopId: dropOffStopId,
-                    totalPrice: estimatedPrice.totalPrice,
-                }
-            );
-
+            const response = await UserService.vnPay({ fullName, email, phoneNumber, pickupStopId, dropOffStopId, estimatedPrice })
             const paymentUrl = response.data;
-
             window.location.href = paymentUrl;
         } catch (error) {
             console.error("Payment failed", error);
@@ -97,12 +69,7 @@ const PaymentMethod = () => {
 
             if (allTicketCodes.length > 0) {
                 try {
-                    const response = await axiosWithJWT.post(
-                        "http://localhost:8080/api/v1/bookings/estimated-prices",
-                        {
-                            ticketCodes: allTicketCodes,
-                        }
-                    );
+                    const response = await UserService.priceEstimate(allTicketCodes);
                     setEstimatedPrice(response.data.data);
                 } catch (error) {
                     console.error("Error fetching estimated prices:", error);
@@ -122,12 +89,7 @@ const PaymentMethod = () => {
 
             if (pickupStopId && dropOffStopId && scheduleId) {
                 try {
-                    const response = await axiosWithJWT.get(
-                        "http://localhost:8080/api/v1/bookings/trip-info",
-                        {
-                            params: { pickupStopId, dropOffStopId, scheduleId },
-                        }
-                    );
+                    const response = await UserService.tripInfor({ pickupStopId, dropOffStopId, scheduleId });
                     setTripInfo(response.data.data);
                 } catch (error) {
                     console.error("Error fetching trip info:", error);
@@ -169,9 +131,7 @@ const PaymentMethod = () => {
 
     const handleConfirmExit = async () => {
         try {
-            await axiosWithJWT.post(
-                "http://localhost:8080/api/v1/seats/cancel-reserve"
-            );
+            await UserService.cancleTicketReserve();
             toast.success("Đã hủy chỗ đặt thành công");
         } catch (error) {
             console.error("Error canceling reservation:", error);

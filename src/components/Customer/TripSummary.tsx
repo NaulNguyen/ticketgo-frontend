@@ -6,23 +6,7 @@ import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import DirectionsBusIcon from "@mui/icons-material/DirectionsBus";
 import { format } from "date-fns";
 import vi from "date-fns/locale/vi";
-
-interface EstimatedPrice {
-    totalPrice: number;
-    unitPrice: number;
-    quantity: number;
-    seatNumbers: string[];
-}
-
-interface TripInfo {
-    departureTime: string;
-    licensePlate: string;
-    busType: string;
-    pickupTime: string;
-    pickupLocation: string;
-    dropoffTime: string;
-    dropoffLocation: string;
-}
+import { EstimatedPrice, TripInfo } from "../../global";
 
 interface TripSummaryProps {
     tripInfo: TripInfo;

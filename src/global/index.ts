@@ -24,3 +24,53 @@ export type Booking = {
     dropOffStopId: string;
     scheduleId: string;
 };
+
+export interface PaginatedResponse {
+    data: Bus[];
+    totalPages: number;
+    currentPage: number;
+    totalElements: number;
+}
+
+export interface Bus {
+    busId: number;
+    busImage: string;
+    busType: string;
+    licensePlate: string;
+    totalSeats: number;
+    floors: number;
+    registrationExpiry: string;
+    expirationDate: string;
+}
+
+export interface EstimatedPrice {
+    totalPrice: number;
+    unitPrice: number;
+    quantity: number;
+    seatNumbers: string[];
+}
+
+export interface TripInfo {
+    departureTime: string;
+    licensePlate: string;
+    busType: string;
+    pickupTime: string;
+    pickupLocation: string;
+    dropoffTime: string;
+    dropoffLocation: string;
+}
+
+export interface BookingHistoryItem {
+    ticketCode: string;
+    contactName: string;
+    routeName: string;
+    departureDate: string;
+    pickupTime: string;
+    pickupLocation: string;
+    dropoffLocation: string;
+    seatNumber: string;
+    licensePlate: string;
+    contactEmail: string;
+    price: string;
+    status: string;
+}

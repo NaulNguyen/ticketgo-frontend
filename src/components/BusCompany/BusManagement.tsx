@@ -10,25 +10,8 @@ import {
     Button,
     Pagination,
 } from "@mui/material";
-import { axiosWithJWT } from "../../config/axiosConfig";
-
-interface Bus {
-    busId: number;
-    busImage: string;
-    busType: string;
-    licensePlate: string;
-    totalSeats: number;
-    floors: number;
-    registrationExpiry: string;
-    expirationDate: string;
-}
-
-interface PaginatedResponse {
-    data: Bus[];
-    totalPages: number;
-    currentPage: number;
-    totalElements: number;
-}
+import { Bus } from "../../global";
+import BusService from "../../service/BusService";
 
 const BusManagement = () => {
     const [buses, setBuses] = useState<Bus[]>([]);
@@ -40,15 +23,7 @@ const BusManagement = () => {
     useEffect(() => {
         const fetchBuses = async () => {
             try {
-                const response = await axiosWithJWT.get<PaginatedResponse>(
-                    "http://localhost:8080/api/v1/buses",
-                    {
-                        params: {
-                            pageNumber: page,
-                            pageSize: pageSize,
-                        },
-                    }
-                );
+                const response = await BusService.fetchBusData( { page, pageSize });
                 setBuses(response.data.data);
                 setTotalPages(response.data.totalPages);
                 setLoading(false);
