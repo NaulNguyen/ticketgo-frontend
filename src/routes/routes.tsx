@@ -13,6 +13,7 @@ import {
     NotFound,
     Profile,
     BookingHistory,
+    ThankyouPage,
 } from "../pages";
 
 function AppRoutes() {
@@ -26,6 +27,7 @@ function AppRoutes() {
             <Route path="/resend-email" element={<ResendEmail />} />
             <Route path="/booking-history" element={<BookingHistory />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/thankyou" element={<ThankyouPage />} />
             <Route path="/404" element={<NotFound />} />
             <Route path="*" element={<NotFound />} />
 

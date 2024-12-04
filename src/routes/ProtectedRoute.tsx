@@ -14,7 +14,6 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles 
     if (token) {
         try {
             const decodedToken: { role: string } = jwtDecode(token);
-            console.log(decodedToken);
             if (allowedRoles.includes(decodedToken.role)) {
                 return <>{children}</>; // Render children if role is valid
             }

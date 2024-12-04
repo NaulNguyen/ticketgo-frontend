@@ -45,7 +45,6 @@ const Profile = () => {
 
                 try {
                     const updatedUserInfo = await UserService.fetchUserInfor();
-                    console.log("updatedUserInfo", updatedUserInfo);
                     dispatch({
                         type: ASYNC_USER_INFOR,
                         payload: {
