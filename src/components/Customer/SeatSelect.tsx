@@ -97,7 +97,7 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
         const fetchSeatsData = async () => {
             try {
                 const response = await axios.get(
-                    `http://localhost:8080/api/v1/seats?scheduleId=${scheduleId}`
+                    `https://ticketgo-app-a139ba17185b.herokuapp.com/api/v1/seats?scheduleId=${scheduleId}`
                 );
                 if (response.data.status === 200) {
                     setSeatsData(response.data.data);
@@ -117,7 +117,7 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
             const fetchRouteStops = async () => {
                 try {
                     const response = await axios.get(
-                        `http://localhost:8080/api/v1/route-stops?scheduleId=${scheduleId}`
+                        `https://ticketgo-app-a139ba17185b.herokuapp.com/api/v1/route-stops?scheduleId=${scheduleId}`
                     );
                     setRouteStops(response.data.data);
                 } catch (error) {
@@ -170,7 +170,7 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
 
             try {
                 const response = await axiosWithJWT.get(
-                    "http://localhost:8080/api/v1/bookings/in-progress"
+                    "https://ticketgo-app-a139ba17185b.herokuapp.com/api/v1/bookings/in-progress"
                 );
 
                 if (response.data) {

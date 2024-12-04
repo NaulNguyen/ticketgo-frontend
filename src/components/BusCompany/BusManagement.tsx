@@ -6,9 +6,10 @@ import {
     CardMedia,
     Typography,
     CircularProgress,
-    CardActions,
-    Button,
     Pagination,
+    Container,
+    Grid,
+    Paper,
 } from "@mui/material";
 import { Bus } from "../../global";
 import BusService from "../../service/BusService";
@@ -23,7 +24,7 @@ const BusManagement = () => {
     useEffect(() => {
         const fetchBuses = async () => {
             try {
-                const response = await BusService.fetchBusData( { page, pageSize });
+                const response = await BusService.fetchBusData({ page, pageSize });
                 setBuses(response.data.data);
                 setTotalPages(response.data.totalPages);
                 setLoading(false);
@@ -36,88 +37,107 @@ const BusManagement = () => {
         fetchBuses();
     }, [page]);
 
-    const handleEditBus = (bus: Bus) => {
-        // TODO: Implement edit functionality
-        console.log("Edit bus:", bus);
-    };
-
-    const handleDeleteBus = (busId: number) => {
-        // TODO: Implement delete functionality
-        console.log("Delete bus:", busId);
-    };
-
     const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
         setPage(value);
     };
 
     if (loading) {
         return (
-            <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
-                <CircularProgress />
+            <Box display="flex" justifyContent="center" alignItems="center" minHeight="300px">
+                <CircularProgress size={60} />
             </Box>
         );
     }
 
     return (
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 2, p: 2 }}>
-            <Box
-                sx={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
-                    gap: 2,
-                }}>
+        <Container maxWidth="lg" sx={{ py: 4 }}>
+            <Grid container spacing={3}>
                 {buses.map((bus) => (
-                    <Card key={bus.busId} sx={{ height: "100%", display: "flex" }}>
-                        <CardMedia
-                            component="img"
-                            sx={{ width: "40%", objectFit: "cover" }}
-                            image={bus.busImage}
-                            alt={bus.busType}
-                        />
-                        <Box sx={{ display: "flex", flexDirection: "column", width: "60%" }}>
-                            <CardContent sx={{ flex: "1 0 auto" }}>
-                                <Typography variant="h6" gutterBottom>
-                                    Biển số xe: {bus.licensePlate}
-                                </Typography>
-                                <Typography variant="body1">Loại xe: {bus.busType}</Typography>
-                                <Typography variant="body1">
-                                    Số chỗ ngồi: {bus.totalSeats}
-                                </Typography>
-                                <Typography variant="body1">Số tầng: {bus.floors}</Typography>
-                                <Typography variant="body1">
-                                    Hạn đăng kiểm: {bus.registrationExpiry}
-                                </Typography>
-                                <Typography variant="body1">
-                                    Ngày hết hạn: {bus.expirationDate}
-                                </Typography>
-                            </CardContent>
-                            <CardActions>
-                                <Button
-                                    size="small"
-                                    color="primary"
-                                    onClick={() => handleEditBus(bus)}>
-                                    Chỉnh sửa
-                                </Button>
-                                <Button
-                                    size="small"
-                                    color="error"
-                                    onClick={() => handleDeleteBus(bus.busId)}>
-                                    Xóa
-                                </Button>
-                            </CardActions>
-                        </Box>
-                    </Card>
+                    <Grid item xs={12} key={bus.busId}>
+                        <Paper elevation={3} sx={{ borderRadius: 2, overflow: "hidden" }}>
+                            <Card sx={{ display: "flex", height: "100%" }}>
+                                <CardMedia
+                                    component="img"
+                                    sx={{
+                                        width: "40%",
+                                        objectFit: "cover",
+                                        borderRadius: "4px 0 0 4px",
+                                    }}
+                                    image={bus.busImage}
+                                    alt={bus.busType}
+                                />
+                                <Box
+                                    sx={{
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        width: "60%",
+                                        p: 2,
+                                    }}>
+                                    <CardContent>
+                                        <Typography
+                                            variant="h5"
+                                            sx={{
+                                                mb: 2,
+                                                fontWeight: "bold",
+                                                color: "#1976d2",
+                                            }}>
+                                            Biển số xe: {bus.licensePlate}
+                                        </Typography>
+                                        <Grid container spacing={2}>
+                                            <Grid item xs={6}>
+                                                <Typography
+                                                    variant="body1"
+                                                    sx={{ mb: 1.5, fontWeight: 500 }}>
+                                                    <strong>Loại xe:</strong> {bus.busType}
+                                                </Typography>
+                                                <Typography
+                                                    variant="body1"
+                                                    sx={{ mb: 1.5, fontWeight: 500 }}>
+                                                    <strong>Số chỗ ngồi:</strong> {bus.totalSeats}
+                                                </Typography>
+                                                <Typography
+                                                    variant="body1"
+                                                    sx={{ mb: 1.5, fontWeight: 500 }}>
+                                                    <strong>Số tầng:</strong> {bus.floors}
+                                                </Typography>
+                                            </Grid>
+                                            <Grid item xs={6}>
+                                                <Typography
+                                                    variant="body1"
+                                                    sx={{ mb: 1.5, fontWeight: 500 }}>
+                                                    <strong>Hạn đăng kiểm:</strong>{" "}
+                                                    {bus.registrationExpiry}
+                                                </Typography>
+                                                <Typography
+                                                    variant="body1"
+                                                    sx={{
+                                                        mb: 1.5,
+                                                        fontWeight: 500,
+                                                        color: "error.main",
+                                                    }}>
+                                                    <strong>Ngày hết hạn:</strong>{" "}
+                                                    {bus.expirationDate}
+                                                </Typography>
+                                            </Grid>
+                                        </Grid>
+                                    </CardContent>
+                                </Box>
+                            </Card>
+                        </Paper>
+                    </Grid>
                 ))}
-            </Box>
-            <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+            </Grid>
+            <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
                 <Pagination
                     count={totalPages}
                     page={page}
                     onChange={handlePageChange}
                     color="primary"
+                    size="large"
+                    sx={{ "& .MuiPaginationItem-root": { fontSize: "1.1rem" } }}
                 />
             </Box>
-        </Box>
+        </Container>
     );
 };
 

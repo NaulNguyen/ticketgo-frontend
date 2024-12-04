@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Box, Divider, IconButton, Typography } from "@mui/material";
+import { Box, Divider, IconButton, Typography, Tooltip } from "@mui/material";
 import { LocationRoute } from "../IconSVG";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
@@ -30,8 +30,19 @@ const TripSummary: React.FC<TripSummaryProps> = ({ tripInfo, estimatedPrice }) =
         return !isNaN(date.getTime()) ? format(date, "HH:mm") : "N/A";
     };
 
+    const truncateText = (text: string, maxLength: number) => {
+        if (!text) return "N/A";
+        return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
+    };
+
     return (
-        <Box sx={{ width: "375px", padding: 2, borderRadius: 2 }}>
+        <Box
+            sx={{
+                width: "375px",
+                padding: 2,
+                borderRadius: 2,
+                marginBottom: showPriceDetails ? "50px" : 0,
+            }}>
             {/* Price Summary */}
             <Box
                 sx={{
@@ -159,13 +170,17 @@ const TripSummary: React.FC<TripSummaryProps> = ({ tripInfo, estimatedPrice }) =
                             <LocationRoute />
                         </Box>
 
-                        <Box display="flex" flexDirection="column" gap={3.5}>
-                            <Typography sx={{ fontWeight: "700" }}>
-                                {tripInfo?.pickupLocation || "N/A"}
-                            </Typography>
-                            <Typography sx={{ fontWeight: "700" }}>
-                                {tripInfo?.dropoffLocation || "N/A"}
-                            </Typography>
+                        <Box display="flex" flexDirection="column" gap={3.5} sx={{ flex: 1 }}>
+                            <Tooltip title={tripInfo?.pickupLocation || "N/A"} placement="top">
+                                <Typography sx={{ fontWeight: "700" }}>
+                                    {truncateText(tripInfo?.pickupLocation, 15)}
+                                </Typography>
+                            </Tooltip>
+                            <Tooltip title={tripInfo?.dropoffLocation || "N/A"} placement="bottom">
+                                <Typography sx={{ fontWeight: "700" }}>
+                                    {truncateText(tripInfo?.dropoffLocation, 15)}
+                                </Typography>
+                            </Tooltip>
                         </Box>
                     </Box>
                 </Box>

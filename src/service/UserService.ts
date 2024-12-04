@@ -2,7 +2,7 @@ import axios from "axios";
 import { axiosWithJWT } from "../config/axiosConfig";
 
 class UserService {
-    static BASE_URL = "http://localhost:8080";
+    static BASE_URL = "https://ticketgo-app-a139ba17185b.herokuapp.com";
 
     static async register(userData: any) {
         try {

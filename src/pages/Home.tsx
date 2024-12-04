@@ -31,7 +31,9 @@ const Home = () => {
     // Memoized fetch functions
     const fetchRoutes = useCallback(async () => {
         try {
-            const response = await axios.get("http://localhost:8080/api/v1/routes/popular");
+            const response = await axios.get(
+                "https://ticketgo-app-a139ba17185b.herokuapp.com/api/v1/routes/popular"
+            );
             const data = response.data;
             if (data.status === 200) {
                 setRoutes(data.data);
@@ -47,7 +49,9 @@ const Home = () => {
 
     const fetchHomepageData = useCallback(async () => {
         try {
-            const response = await axios.get("http://localhost:8080/api/v1/homepage");
+            const response = await axios.get(
+                "https://ticketgo-app-a139ba17185b.herokuapp.com/api/v1/homepage"
+            );
             const data = response.data;
             if (data.status === 200) {
                 setHomepageData(data.data);

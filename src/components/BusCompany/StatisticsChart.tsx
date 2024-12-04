@@ -38,7 +38,7 @@ const StatisticsChart: React.FC<StatisticsChartProps> = ({ selectedSubIndex }) =
     const fetchData = async () => {
         setLoading(true);
         try {
-            const baseUrl = "http://localhost:8080/api/v1/revenues";
+            const baseUrl = "https://ticketgo-app-a139ba17185b.herokuapp.com/api/v1/revenues";
             let url = "";
 
             switch (activeTab) {
