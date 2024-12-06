@@ -6,7 +6,7 @@ export type UserState = {
     isAuthenticated: boolean;
     isLoading: boolean;
     user: UserInformation;
-    booking : Booking[];
+    booking: Booking[];
 };
 
 export type UserInformation = {
@@ -19,7 +19,7 @@ export type UserInformation = {
 };
 
 export type Booking = {
-    ticketCodes: string[]; 
+    ticketCodes: string[];
     pickupStopId: string;
     dropOffStopId: string;
     scheduleId: string;
@@ -27,9 +27,11 @@ export type Booking = {
 
 export interface PaginatedResponse {
     data: Bus[];
-    totalPages: number;
-    currentPage: number;
-    totalElements: number;
+    pagination: {
+        totalPages: number;
+        currentPage: number;
+        totalElements: number;
+    };
 }
 
 export interface Bus {

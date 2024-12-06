@@ -14,28 +14,33 @@ type DestinationCardProps = {
 const DestinationCard: React.FC<DestinationCardProps> = ({ routeImage, routeName, price }) => {
     const formattedPrice = new Intl.NumberFormat("en-US").format(price);
     return (
-        <Card
-            sx={{
-                width: 320,
-                height: 300,
-                my: 2,
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-            }}>
-            <CardActionArea sx={{ height: "100%" }}>
+        <Card sx={{ width: 320, height: "fit-content" }}>
+            <CardActionArea>
                 <CardMedia
                     component="img"
                     image={routeImage}
                     alt="Destination image"
-                    sx={{ objectFit: "cover", height: "210px", width: "320px" }}
+                    sx={{ height: 180, objectFit: "cover" }}
                 />
-                <CardContent sx={{ flexGrow: 1 }}>
-                    <Typography gutterBottom variant="h5" component="div">
+                <CardContent>
+                    <Typography
+                        variant="h6"
+                        sx={{
+                            fontWeight: 600,
+                            mb: 0.5,
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            display: "-webkit-box",
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: "vertical",
+                        }}>
                         {routeName}
                     </Typography>
-                    <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                    <Typography
+                        variant="body1"
+                        sx={{
+                            fontWeight: 500,
+                        }}>
                         Từ {formattedPrice} VND
                     </Typography>
                 </CardContent>

@@ -27,8 +27,9 @@ import { toast } from "react-toastify";
 import { useLocation, useNavigate } from "react-router-dom";
 import UserService from "../service/UserService";
 import DashboardIcon from "@mui/icons-material/Dashboard";
+import MenuIcon from "@mui/icons-material/Menu";
 
-const Header = () => {
+const Header = ({ onToggleDrawer }: { onToggleDrawer?: () => void }) => {
     const [modalState, setModalState] = useState({ isRegisterOpen: false, isLoginOpen: false });
     const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
     const [timeLeft, setTimeLeft] = useState(300);
@@ -40,6 +41,7 @@ const Header = () => {
     const location = useLocation();
 
     const isPaymentMethod = location.pathname === "/payment-method";
+    const isDashboardPage = location.pathname === "/dashboard";
 
     const { getUserInfor } = useAppAccessor();
     const userInfo = getUserInfor();
@@ -52,7 +54,7 @@ const Header = () => {
         setAnchorEl(null);
     };
 
-    const openModal = (type: any) => {
+    const openModal = (type: "register" | "login") => {
         setModalState({
             isRegisterOpen: type === "register",
             isLoginOpen: type === "login",
@@ -99,15 +101,17 @@ const Header = () => {
         Cookies.remove("refreshToken");
         dispatch(logout());
         toast.success("Đăng xuất thành công");
+        navigate("/");
     };
 
     useEffect(() => {
+        let timer: NodeJS.Timeout;
         if (isPaymentMethod && timeLeft > 0) {
-            const timer = setInterval(() => setTimeLeft(timeLeft - 1), 1000);
-            return () => clearInterval(timer); // Cleanup on unmount
+            timer = setInterval(() => setTimeLeft((prev) => prev - 1), 1000);
         } else if (timeLeft === 0) {
             setTimeoutModalOpen(true);
         }
+        return () => clearInterval(timer);
     }, [isPaymentMethod, timeLeft]);
 
     useEffect(() => {
@@ -119,7 +123,11 @@ const Header = () => {
                 console.error("Failed to fetch user info", error);
             }
         };
-        fetchUserInfo();
+
+        const accessToken = Cookies.get("accessToken");
+        if (accessToken) {
+            fetchUserInfo();
+        }
     }, [dispatch]);
 
     const handleCloseTimeoutModal = () => {
@@ -127,29 +135,35 @@ const Header = () => {
         navigate("/search");
     };
 
-    // Time Formatting
     const formatTime = (time: number) => {
         const minutes = Math.floor(time / 60);
         const seconds = time % 60;
         return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
     };
 
-    const handleNavigateBookingHistoryClick = () => {
-        navigate("/booking-history");
-    };
-
-    const handleNavigateProfilesClick = () => {
-        navigate("/profile");
-    };
-
-    const handleNavigateDashboardClick = () => {
-        navigate("/dashboard");
+    const handleNavigation = (path: string) => {
+        navigate(path);
+        handleAvatarClose();
     };
 
     return (
         <header className="flex justify-between items-center px-6 py-4 bg-[#0d47a1] shadow-md z-10">
-            <div className="flex items-center cursor-pointer" onClick={handleNavigateClick}>
-                <span className="font-pacifico text-4xl text-white">TicketGo</span>
+            <div className="flex items-center gap-4">
+                {isDashboardPage && (
+                    <IconButton
+                        onClick={onToggleDrawer}
+                        sx={{
+                            color: "white",
+                            "&:hover": {
+                                backgroundColor: "rgba(255, 255, 255, 0.1)",
+                            },
+                        }}>
+                        <MenuIcon />
+                    </IconButton>
+                )}
+                <div className="cursor-pointer" onClick={handleNavigateClick}>
+                    <span className="font-pacifico text-4xl text-white">TicketGo</span>
+                </div>
             </div>
             {isPaymentMethod && (
                 <Box display="flex" gap={1}>
@@ -280,17 +294,17 @@ const Header = () => {
                 anchorOrigin={{ horizontal: "right", vertical: "bottom" }}>
                 <MenuItem
                     sx={{ paddingX: "20px", paddingY: "10px" }}
-                    onClick={handleNavigateProfilesClick}>
+                    onClick={() => handleNavigation("/profile")}>
                     <ListItemIcon>
                         <PersonIcon fontSize="small" />
                     </ListItemIcon>
                     Thông tin tài khoản
                 </MenuItem>
-                {userInfo.user.role === "ROLE_CUSTOMER" && (
+                {userInfo?.user.role === "ROLE_CUSTOMER" && (
                     <Box>
                         <MenuItem
                             sx={{ paddingX: "20px", paddingY: "10px" }}
-                            onClick={handleNavigateBookingHistoryClick}>
+                            onClick={() => handleNavigation("/booking-history")}>
                             <ListItemIcon>
                                 <LoyaltyIcon fontSize="small" />
                             </ListItemIcon>
@@ -304,10 +318,10 @@ const Header = () => {
                         </MenuItem>
                     </Box>
                 )}
-                {userInfo.user.role === "ROLE_BUS_COMPANY" && (
+                {userInfo?.user.role === "ROLE_BUS_COMPANY" && (
                     <MenuItem
                         sx={{ paddingX: "20px", paddingY: "10px" }}
-                        onClick={handleNavigateDashboardClick}>
+                        onClick={() => handleNavigation("/dashboard")}>
                         <ListItemIcon>
                             <DashboardIcon fontSize="small" />
                         </ListItemIcon>

@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, memo } from "react";
 import { DestinationCard, Footer, Header, Search } from "../components";
-import { Typography, Box, Skeleton, Fade } from "@mui/material";
+import { Typography, Box, Skeleton, Fade, Container, Paper } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
@@ -66,7 +66,6 @@ const Home = () => {
     }, []);
 
     useEffect(() => {
-        // Using Promise.all to fetch data in parallel
         Promise.all([fetchRoutes(), fetchHomepageData()]);
     }, [fetchRoutes, fetchHomepageData]);
 
@@ -81,46 +80,27 @@ const Home = () => {
         [navigate]
     );
 
-    // Memoized loading skeleton
     const LoadingSkeleton = memo(() => (
-        <Box
-            sx={{
-                width: 250,
-                height: "fit-content",
-                bgcolor: "white",
-                borderRadius: 1,
-                p: 1,
-            }}>
-            <Skeleton
-                variant="rectangular"
-                width="100%"
-                height={150}
-                animation="wave"
-                sx={{ borderRadius: 1 }}
-            />
-            <Box sx={{ pt: 1 }}>
-                <Skeleton width="80%" height={24} />
-                <Skeleton width="50%" height={20} />
+        <Paper elevation={2} sx={{ width: 280, height: "fit-content", p: 2, borderRadius: 2 }}>
+            <Skeleton variant="rectangular" width="100%" height={180} sx={{ borderRadius: 1 }} />
+            <Box sx={{ pt: 1.5 }}>
+                <Skeleton width="85%" height={28} />
+                <Skeleton width="60%" height={24} />
             </Box>
-        </Box>
+        </Paper>
     ));
 
     return (
-        <div style={{ backgroundColor: "#f0f0f0" }}>
+        <Box sx={{ bgcolor: "#f5f5f5", minHeight: "100vh" }}>
             <MemoizedHeader />
-            <div className="relative">
+            <Box className="relative">
                 {loadingHomepage ? (
                     <Box sx={{ width: "100%", height: 480 }}>
-                        <Skeleton
-                            variant="rectangular"
-                            width="100%"
-                            height="100%"
-                            animation="wave"
-                        />
+                        <Skeleton variant="rectangular" width="100%" height="100%" />
                     </Box>
                 ) : (
                     homepageData && (
-                        <Fade in={!loadingHomepage} timeout={800}>
+                        <Fade in={!loadingHomepage} timeout={1000}>
                             <img
                                 src={homepageData.bannerUrl}
                                 alt="Homepage Banner"
@@ -131,76 +111,186 @@ const Home = () => {
                     )
                 )}
                 <MemoizedSearch />
-            </div>
-            <Box>
-                <Typography variant="h6" fontWeight="bold" ml={5} mt={2}>
-                    <span className="border-2 border-cyan-500 mr-2"></span>Tuyến đường phổ biến
+            </Box>
+
+            <Container maxWidth="xl" sx={{ py: 4 }}>
+                <Typography
+                    variant="h5"
+                    sx={{
+                        fontWeight: 600,
+                        mb: 3,
+                        display: "flex",
+                        alignItems: "center",
+                        "&::before": {
+                            content: '""',
+                            width: 4,
+                            height: 24,
+                            bgcolor: "primary.main",
+                            mr: 2,
+                            borderRadius: 1,
+                        },
+                    }}>
+                    Tuyến đường phổ biến
                 </Typography>
+
                 <Box
                     sx={{
                         display: "flex",
-                        justifyContent: "center",
-                        alignItems: "center",
                         flexWrap: "wrap",
-                        gap: 2,
-                        mt: 2,
-                        px: 3,
+                        gap: 3,
+                        justifyContent: "center",
+                        mb: 6,
                     }}>
                     {loadingRoutes
                         ? Array.from({ length: 4 }).map((_, i) => <LoadingSkeleton key={i} />)
                         : routes.map((route, i) => (
-                              <Fade in={!loadingRoutes} timeout={800} key={i}>
-                                  <Box onClick={() => handleRouteClick(route.routeName)}>
+                              <Fade in={!loadingRoutes} timeout={800 + i * 200} key={i}>
+                                  <Paper
+                                      elevation={2}
+                                      onClick={() => handleRouteClick(route.routeName)}
+                                      sx={{
+                                          transition: "transform 0.2s, box-shadow 0.2s",
+                                          "&:hover": {
+                                              transform: "translateY(-4px)",
+                                              boxShadow: 4,
+                                          },
+                                          cursor: "pointer",
+                                      }}>
                                       <MemoizedDestinationCard
                                           routeImage={route.routeImage}
                                           routeName={route.routeName}
                                           price={route.price}
                                       />
-                                  </Box>
+                                  </Paper>
                               </Fade>
                           ))}
                 </Box>
-                <Typography variant="h6" fontWeight="bold" ml={5} mt={2}>
-                    <span className="border-2 border-cyan-500 mr-2"></span>Về chúng tôi
+
+                <Typography
+                    variant="h5"
+                    sx={{
+                        fontWeight: 600,
+                        mb: 3,
+                        display: "flex",
+                        alignItems: "center",
+                        "&::before": {
+                            content: '""',
+                            width: 4,
+                            height: 24,
+                            bgcolor: "primary.main",
+                            mr: 2,
+                            borderRadius: 1,
+                        },
+                    }}>
+                    Về chúng tôi
                 </Typography>
-                <Box sx={{ px: 5, py: 2 }}>
+
+                <Box sx={{ mb: 4 }}>
                     {loadingHomepage ? (
-                        <Box sx={{ bgcolor: "white", p: 2, borderRadius: 1 }}>
-                            <Skeleton variant="text" width="90%" height={25} />
-                            <Skeleton variant="text" width="85%" height={25} />
-                            <Skeleton variant="text" width="88%" height={25} />
-                            <Skeleton variant="text" width="80%" height={25} />
-                        </Box>
+                        <Paper elevation={2} sx={{ p: 3, borderRadius: 2 }}>
+                            <Skeleton variant="text" width="90%" height={28} />
+                            <Skeleton variant="text" width="85%" height={28} />
+                            <Skeleton variant="text" width="88%" height={28} />
+                            <Skeleton variant="text" width="80%" height={28} />
+                        </Paper>
                     ) : (
                         homepageData && (
-                            <Box
-                                display="flex"
-                                justifyContent="space-between"
+                            <Paper
+                                elevation={3}
                                 sx={{
-                                    backgroundColor: "#ffffff",
-                                    borderRadius: 1,
-                                    padding: 2,
-                                    boxShadow: 1,
+                                    borderRadius: 2,
+                                    overflow: "hidden",
+                                    bgcolor: "#ffffff",
+                                    maxWidth: "1000px", // Added maxWidth
+                                    margin: "0 auto", // Center the paper
                                 }}>
-                                <Typography variant="body1" color="textSecondary">
-                                    <span
-                                        dangerouslySetInnerHTML={{
-                                            __html: homepageData.description
-                                                .replace(
-                                                    "Nhà xe TicketGo",
-                                                    '<span class="font-pacifico text-3xl text-black">TicketGo </span>'
-                                                )
-                                                .replace(/\n\n/g, "<br /><br />"),
-                                        }}
-                                    />
-                                </Typography>
-                            </Box>
+                                <Box
+                                    sx={{ p: 4, display: "flex", flexDirection: "column", gap: 4 }}>
+                                    <Box
+                                        sx={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: 4,
+                                            flexWrap: { xs: "wrap", md: "nowrap" },
+                                        }}>
+                                        <Typography
+                                            variant="body1"
+                                            sx={{
+                                                flex: "0 0 50%", // Changed from flex: 1 to fixed 50% width
+                                                fontSize: "1.1rem",
+                                                lineHeight: 1.8,
+                                                color: "#2c3e50",
+                                            }}>
+                                            <span
+                                                dangerouslySetInnerHTML={{
+                                                    __html: homepageData.description
+                                                        .split("\n\n")[0]
+                                                        .replace(
+                                                            "Nhà xe TicketGo",
+                                                            '<span class="font-pacifico text-4xl text-primary">TicketGo </span>'
+                                                        ),
+                                                }}
+                                            />
+                                        </Typography>
+                                        <Box
+                                            component="img"
+                                            src="https://res.cloudinary.com/dj1h07rea/image/upload/v1733365012/z6098699997331_d46ffa1573577506f3613cbe5cd50ec3_gxauhr.jpg"
+                                            sx={{
+                                                width: { xs: "100%", md: "50%" }, // Changed to 50% width
+                                                height: 550,
+                                                objectFit: "cover",
+                                                borderRadius: 2,
+                                                boxShadow: 3,
+                                            }}
+                                        />
+                                    </Box>
+
+                                    <Box
+                                        sx={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: 4,
+                                            flexWrap: { xs: "wrap-reverse", md: "nowrap" },
+                                        }}>
+                                        <Box
+                                            component="img"
+                                            src="https://res.cloudinary.com/dj1h07rea/image/upload/v1733365012/z6098697156421_1d372dc62b02c82a30aee123a2c3d485_s4kai3.jpg"
+                                            sx={{
+                                                width: { xs: "100%", md: "50%" }, // Changed to 50% width
+                                                height: 550,
+                                                objectFit: "cover",
+                                                borderRadius: 2,
+                                                boxShadow: 3,
+                                            }}
+                                        />
+                                        <Typography
+                                            variant="body1"
+                                            sx={{
+                                                flex: "0 0 50%", // Changed from flex: 1 to fixed 50% width
+                                                fontSize: "1.1rem",
+                                                lineHeight: 1.8,
+                                                color: "#2c3e50",
+                                            }}>
+                                            <span
+                                                dangerouslySetInnerHTML={{
+                                                    __html: homepageData.description
+                                                        .split("\n\n")[1]
+                                                        .replace(
+                                                            "Nhà xe TicketGo",
+                                                            '<span class="font-pacifico text-4xl text-primary">TicketGo </span>'
+                                                        ),
+                                                }}
+                                            />
+                                        </Typography>
+                                    </Box>
+                                </Box>
+                            </Paper>
                         )
                     )}
                 </Box>
-            </Box>
+            </Container>
             <MemoizedFooter />
-        </div>
+        </Box>
     );
 };
 

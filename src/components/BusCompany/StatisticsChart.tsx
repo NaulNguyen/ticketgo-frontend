@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import {
-    BarChart,
+    ComposedChart,
     Bar,
     Line,
     XAxis,
@@ -83,6 +83,14 @@ const StatisticsChart: React.FC<StatisticsChartProps> = ({ selectedSubIndex }) =
     };
 
     const formatDate = (date: string): string => {
+        if (activeTab === "monthly") {
+            return new Date(date).toLocaleDateString("vi-VN", {
+                year: "numeric",
+                month: "long",
+            });
+        } else if (activeTab === "yearly") {
+            return `Năm ${date}`;
+        }
         return new Date(date).toLocaleDateString("vi-VN", {
             year: "numeric",
             month: "short",
@@ -99,17 +107,30 @@ const StatisticsChart: React.FC<StatisticsChartProps> = ({ selectedSubIndex }) =
                     bgcolor: "background.paper",
                     border: 1,
                     borderColor: "grey.300",
-                    borderRadius: 1,
-                    p: 1.5,
-                    boxShadow: 2,
+                    borderRadius: 2,
+                    p: 2,
+                    boxShadow: 3,
+                    minWidth: 200,
                 }}>
-                <Typography variant="subtitle2" gutterBottom>
-                    Ngày: {formatDate(label || "")}
+                <Typography
+                    variant="subtitle1"
+                    gutterBottom
+                    sx={{ fontWeight: "bold", borderBottom: 1, pb: 1, borderColor: "grey.300" }}>
+                    {activeTab === "yearly"
+                        ? "Năm: "
+                        : activeTab === "monthly"
+                        ? "Tháng: "
+                        : "Ngày: "}
+                    {formatDate(label || "")}
                 </Typography>
-                <Typography variant="body2">
-                    Doanh thu: {formatCurrency(payload[0].value)}
-                </Typography>
-                <Typography variant="body2">Vé đã bán: {payload[1].value}</Typography>
+                <Box sx={{ mt: 1 }}>
+                    <Typography variant="body1" sx={{ mb: 1, color: "#4a90e2" }}>
+                        <strong>Doanh thu:</strong> {formatCurrency(payload[0].value)}
+                    </Typography>
+                    <Typography variant="body1" sx={{ color: "#82ca9d" }}>
+                        <strong>Vé đã bán:</strong> {payload[1].value}
+                    </Typography>
+                </Box>
             </Box>
         );
     };
@@ -153,8 +174,16 @@ const StatisticsChart: React.FC<StatisticsChartProps> = ({ selectedSubIndex }) =
         }
     };
 
+    // Tính toán interval dựa trên số lượng dữ liệu
+    const calculateInterval = () => {
+        if (activeTab === "daily" && data.length > 15) {
+            return Math.floor(data.length / 15); // Hiển thị khoảng 15 điểm dữ liệu
+        }
+        return 0; // Hiển thị tất cả điểm dữ liệu cho monthly và yearly
+    };
+
     return (
-        <Box sx={{ p: 4 }}>
+        <Box sx={{ p: 4, width: "100%" }}>
             {renderDateInputs()}
             {loading ? (
                 <Box display="flex" justifyContent="center">
@@ -162,7 +191,7 @@ const StatisticsChart: React.FC<StatisticsChartProps> = ({ selectedSubIndex }) =
                 </Box>
             ) : data.length > 0 ? (
                 <ResponsiveContainer width="100%" height={500}>
-                    <BarChart
+                    <ComposedChart
                         data={data}
                         margin={{
                             top: 20,
@@ -174,35 +203,55 @@ const StatisticsChart: React.FC<StatisticsChartProps> = ({ selectedSubIndex }) =
                         <XAxis
                             dataKey="period"
                             tickFormatter={formatDate}
-                            interval={0}
+                            interval={calculateInterval()}
+                            angle={data.length <= 5 ? 0 : -45}
                             textAnchor="end"
+                            height={60}
+                            tick={{ fontSize: 12 }}
                         />
-                        <YAxis />
+                        <YAxis yAxisId="left" orientation="left" />
+                        <YAxis yAxisId="right" orientation="right" />
                         <Tooltip content={<CustomTooltip />} />
                         <Legend
                             wrapperStyle={{
                                 paddingTop: "10px",
                             }}
                         />
-                        <Bar dataKey="totalRevenue" fill="#8884d8" name="Doanh thu" barSize={30} />
                         <Bar
+                            yAxisId="left"
+                            dataKey="totalRevenue"
+                            fill="#4a90e2"
+                            name="Doanh thu"
+                            barSize={30}
+                        />
+                        <Bar
+                            yAxisId="right"
                             dataKey="totalTicketsSold"
                             fill="#82ca9d"
                             name="Vé đã bán"
                             barSize={30}
                         />
                         <Line
+                            yAxisId="left"
                             type="monotone"
                             dataKey="totalRevenue"
-                            stroke="#ff7300"
-                            strokeWidth={2}
+                            stroke="#0047ab"
+                            strokeWidth={3}
                             name="Xu hướng doanh thu"
-                            isAnimationActive={true}
-                            animationDuration={1500}
-                            dot={{ r: 5, fill: "#ff7300" }}
-                            activeDot={{ r: 8, fill: "#ff0000" }}
+                            dot={activeTab === "yearly" ? false : { r: 5, fill: "#0047ab" }}
+                            activeDot={activeTab === "yearly" ? false : { r: 8, fill: "#2171cd" }}
                         />
-                    </BarChart>
+                        <Line
+                            yAxisId="right"
+                            type="monotone"
+                            dataKey="totalTicketsSold"
+                            stroke="#008000"
+                            strokeWidth={3}
+                            name="Xu hướng vé bán"
+                            dot={activeTab === "yearly" ? false : { r: 5, fill: "#008000" }}
+                            activeDot={activeTab === "yearly" ? false : { r: 8, fill: "#4d9d6a" }}
+                        />
+                    </ComposedChart>
                 </ResponsiveContainer>
             ) : (
                 <Typography variant="h6" textAlign="center">

@@ -28,6 +28,7 @@ const DashBoard = () => {
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [statsOpen, setStatsOpen] = useState(false);
     const [selectedSubIndex, setSelectedSubIndex] = useState(0);
+    const [drawerOpen, setDrawerOpen] = useState(true);
 
     const menuItems = [
         { text: "Báo cáo thống kê", icon: <StackedLineChartIcon /> },
@@ -67,7 +68,7 @@ const DashBoard = () => {
         <Box sx={{ display: "flex", flexDirection: "column", height: "100vh" }}>
             {/* Fixed Header */}
             <Box sx={{ position: "fixed", width: "100%", zIndex: 10 }}>
-                <Header />
+                <Header onToggleDrawer={() => setDrawerOpen(!drawerOpen)} />
             </Box>
 
             {/* Main Content Area */}
@@ -77,16 +78,17 @@ const DashBoard = () => {
                     <Drawer
                         variant="permanent"
                         sx={{
-                            width: 240,
+                            width: drawerOpen ? 240 : 0,
                             flexShrink: 0,
                             zIndex: 0,
                             transition: "width 0.3s",
                             [`& .MuiDrawer-paper`]: {
-                                width: 240,
+                                width: drawerOpen ? 240 : 0,
                                 boxSizing: "border-box",
                                 bgcolor: "#0d47a1",
                                 color: "white",
                                 overflowY: "auto",
+                                transition: "width 0.3s",
                                 "&::-webkit-scrollbar": {
                                     width: "0px",
                                 },
@@ -215,7 +217,17 @@ const DashBoard = () => {
                 </Box>
 
                 {/* Content Area */}
-                <Box sx={{ flexGrow: 1, padding: 3, overflow: "auto" }}>{renderComponent()}</Box>
+                <Box
+                    component="main"
+                    sx={{
+                        flexGrow: 1,
+                        padding: 3,
+                        overflow: "auto",
+                        transition: "margin-left 0.3s",
+                        width: "100%",
+                    }}>
+                    {renderComponent()}
+                </Box>
             </Box>
         </Box>
     );
