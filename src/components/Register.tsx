@@ -32,7 +32,7 @@ const Registration: React.FC<RegistrationProps> = ({ onClose, onLoginClick }) =>
         setLoading(true);
         try {
             const response = await UserService.register(values);
-            if (response.data.status === 200) {
+            if (response.data.status === 201) {
                 onClose();
                 toast.success("Đăng ký tài khoản thành công");
                 toast.info("Vui lòng kiểm tra email để kích hoạt tài khoản!");
