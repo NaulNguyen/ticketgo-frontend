@@ -32,11 +32,11 @@ const Registration: React.FC<RegistrationProps> = ({ onClose, onLoginClick }) =>
         setLoading(true);
         try {
             const response = await UserService.register(values);
-            if (response.data.status === 201) {
+            if (response.status === 201) {
                 onClose();
                 toast.success("Đăng ký tài khoản thành công");
                 toast.info("Vui lòng kiểm tra email để kích hoạt tài khoản!");
-            } else if (response.data.status === 409) {
+            } else if (response.status === 409) {
                 toast.error("Tài khoản với email này đã tồn tại.");
                 toast.warn("Vui lòng chọn một email khác!");
             }
