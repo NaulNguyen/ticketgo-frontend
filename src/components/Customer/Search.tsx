@@ -16,6 +16,7 @@ const Search = () => {
     const [departure, setDeparture] = useState<string | null>(null);
     const [destination, setDestination] = useState<string | null>(null);
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+    const [returnDate, setReturnDate] = useState<Date | null>(null);
 
     const location = useLocation();
     const navigate = useNavigate();
@@ -27,10 +28,12 @@ const Search = () => {
         const departureLocation = searchParams.get("departureLocation");
         const arrivalLocation = searchParams.get("arrivalLocation");
         const departureDate = searchParams.get("departureDate");
+        const returnDate = searchParams.get("returnDate");
 
         if (departureLocation) setDeparture(departureLocation);
         if (arrivalLocation) setDestination(arrivalLocation);
         if (departureDate) setSelectedDate(new Date(departureDate));
+        if (returnDate) setReturnDate(new Date(returnDate));
     }, [location.search]);
 
     const handleSwap = () => {
@@ -40,7 +43,7 @@ const Search = () => {
     };
 
     const handleSearch = () => {
-        if (!departure || !destination || !selectedDate) {
+        if (!departure || !destination || !selectedDate || !returnDate) {
             toast.warn("Hãy nhập đầy đủ thông tin");
             return;
         }
@@ -51,10 +54,12 @@ const Search = () => {
         }
 
         const formattedDate = format(selectedDate, "yyyy-MM-dd");
+        const formattedReturnDate = format(returnDate, "yyyy-MM-dd");
         const params = new URLSearchParams({
             departureLocation: departure,
             arrivalLocation: destination,
             departureDate: formattedDate,
+            returnDate: formattedReturnDate,
             sortBy: "departureTime",
             sortDirection: "asc",
             pageNumber: "1",
@@ -74,18 +79,19 @@ const Search = () => {
             <div
                 className={`${
                     isHome
-                        ? "bg-white p-4 md:p-6 rounded-lg shadow-lg w-full max-w-5xl border border-gray-300"
+                        ? "bg-white p-4 md:p-6 rounded-lg shadow-lg w-full max-w-5xl border border-gray-300 "
                         : "bg-white p-4 md:p-6 rounded-lg shadow-lg border border-gray-300"
                 }`}>
-                <div className="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
+                <div className="flex flex-col md:flex-row items-center md:space-y-0 md:space-x-2">
                     {/* Nơi xuất phát */}
                     <Box
                         sx={{
                             width: "100%",
                             display: "flex",
                             flexDirection: { xs: "column", md: "row" },
-                            gap: { xs: 2, md: 0 },
+                            justifyContent: "center", // Căn giữa các phần tử
                             alignItems: "center",
+                            gap: 1,
                         }}>
                         <Autocomplete
                             freeSolo
@@ -105,8 +111,7 @@ const Search = () => {
                                     variant="outlined"
                                     fullWidth
                                     sx={{
-                                        minWidth: { xs: "100%", md: "220px" },
-                                        width: { xs: "300px", md: "auto" },
+                                        width: "150px",
                                     }}
                                     InputProps={{
                                         ...params.InputProps,
@@ -127,8 +132,9 @@ const Search = () => {
                             aria-label="swap"
                             size="large"
                             sx={{
-                                display: "flex",
+                                position: "relative",
                                 transform: { xs: "rotate(90deg)", md: "rotate(0deg)" },
+                                padding: "8px", // Reduced padding
                             }}>
                             <SwapHorizIcon />
                         </IconButton>
@@ -152,8 +158,7 @@ const Search = () => {
                                     variant="outlined"
                                     fullWidth
                                     sx={{
-                                        minWidth: { xs: "100%", md: "220px" },
-                                        width: { xs: "300px", md: "auto" },
+                                        width: "150px",
                                     }}
                                     InputProps={{
                                         ...params.InputProps,
@@ -182,7 +187,27 @@ const Search = () => {
                                 textField: {
                                     variant: "outlined",
                                     fullWidth: true,
-                                    sx: { minWidth: { xs: "100%", md: "220px" } },
+                                },
+                                day: {
+                                    sx: {
+                                        width: 36,
+                                        height: 36,
+                                    },
+                                },
+                            }}
+                        />
+                        <DatePicker
+                            label="Ngày về"
+                            value={returnDate}
+                            onChange={(date) => setReturnDate(date)}
+                            minDate={selectedDate || undefined}
+                            disablePast
+                            format="eeee, dd/MM/yyyy"
+                            formatDensity="spacious"
+                            slotProps={{
+                                textField: {
+                                    variant: "outlined",
+                                    fullWidth: true,
                                 },
                                 day: {
                                     sx: {
