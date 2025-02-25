@@ -124,7 +124,7 @@ const SearchingPage = () => {
             };
             try {
                 const response = await axios.post(
-                    "https://ticketgo-app-a139ba17185b.herokuapp.com/api/v1/routes/search",
+                    "http://localhost:8080/api/v1/routes/search",
                     params
                 );
                 setSearchResults(response.data);

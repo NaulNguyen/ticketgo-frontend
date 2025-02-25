@@ -27,4 +27,17 @@ export const forgotPasswordValidationSchema = Yup.object().shape({
     forgotPasswordEmail: Yup.string().email("Email không hợp lệ").required("Email là bắt buộc"),
   });
 
+export const EditVoucherValidationSchema = Yup.object({
+      description: Yup.string().required("Vui lòng nhập mô tả"),
+      discountPercentage: Yup.number()
+          .required("Vui lòng nhập phần trăm giảm giá")
+          .min(0, "Phần trăm giảm giá không được âm")
+          .max(100, "Phần trăm giảm giá không được vượt quá 100"),
+      discountCode: Yup.string().required("Vui lòng nhập mã giảm giá"),
+      startDate: Yup.date().required("Vui lòng chọn ngày bắt đầu"),
+      endDate: Yup.date()
+          .required("Vui lòng chọn ngày kết thúc")
+          .min(Yup.ref("startDate"), "Ngày kết thúc phải sau ngày bắt đầu"),
+  });
+
 

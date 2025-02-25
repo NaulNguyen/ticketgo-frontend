@@ -20,7 +20,7 @@ const AccountActivation = () => {
                 if (token) {
                     try {
                         const response = await axios.put(
-                            "https://ticketgo-app-a139ba17185b.herokuapp.com/api/v1/auth/activate",
+                            "http://localhost:8080/api/v1/auth/activate",
                             { token },
                             {
                                 headers: {

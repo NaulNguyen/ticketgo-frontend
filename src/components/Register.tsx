@@ -20,7 +20,10 @@ interface RegistrationProps {
     onLoginClick: () => void;
 }
 
-const Registration: React.FC<RegistrationProps> = ({ onClose, onLoginClick }) => {
+const Registration: React.FC<RegistrationProps> = ({
+    onClose,
+    onLoginClick,
+}) => {
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
 
@@ -60,8 +63,16 @@ const Registration: React.FC<RegistrationProps> = ({ onClose, onLoginClick }) =>
             onSubmit={(values, actions) => {
                 handleUserSubmit(values);
                 actions.resetForm();
-            }}>
-            {({ handleSubmit, handleChange, setFieldValue, values, errors, touched }) => (
+            }}
+        >
+            {({
+                handleSubmit,
+                handleChange,
+                setFieldValue,
+                values,
+                errors,
+                touched,
+            }) => (
                 <Form onSubmit={handleSubmit}>
                     <Grid container spacing={2}>
                         <Grid item xs={12}>
@@ -112,9 +123,16 @@ const Registration: React.FC<RegistrationProps> = ({ onClose, onLoginClick }) =>
                                         <InputAdornment position="end">
                                             <IconButton
                                                 aria-label="toggle password visibility"
-                                                onClick={togglePasswordVisibility}
-                                                edge="end">
-                                                {showPassword ? <VisibilityOff /> : <Visibility />}
+                                                onClick={
+                                                    togglePasswordVisibility
+                                                }
+                                                edge="end"
+                                            >
+                                                {showPassword ? (
+                                                    <VisibilityOff />
+                                                ) : (
+                                                    <Visibility />
+                                                )}
                                             </IconButton>
                                         </InputAdornment>
                                     ),
@@ -128,8 +146,12 @@ const Registration: React.FC<RegistrationProps> = ({ onClose, onLoginClick }) =>
                                 name="phoneNumber"
                                 value={values.phoneNumber}
                                 onChange={handleChange}
-                                error={touched.phoneNumber && !!errors.phoneNumber}
-                                helperText={touched.phoneNumber && errors.phoneNumber}
+                                error={
+                                    touched.phoneNumber && !!errors.phoneNumber
+                                }
+                                helperText={
+                                    touched.phoneNumber && errors.phoneNumber
+                                }
                                 fullWidth
                                 required
                             />
@@ -153,14 +175,24 @@ const Registration: React.FC<RegistrationProps> = ({ onClose, onLoginClick }) =>
                                             throw new Error("Invalid date");
                                         }
                                         const formattedDate = inputDate;
-                                        setFieldValue("dateOfBirth", formattedDate);
+                                        setFieldValue(
+                                            "dateOfBirth",
+                                            formattedDate
+                                        );
                                     } catch (error) {
-                                        console.error("Date parsing error:", error);
+                                        console.error(
+                                            "Date parsing error:",
+                                            error
+                                        );
                                         setFieldValue("dateOfBirth", "");
                                     }
                                 }}
-                                error={touched.dateOfBirth && !!errors.dateOfBirth}
-                                helperText={touched.dateOfBirth && errors.dateOfBirth}
+                                error={
+                                    touched.dateOfBirth && !!errors.dateOfBirth
+                                }
+                                helperText={
+                                    touched.dateOfBirth && errors.dateOfBirth
+                                }
                                 fullWidth
                                 InputLabelProps={{ shrink: true }}
                                 required
@@ -174,14 +206,24 @@ const Registration: React.FC<RegistrationProps> = ({ onClose, onLoginClick }) =>
                                 fullWidth
                                 disabled={loading}
                                 startIcon={
-                                    loading ? <CircularProgress size={20} color="inherit" /> : null
-                                }>
+                                    loading ? (
+                                        <CircularProgress
+                                            size={20}
+                                            color="inherit"
+                                        />
+                                    ) : null
+                                }
+                            >
                                 Đăng ký
                             </Button>
                         </Grid>
                     </Grid>
 
-                    <Typography variant="body2" paddingTop={2} sx={{ fontSize: "1rem" }}>
+                    <Typography
+                        variant="body2"
+                        paddingTop={2}
+                        sx={{ fontSize: "1rem" }}
+                    >
                         Bạn đã có tài khoản?{" "}
                         <Box
                             component="span"
@@ -193,7 +235,8 @@ const Registration: React.FC<RegistrationProps> = ({ onClose, onLoginClick }) =>
                                     textDecoration: "underline",
                                 },
                             }}
-                            onClick={onLoginClick}>
+                            onClick={onLoginClick}
+                        >
                             Đăng nhập
                         </Box>
                     </Typography>

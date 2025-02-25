@@ -6,7 +6,7 @@ const saveNewAccessToken = (newAccessToken: any) => {
 };
 
 const AxiosInstance = axios.create({
-    baseURL: "https://ticketgo-app-a139ba17185b.herokuapp.com",
+    baseURL: "http://localhost:8080",
 });
 
 // Add a response interceptor to handle token expiration

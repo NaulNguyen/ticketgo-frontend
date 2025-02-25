@@ -32,7 +32,7 @@ const Home = () => {
     const fetchRoutes = useCallback(async () => {
         try {
             const response = await axios.get(
-                "https://ticketgo-app-a139ba17185b.herokuapp.com/api/v1/routes/popular"
+                "http://localhost:8080/api/v1/routes/popular"
             );
             const data = response.data;
             if (data.status === 200) {
@@ -50,7 +50,7 @@ const Home = () => {
     const fetchHomepageData = useCallback(async () => {
         try {
             const response = await axios.get(
-                "https://ticketgo-app-a139ba17185b.herokuapp.com/api/v1/homepage"
+                "http://localhost:8080/api/v1/homepage"
             );
             const data = response.data;
             if (data.status === 200) {
