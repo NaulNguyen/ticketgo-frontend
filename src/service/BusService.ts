@@ -20,6 +20,10 @@ class BusService {
             throw err;
         }
     }
+
+    static deleteBus = async (busId: string) => {
+        return await axiosWithJWT.delete(`http://localhost:8080/api/v1/buses/${busId}`);
+    };
 }
 
 export default BusService;
