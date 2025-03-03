@@ -13,6 +13,11 @@ import {
     IconButton,
     Tooltip,
     Button,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogContentText,
+    DialogActions,
 } from "@mui/material";
 import { Bus } from "../../global";
 import BusService from "../../service/BusService";
@@ -23,6 +28,11 @@ import DirectionsBusIcon from "@mui/icons-material/DirectionsBus";
 import EventIcon from "@mui/icons-material/Event";
 import AirlineSeatReclineNormalIcon from "@mui/icons-material/AirlineSeatReclineNormal";
 import ViewQuiltIcon from "@mui/icons-material/ViewQuilt";
+import CreateBusPopup from "../../popup/CreateBusPopup";
+import EditBusPopup from "../../popup/EditBusPopup";
+import { toast } from "react-toastify";
+import WarningIcon from "@mui/icons-material/Warning";
+import CloseIcon from "@mui/icons-material/Close";
 
 const BusManagement = () => {
     const [buses, setBuses] = useState<Bus[]>([]);
@@ -30,23 +40,67 @@ const BusManagement = () => {
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(0);
     const pageSize = 6;
+    const [isCreatePopupOpen, setIsCreatePopupOpen] = useState(false);
+    const [isEditPopupOpen, setIsEditPopupOpen] = useState(false);
+    const [selectedBusId, setSelectedBusId] = useState<string | null>(null);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [busToDelete, setBusToDelete] = useState<Bus | null>(null);
+
+    const handleOpenCreatePopup = () => setIsCreatePopupOpen(true);
+    const handleCloseCreatePopup = () => setIsCreatePopupOpen(false);
+
+    const handleOpenEditPopup = (busId: string) => {
+        setSelectedBusId(busId);
+        setIsEditPopupOpen(true);
+    };
+
+    const handleCloseEditPopup = () => {
+        setSelectedBusId(null);
+        setIsEditPopupOpen(false);
+    };
+
+    const handleOpenDeleteDialog = (bus: Bus) => {
+        setBusToDelete(bus);
+        setIsDeleteDialogOpen(true);
+    };
+
+    const handleCloseDeleteDialog = () => {
+        setBusToDelete(null);
+        setIsDeleteDialogOpen(false);
+    };
+
+    const fetchBuses = async () => {
+        try {
+            const response = await BusService.fetchBusData({
+                page,
+                pageSize,
+            });
+            setBuses(response.data.data);
+            setTotalPages(response.data.pagination.totalPages);
+            setLoading(false);
+        } catch (error) {
+            console.error("Error fetching buses:", error);
+            setLoading(false);
+        }
+    };
+
+    const handleDeleteBus = async () => {
+        if (!busToDelete) return;
+
+        try {
+            const response = await BusService.deleteBus(busToDelete.busId);
+            if (response.status === 200) {
+                toast.success("Xóa xe thành công");
+                fetchBuses();
+                handleCloseDeleteDialog();
+            }
+        } catch (error) {
+            console.error("Error deleting bus:", error);
+            toast.error("Không thể xóa xe");
+        }
+    };
 
     useEffect(() => {
-        const fetchBuses = async () => {
-            try {
-                const response = await BusService.fetchBusData({
-                    page,
-                    pageSize,
-                });
-                setBuses(response.data.data);
-                setTotalPages(response.data.pagination.totalPages);
-                setLoading(false);
-            } catch (error) {
-                console.error("Error fetching buses:", error);
-                setLoading(false);
-            }
-        };
-
         fetchBuses();
     }, [page]);
 
@@ -97,6 +151,7 @@ const BusManagement = () => {
                 <Button
                     variant="contained"
                     startIcon={<AddIcon />}
+                    onClick={handleOpenCreatePopup}
                     sx={{
                         backgroundColor: "#1976d2",
                         "&:hover": {
@@ -108,6 +163,13 @@ const BusManagement = () => {
                 >
                     Thêm xe mới
                 </Button>
+                <CreateBusPopup
+                    open={isCreatePopupOpen}
+                    onClose={handleCloseCreatePopup}
+                    onSuccess={() => {
+                        fetchBuses();
+                    }}
+                />
             </Box>
 
             {/* Bus Cards Grid */}
@@ -184,6 +246,11 @@ const BusManagement = () => {
                                                                 color: "white",
                                                             },
                                                         }}
+                                                        onClick={() =>
+                                                            handleOpenEditPopup(
+                                                                bus.busId
+                                                            )
+                                                        }
                                                     >
                                                         <EditIcon />
                                                     </IconButton>
@@ -201,6 +268,11 @@ const BusManagement = () => {
                                                                 color: "white",
                                                             },
                                                         }}
+                                                        onClick={() =>
+                                                            handleOpenDeleteDialog(
+                                                                bus
+                                                            )
+                                                        }
                                                     >
                                                         <DeleteIcon />
                                                     </IconButton>
@@ -357,6 +429,120 @@ const BusManagement = () => {
                     }}
                 />
             </Box>
+            <EditBusPopup
+                open={isEditPopupOpen}
+                onClose={handleCloseEditPopup}
+                onSuccess={fetchBuses}
+                busId={selectedBusId}
+            />
+            <Dialog
+                open={isDeleteDialogOpen}
+                onClose={handleCloseDeleteDialog}
+                PaperProps={{
+                    sx: {
+                        borderRadius: 2,
+                        boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
+                        width: "400px",
+                    },
+                }}
+            >
+                <DialogTitle
+                    sx={{
+                        bgcolor: "#d32f2f",
+                        color: "white",
+                        gap: 1,
+                        py: 2,
+                        textAlign: "center",
+                    }}
+                >
+                    Xác nhận xóa xe
+                </DialogTitle>
+                <DialogContent sx={{ mt: 2, pb: 3 }}>
+                    <DialogContentText
+                        sx={{
+                            color: "text.primary",
+                            mb: 2,
+                        }}
+                    >
+                        Bạn có chắc chắn muốn xóa xe:
+                    </DialogContentText>
+                    <Box
+                        sx={{
+                            bgcolor: "#f5f5f5",
+                            p: 2,
+                            borderRadius: 1,
+                            mb: 2,
+                        }}
+                    >
+                        <Typography
+                            variant="subtitle1"
+                            sx={{
+                                fontWeight: "bold",
+                                color: "#1565c0",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1,
+                            }}
+                        >
+                            <DirectionsBusIcon />
+                            {busToDelete?.licensePlate}
+                        </Typography>
+                        <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{ mt: 1 }}
+                        >
+                            Loại xe: {busToDelete?.busType}
+                        </Typography>
+                    </Box>
+                    <Typography
+                        variant="body2"
+                        color="error"
+                        sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1,
+                        }}
+                    >
+                        <WarningIcon fontSize="small" />
+                        Hành động này không thể hoàn tác
+                    </Typography>
+                </DialogContent>
+                <DialogActions
+                    sx={{
+                        px: 3,
+                        pb: 3,
+                        gap: 1,
+                    }}
+                >
+                    <Button
+                        onClick={handleCloseDeleteDialog}
+                        variant="outlined"
+                        startIcon={<CloseIcon />}
+                        sx={{
+                            borderRadius: 2,
+                            px: 3,
+                        }}
+                    >
+                        Hủy
+                    </Button>
+                    <Button
+                        onClick={handleDeleteBus}
+                        color="error"
+                        variant="contained"
+                        startIcon={<DeleteIcon />}
+                        sx={{
+                            borderRadius: 2,
+                            px: 3,
+                            "&:hover": {
+                                bgcolor: "#c62828",
+                            },
+                        }}
+                    >
+                        Xóa
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Container>
     );
 };

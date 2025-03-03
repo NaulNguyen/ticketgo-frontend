@@ -35,7 +35,7 @@ export interface PaginatedResponse {
 }
 
 export interface Bus {
-    busId: number;
+    busId: string;
     busImage: string;
     busType: string;
     licensePlate: string;

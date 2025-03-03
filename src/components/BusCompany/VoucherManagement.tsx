@@ -86,7 +86,6 @@ const VoucherManagement = () => {
             const response = await axiosWithJWT.get<PromotionResponse>(
                 `http://localhost:8080/api/v1/promotions?pageNumber=${page}&pageSize=${pageSize}`
             );
-            console.log(response.data);
             setVouchers(response.data.data);
             setTotalPages(response.data.totalPages);
             setIsLoading(false);
