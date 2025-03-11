@@ -23,6 +23,8 @@ import DirectionsBusIcon from "@mui/icons-material/DirectionsBus";
 import RouteIcon from "@mui/icons-material/Route";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import PeopleIcon from "@mui/icons-material/People";
+import AccountCircleIcon from "@mui/icons-material/AccountCircle";
+import DriverManagement from "../../components/BusCompany/DriverManagement";
 
 const DashBoard = () => {
     const [selectedIndex, setSelectedIndex] = useState(0);
@@ -35,7 +37,8 @@ const DashBoard = () => {
         { text: "Quản lý xe", icon: <DirectionsBusIcon /> },
         { text: "Quản lý tuyến xe", icon: <RouteIcon /> },
         { text: "Quản lý khuyến mãi", icon: <LocalOfferIcon /> },
-        { text: "Quản lý tài khoản khách hàng", icon: <PeopleIcon /> },
+        { text: "Quản lý tài khoản khách hàng", icon: <AccountCircleIcon /> },
+        { text: "Quản lý tài xế", icon: <PeopleIcon /> },
     ];
 
     const handleListItemClick = (index: number) => {
@@ -59,6 +62,8 @@ const DashBoard = () => {
                 return <VoucherManagement />;
             case 4:
                 return <UserAccountManagement />;
+            case 5:
+                return <DriverManagement />;
             default:
                 return <StatisticsChart selectedSubIndex={selectedSubIndex} />;
         }
@@ -96,80 +101,118 @@ const DashBoard = () => {
                                     backgroundColor: "rgba(0,0,0,0.1)",
                                 },
                             },
-                        }}>
+                        }}
+                    >
                         <List
                             sx={{
                                 paddingTop: "100px",
-                            }}>
+                            }}
+                        >
                             {menuItems.map(({ text, icon }, index) => {
                                 if (text === "Báo cáo thống kê") {
                                     return (
                                         <React.Fragment key={text}>
                                             <ListItem disablePadding>
                                                 <ListItemButton
-                                                    onClick={() => setStatsOpen(!statsOpen)}
-                                                    sx={{ color: "white" }}>
+                                                    onClick={() =>
+                                                        setStatsOpen(!statsOpen)
+                                                    }
+                                                    sx={{ color: "white" }}
+                                                >
                                                     <ListItemIcon
-                                                        sx={{ minWidth: "32px", color: "white" }}>
+                                                        sx={{
+                                                            minWidth: "32px",
+                                                            color: "white",
+                                                        }}
+                                                    >
                                                         {icon}
                                                     </ListItemIcon>
                                                     <ListItemText
                                                         primary={text}
                                                         sx={{ color: "white" }}
                                                     />
-                                                    {statsOpen ? <ExpandLess /> : <ExpandMore />}
+                                                    {statsOpen ? (
+                                                        <ExpandLess />
+                                                    ) : (
+                                                        <ExpandMore />
+                                                    )}
                                                 </ListItemButton>
                                             </ListItem>
-                                            <Collapse in={statsOpen} timeout="auto" unmountOnExit>
-                                                <List component="div" disablePadding>
+                                            <Collapse
+                                                in={statsOpen}
+                                                timeout="auto"
+                                                unmountOnExit
+                                            >
+                                                <List
+                                                    component="div"
+                                                    disablePadding
+                                                >
                                                     {[
                                                         "Thống kê theo ngày",
                                                         "Thống kê theo tháng",
                                                         "Thống kê theo năm",
-                                                    ].map((subText, subIndex) => (
-                                                        <ListItem key={subText} disablePadding>
-                                                            <ListItemButton
-                                                                selected={
-                                                                    selectedIndex === index &&
-                                                                    selectedSubIndex === subIndex
-                                                                }
-                                                                onClick={() =>
-                                                                    handleStatsClick(subIndex)
-                                                                }
-                                                                sx={{
-                                                                    pl: 4,
-                                                                    color: "white",
-                                                                    "&.Mui-selected": {
-                                                                        backgroundColor: "#1565c0",
-                                                                        "&:hover": {
-                                                                            backgroundColor:
-                                                                                "#1976d2",
-                                                                        },
-                                                                    },
-                                                                }}>
-                                                                <ListItemText
-                                                                    primary={subText}
-                                                                    sx={{ color: "white" }}
-                                                                />
-                                                                {selectedIndex === index &&
-                                                                    selectedSubIndex ===
-                                                                        subIndex && (
-                                                                        <Box
-                                                                            sx={{
-                                                                                width: "4px",
-                                                                                height: "60%",
-                                                                                position:
-                                                                                    "absolute",
-                                                                                top: 9,
-                                                                                right: 5,
+                                                    ].map(
+                                                        (subText, subIndex) => (
+                                                            <ListItem
+                                                                key={subText}
+                                                                disablePadding
+                                                            >
+                                                                <ListItemButton
+                                                                    selected={
+                                                                        selectedIndex ===
+                                                                            index &&
+                                                                        selectedSubIndex ===
+                                                                            subIndex
+                                                                    }
+                                                                    onClick={() =>
+                                                                        handleStatsClick(
+                                                                            subIndex
+                                                                        )
+                                                                    }
+                                                                    sx={{
+                                                                        pl: 4,
+                                                                        color: "white",
+                                                                        "&.Mui-selected":
+                                                                            {
                                                                                 backgroundColor:
-                                                                                    "white",
-                                                                            }}
-                                                                        />
-                                                                    )}
-                                                            </ListItemButton>
-                                                        </ListItem>
-                                                    ))}
+                                                                                    "#1565c0",
+                                                                                "&:hover":
+                                                                                    {
+                                                                                        backgroundColor:
+                                                                                            "#1976d2",
+                                                                                    },
+                                                                            },
+                                                                    }}
+                                                                >
+                                                                    <ListItemText
+                                                                        primary={
+                                                                            subText
+                                                                        }
+                                                                        sx={{
+                                                                            color: "white",
+                                                                        }}
+                                                                    />
+                                                                    {selectedIndex ===
+                                                                        index &&
+                                                                        selectedSubIndex ===
+                                                                            subIndex && (
+                                                                            <Box
+                                                                                sx={{
+                                                                                    width: "4px",
+                                                                                    height: "60%",
+                                                                                    position:
+                                                                                        "absolute",
+                                                                                    top: 9,
+                                                                                    right: 5,
+                                                                                    backgroundColor:
+                                                                                        "white",
+                                                                                }}
+                                                                            />
+                                                                        )}
+                                                                </ListItemButton>
+                                                            </ListItem>
+                                                        )
+                                                    )}
                                                 </List>
                                             </Collapse>
                                         </React.Fragment>
@@ -180,7 +223,10 @@ const DashBoard = () => {
                                     <ListItem
                                         key={text}
                                         disablePadding
-                                        onClick={() => handleListItemClick(index)}>
+                                        onClick={() =>
+                                            handleListItemClick(index)
+                                        }
+                                    >
                                         <ListItemButton
                                             selected={selectedIndex === index}
                                             sx={{
@@ -188,14 +234,24 @@ const DashBoard = () => {
                                                 "&.Mui-selected": {
                                                     backgroundColor: "#1565c0",
                                                     "&:hover": {
-                                                        backgroundColor: "#1976d2",
+                                                        backgroundColor:
+                                                            "#1976d2",
                                                     },
                                                 },
-                                            }}>
-                                            <ListItemIcon sx={{ minWidth: "32px", color: "white" }}>
+                                            }}
+                                        >
+                                            <ListItemIcon
+                                                sx={{
+                                                    minWidth: "32px",
+                                                    color: "white",
+                                                }}
+                                            >
                                                 {icon}
                                             </ListItemIcon>
-                                            <ListItemText primary={text} sx={{ color: "white" }} />
+                                            <ListItemText
+                                                primary={text}
+                                                sx={{ color: "white" }}
+                                            />
                                             {selectedIndex === index && (
                                                 <Box
                                                     sx={{
@@ -204,7 +260,8 @@ const DashBoard = () => {
                                                         position: "absolute",
                                                         top: 9,
                                                         right: 5,
-                                                        backgroundColor: "white",
+                                                        backgroundColor:
+                                                            "white",
                                                     }}
                                                 />
                                             )}
@@ -225,7 +282,8 @@ const DashBoard = () => {
                         overflow: "auto",
                         transition: "margin-left 0.3s",
                         width: "100%",
-                    }}>
+                    }}
+                >
                     {renderComponent()}
                 </Box>
             </Box>
