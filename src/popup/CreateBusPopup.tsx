@@ -249,13 +249,13 @@ const CreateBusPopup: React.FC<CreateBusPopupProps> = ({
     };
 
     return (
-        <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+        <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
             <DialogTitle>Thêm Xe Mới</DialogTitle>
             <form onSubmit={formik.handleSubmit}>
                 <DialogContent>
                     <Grid container spacing={3}>
                         {/* Left side - Form fields */}
-                        <Grid item xs={7}>
+                        <Grid item xs={5}>
                             <Box
                                 sx={{
                                     display: "flex",
@@ -367,7 +367,7 @@ const CreateBusPopup: React.FC<CreateBusPopupProps> = ({
                         </Grid>
 
                         {/* Right side - Image upload and preview */}
-                        <Grid item xs={5}>
+                        <Grid item xs={7}>
                             <Box
                                 sx={{
                                     display: "flex",
