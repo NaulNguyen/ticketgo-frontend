@@ -30,11 +30,10 @@ import RouteIcon from "@mui/icons-material/Route";
 import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
 import dayjs from "dayjs";
 import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
-import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import DeleteIcon from "@mui/icons-material/Delete";
-import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 
 interface CreateBusRouteProps {
     open: boolean;
@@ -579,7 +578,7 @@ const CreateBusRoute: React.FC<CreateBusRouteProps> = ({
                                     <LocalizationProvider
                                         dateAdapter={AdapterDayjs}
                                     >
-                                        <TimePicker
+                                        <DateTimePicker
                                             label="Giờ khởi hành"
                                             value={formik.values.departureTime}
                                             onChange={(value) => {
@@ -588,7 +587,7 @@ const CreateBusRoute: React.FC<CreateBusRouteProps> = ({
                                                     value
                                                 );
                                             }}
-                                            format="HH:mm"
+                                            format="DD/MM/YYYY HH:mm"
                                             slotProps={{
                                                 textField: {
                                                     fullWidth: true,
@@ -608,15 +607,16 @@ const CreateBusRoute: React.FC<CreateBusRouteProps> = ({
                                                     InputProps: {
                                                         startAdornment: (
                                                             <InputAdornment position="start">
-                                                                <AccessTimeIcon color="primary" />
+                                                                <CalendarTodayIcon color="primary" />
                                                             </InputAdornment>
                                                         ),
                                                     },
                                                 },
                                                 actionBar: {
-                                                    actions: ["clear"],
+                                                    actions: ["today", "clear"],
                                                 },
                                             }}
+                                            minDateTime={dayjs()}
                                             sx={{
                                                 width: "100%",
                                                 "& .MuiInputBase-root": {
@@ -637,7 +637,7 @@ const CreateBusRoute: React.FC<CreateBusRouteProps> = ({
                                     <LocalizationProvider
                                         dateAdapter={AdapterDayjs}
                                     >
-                                        <TimePicker
+                                        <DateTimePicker
                                             label="Giờ đến"
                                             value={formik.values.arrivalTime}
                                             onChange={(value) =>
@@ -646,7 +646,7 @@ const CreateBusRoute: React.FC<CreateBusRouteProps> = ({
                                                     value
                                                 )
                                             }
-                                            format="HH:mm"
+                                            format="DD/MM/YYYY HH:mm"
                                             slotProps={{
                                                 textField: {
                                                     fullWidth: true,
@@ -666,7 +666,7 @@ const CreateBusRoute: React.FC<CreateBusRouteProps> = ({
                                                     InputProps: {
                                                         startAdornment: (
                                                             <InputAdornment position="start">
-                                                                <AccessTimeIcon color="primary" />
+                                                                <CalendarTodayIcon color="primary" />
                                                             </InputAdornment>
                                                         ),
                                                     },
@@ -675,6 +675,10 @@ const CreateBusRoute: React.FC<CreateBusRouteProps> = ({
                                                     actions: ["today", "clear"],
                                                 },
                                             }}
+                                            minDateTime={
+                                                formik.values.departureTime ||
+                                                dayjs()
+                                            }
                                             disabled={
                                                 !formik.values.departureTime
                                             }
@@ -683,11 +687,6 @@ const CreateBusRoute: React.FC<CreateBusRouteProps> = ({
                                                 "& .MuiInputBase-root": {
                                                     borderRadius: 1,
                                                 },
-                                                "& .MuiPickersDay-root.Mui-selected":
-                                                    {
-                                                        backgroundColor:
-                                                            "#1976d2",
-                                                    },
                                             }}
                                         />
                                     </LocalizationProvider>
