@@ -1,4 +1,12 @@
-import { Box, Divider, List, ListItem, Tab, Tabs, Typography } from "@mui/material";
+import {
+    Box,
+    Divider,
+    List,
+    ListItem,
+    Tab,
+    Tabs,
+    Typography,
+} from "@mui/material";
 import React, { useEffect, useState } from "react";
 import TranslateIcon from "@mui/icons-material/Translate";
 import HealthAndSafetyIcon from "@mui/icons-material/HealthAndSafety";
@@ -8,6 +16,7 @@ import FastfoodIcon from "@mui/icons-material/Fastfood";
 import WbIncandescentIcon from "@mui/icons-material/WbIncandescent";
 import BedIcon from "@mui/icons-material/Bed";
 import axios from "axios";
+import { axiosWithJWT } from "../../config/axiosConfig";
 
 interface RouteStop {
     location: string;
@@ -34,20 +43,35 @@ interface Amenity {
 }
 
 const amenityIcons: { [key: string]: React.ReactNode } = {
-    "Nhân viên sử dụng tiếng anh": <TranslateIcon sx={{ marginX: "8px", color: "blue" }} />,
-    "Ghế massage": <HealthAndSafetyIcon sx={{ marginX: "8px", color: "blue" }} />,
+    "Nhân viên sử dụng tiếng anh": (
+        <TranslateIcon sx={{ marginX: "8px", color: "blue" }} />
+    ),
+    "Ghế massage": (
+        <HealthAndSafetyIcon sx={{ marginX: "8px", color: "blue" }} />
+    ),
     "Bánh ngọt": <FastfoodIcon sx={{ marginX: "8px", color: "blue" }} />,
-    "Đèn đọc sách": <WbIncandescentIcon sx={{ marginX: "8px", color: "blue" }} />,
+    "Đèn đọc sách": (
+        <WbIncandescentIcon sx={{ marginX: "8px", color: "blue" }} />
+    ),
     "Nước uống": <WaterDropIcon sx={{ marginX: "8px", color: "blue" }} />,
     "Gối nằm": <BedIcon sx={{ marginX: "8px", color: "blue" }} />,
     "Búa phá kính": <HardwareIcon sx={{ marginX: "8px", color: "blue" }} />,
 };
+
+interface Driver {
+    driverId: number;
+    name: string;
+    licenseNumber: string;
+    phoneNumber: string;
+    imageUrl: string;
+}
 
 const Details: React.FC<DetailsProps> = ({ scheduleId }) => {
     const [tabIndex, setTabIndex] = useState(0);
     const [routeStops, setRouteStops] = useState<RouteStopsData | null>(null);
     const [policies, setPolicies] = useState<Policy[]>([]);
     const [amenities, setAmenities] = useState<Amenity[]>([]);
+    const [driver, setDriver] = useState<Driver | null>(null);
 
     const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
         setTabIndex(newValue);
@@ -98,10 +122,31 @@ const Details: React.FC<DetailsProps> = ({ scheduleId }) => {
         }
     }, [tabIndex]);
 
+    useEffect(() => {
+        if (tabIndex === 3) {
+            const fetchDriver = async () => {
+                try {
+                    const response = await axiosWithJWT.get(
+                        `http://localhost:8080/api/v1/drivers/${scheduleId}`
+                    );
+                    setDriver(response.data.data);
+                } catch (err) {
+                    console.error("Failed to fetch driver", err);
+                }
+            };
+            fetchDriver();
+        }
+    }, [tabIndex, scheduleId]);
+
     return (
         <Box>
             {/* Tabs */}
-            <Tabs value={tabIndex} onChange={handleTabChange} aria-label="Details tabs" centered>
+            <Tabs
+                value={tabIndex}
+                onChange={handleTabChange}
+                aria-label="Details tabs"
+                centered
+            >
                 <Tab
                     label="Đón/trả"
                     sx={{
@@ -129,6 +174,20 @@ const Details: React.FC<DetailsProps> = ({ scheduleId }) => {
                         color: tabIndex === 2 ? "rgb(24, 144, 255)" : "inherit",
                     }}
                 />
+                {window.location.pathname.includes("dashboard") && (
+                    <Tab
+                        label="Tài xế"
+                        sx={{
+                            textTransform: "none",
+                            fontSize: "16px",
+                            fontWeight: "500",
+                            color:
+                                tabIndex === 3
+                                    ? "rgb(24, 144, 255)"
+                                    : "inherit",
+                        }}
+                    />
+                )}
             </Tabs>
 
             {/* Tab Content */}
@@ -141,20 +200,29 @@ const Details: React.FC<DetailsProps> = ({ scheduleId }) => {
                             color="primary"
                             fontSize={16}
                             fontWeight={600}
-                            mt={2}>
+                            mt={2}
+                        >
                             Lưu ý
                         </Typography>
                         <Typography>
-                            Các mốc thời gian đón, trả bên dưới là thời gian dự kiến.
+                            Các mốc thời gian đón, trả bên dưới là thời gian dự
+                            kiến.
                         </Typography>
-                        <Typography>Lịch này có thể thay đổi tùy tình hình thực tế.</Typography>
-                        <Box display="flex" justifyContent="space-around" alignContent="center">
+                        <Typography>
+                            Lịch này có thể thay đổi tùy tình hình thực tế.
+                        </Typography>
+                        <Box
+                            display="flex"
+                            justifyContent="space-around"
+                            alignContent="center"
+                        >
                             <Box>
                                 <Typography
                                     variant="subtitle1"
                                     sx={{ mt: 2 }}
                                     fontSize={18}
-                                    fontWeight={700}>
+                                    fontWeight={700}
+                                >
                                     Điểm đón
                                 </Typography>
                                 <Box
@@ -162,7 +230,8 @@ const Details: React.FC<DetailsProps> = ({ scheduleId }) => {
                                         maxHeight: "440px",
                                         overflowY: "auto",
                                         paddingRight: "10px",
-                                    }}>
+                                    }}
+                                >
                                     {routeStops.pickup.map((stop, index) => {
                                         const arrivalTime = new Date(
                                             stop.arrivalTime
@@ -176,16 +245,26 @@ const Details: React.FC<DetailsProps> = ({ scheduleId }) => {
                                                 key={index}
                                                 display="flex"
                                                 alignItems="center"
-                                                sx={{ paddingTop: "13px" }}>
+                                                sx={{ paddingTop: "13px" }}
+                                            >
                                                 <span
                                                     style={{
                                                         fontWeight: "bold",
                                                         marginRight: "8px",
-                                                    }}>
+                                                    }}
+                                                >
                                                     {arrivalTime}
                                                 </span>
-                                                <span style={{ marginRight: "8px" }}>•</span>
-                                                <span style={{ width: "190px" }}>
+                                                <span
+                                                    style={{
+                                                        marginRight: "8px",
+                                                    }}
+                                                >
+                                                    •
+                                                </span>
+                                                <span
+                                                    style={{ width: "190px" }}
+                                                >
                                                     {stop.location}
                                                 </span>
                                             </Typography>
@@ -198,7 +277,8 @@ const Details: React.FC<DetailsProps> = ({ scheduleId }) => {
                                     variant="subtitle1"
                                     sx={{ mt: 2 }}
                                     fontSize={18}
-                                    fontWeight={700}>
+                                    fontWeight={700}
+                                >
                                     Điểm trả
                                 </Typography>
                                 <Box
@@ -206,7 +286,8 @@ const Details: React.FC<DetailsProps> = ({ scheduleId }) => {
                                         maxHeight: "440px",
                                         overflowY: "auto",
                                         paddingRight: "10px",
-                                    }}>
+                                    }}
+                                >
                                     {routeStops.dropoff.map((stop, index) => {
                                         const arrivalTime = new Date(
                                             stop.arrivalTime
@@ -220,16 +301,26 @@ const Details: React.FC<DetailsProps> = ({ scheduleId }) => {
                                                 key={index}
                                                 display="flex"
                                                 alignItems="center"
-                                                sx={{ paddingTop: "13px" }}>
+                                                sx={{ paddingTop: "13px" }}
+                                            >
                                                 <span
                                                     style={{
                                                         fontWeight: "bold",
                                                         marginRight: "8px",
-                                                    }}>
+                                                    }}
+                                                >
                                                     {arrivalTime}
                                                 </span>
-                                                <span style={{ marginRight: "8px" }}>•</span>
-                                                <span style={{ width: "190px" }}>
+                                                <span
+                                                    style={{
+                                                        marginRight: "8px",
+                                                    }}
+                                                >
+                                                    •
+                                                </span>
+                                                <span
+                                                    style={{ width: "190px" }}
+                                                >
                                                     {stop.location}
                                                 </span>
                                             </Typography>
@@ -244,7 +335,13 @@ const Details: React.FC<DetailsProps> = ({ scheduleId }) => {
                 {tabIndex === 1 && (
                     <Box>
                         <Divider />
-                        <Typography variant="h6" fontSize={18} fontWeight={700} mb={2} mt={3}>
+                        <Typography
+                            variant="h6"
+                            fontSize={18}
+                            fontWeight={700}
+                            mb={2}
+                            mt={3}
+                        >
                             Chính sách nhà xe
                         </Typography>
                         {policies.length > 0 &&
@@ -256,19 +353,33 @@ const Details: React.FC<DetailsProps> = ({ scheduleId }) => {
                                             index === policies.length - 1
                                                 ? "none"
                                                 : "1px solid rgba(0, 0, 0, 0.12)",
-                                    }}>
+                                    }}
+                                >
                                     <Typography
                                         variant="subtitle1"
-                                        sx={{ mt: 2, color: "rgba(0, 0, 0, 0.65)" }}
+                                        sx={{
+                                            mt: 2,
+                                            color: "rgba(0, 0, 0, 0.65)",
+                                        }}
                                         fontSize={16}
                                         fontWeight={700}
-                                        key={index}>
+                                        key={index}
+                                    >
                                         {policy.policyType}
                                     </Typography>
-                                    <List style={{ paddingLeft: "1.5rem", lineHeight: "1.6" }}>
-                                        {policy.policyContent.split("\n").map((line, lineIndex) => (
-                                            <ListItem key={lineIndex}>{line}</ListItem>
-                                        ))}
+                                    <List
+                                        style={{
+                                            paddingLeft: "1.5rem",
+                                            lineHeight: "1.6",
+                                        }}
+                                    >
+                                        {policy.policyContent
+                                            .split("\n")
+                                            .map((line, lineIndex) => (
+                                                <ListItem key={lineIndex}>
+                                                    {line}
+                                                </ListItem>
+                                            ))}
                                     </List>
                                 </Box>
                             ))}
@@ -288,20 +399,123 @@ const Details: React.FC<DetailsProps> = ({ scheduleId }) => {
                                         index === amenities.length - 1
                                             ? "none"
                                             : "1px solid rgba(0, 0, 0, 0.12)",
-                                }}>
+                                }}
+                            >
                                 <Box display="flex">
                                     {amenityIcons[amenity.name] || (
-                                        <TranslateIcon sx={{ marginX: "8px", color: "blue" }} />
+                                        <TranslateIcon
+                                            sx={{
+                                                marginX: "8px",
+                                                color: "blue",
+                                            }}
+                                        />
                                     )}
-                                    <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                                    <Typography
+                                        variant="body1"
+                                        sx={{ fontWeight: 500 }}
+                                    >
                                         {amenity.name}
                                     </Typography>
                                 </Box>
-                                <Typography variant="body2" color="textSecondary" paddingTop={1}>
+                                <Typography
+                                    variant="body2"
+                                    color="textSecondary"
+                                    paddingTop={1}
+                                >
                                     {amenity.description}
                                 </Typography>
                             </Box>
                         ))}
+                    </Box>
+                )}
+
+                {tabIndex === 3 && driver && (
+                    <Box>
+                        <Divider />
+                        <Box sx={{ mt: 3, display: "flex", gap: 3 }}>
+                            <Box
+                                sx={{
+                                    width: 200,
+                                    height: 200,
+                                    borderRadius: 2,
+                                    overflow: "hidden",
+                                    border: "2px solid #1976d2",
+                                }}
+                            >
+                                <img
+                                    src={driver.imageUrl}
+                                    alt={driver.name}
+                                    style={{
+                                        width: "100%",
+                                        height: "100%",
+                                        objectFit: "cover",
+                                    }}
+                                />
+                            </Box>
+                            <Box sx={{ flex: 1 }}>
+                                <Typography
+                                    variant="h6"
+                                    sx={{
+                                        fontSize: 24,
+                                        fontWeight: 700,
+                                        color: "#1976d2",
+                                        mb: 2,
+                                    }}
+                                >
+                                    {driver.name}
+                                </Typography>
+                                <Box
+                                    sx={{
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        gap: 2,
+                                    }}
+                                >
+                                    <Box
+                                        sx={{
+                                            display: "flex",
+                                            gap: 1,
+                                            alignItems: "center",
+                                        }}
+                                    >
+                                        <Typography
+                                            sx={{
+                                                fontSize: 16,
+                                                fontWeight: 600,
+                                                color: "text.secondary",
+                                                width: 150,
+                                            }}
+                                        >
+                                            Bằng lái xe:
+                                        </Typography>
+                                        <Typography sx={{ fontSize: 16 }}>
+                                            {driver.licenseNumber}
+                                        </Typography>
+                                    </Box>
+                                    <Box
+                                        sx={{
+                                            display: "flex",
+                                            gap: 1,
+                                            alignItems: "center",
+                                        }}
+                                    >
+                                        <Typography
+                                            sx={{
+                                                fontSize: 16,
+                                                fontWeight: 600,
+                                                color: "text.secondary",
+                                                width: 150,
+                                            }}
+                                        >
+                                            Số điện thoại:
+                                        </Typography>
+                                        <Typography sx={{ fontSize: 16 }}>
+                                            {driver.phoneNumber}
+                                        </Typography>
+                                    </Box>
+                                </Box>
+                            </Box>
+                        </Box>
                     </Box>
                 )}
             </Box>
