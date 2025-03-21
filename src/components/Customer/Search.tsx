@@ -1,5 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { Autocomplete, Box, Button, IconButton, InputAdornment, TextField } from "@mui/material";
+import {
+    Autocomplete,
+    Box,
+    Button,
+    IconButton,
+    InputAdornment,
+    TextField,
+} from "@mui/material";
 import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
 import MyLocationIcon from "@mui/icons-material/MyLocation";
 import PlaceIcon from "@mui/icons-material/Place";
@@ -43,7 +50,7 @@ const Search = () => {
     };
 
     const handleSearch = () => {
-        if (!departure || !destination || !selectedDate || !returnDate) {
+        if (!departure || !destination || !selectedDate) {
             toast.warn("Hãy nhập đầy đủ thông tin");
             return;
         }
@@ -54,19 +61,22 @@ const Search = () => {
         }
 
         const formattedDate = format(selectedDate, "yyyy-MM-dd");
-        const formattedReturnDate = format(returnDate, "yyyy-MM-dd");
         const params = new URLSearchParams({
             departureLocation: departure,
             arrivalLocation: destination,
             departureDate: formattedDate,
-            returnDate: formattedReturnDate,
             sortBy: "departureTime",
             sortDirection: "asc",
             pageNumber: "1",
             pageSize: "5",
-        }).toString();
+        });
 
-        navigate(`/search?${params}`);
+        // Only add returnDate if it exists
+        if (returnDate) {
+            params.append("returnDate", format(returnDate, "yyyy-MM-dd"));
+        }
+
+        navigate(`/search?${params.toString()}`);
     };
 
     return (
@@ -75,13 +85,15 @@ const Search = () => {
                 isHome
                     ? "absolute inset-0 flex justify-center items-center text-white text-3xl font-bold px-4"
                     : "w-full text-white text-3xl font-bold pt-6 px-4"
-            }`}>
+            }`}
+        >
             <div
                 className={`${
                     isHome
                         ? "bg-white p-4 md:p-6 rounded-lg shadow-lg w-full max-w-5xl border border-gray-300 "
                         : "bg-white p-4 md:p-6 rounded-lg shadow-lg border border-gray-300"
-                }`}>
+                }`}
+            >
                 <div className="flex flex-col md:flex-row items-center md:space-y-0 md:space-x-2">
                     {/* Nơi xuất phát */}
                     <Box
@@ -92,14 +104,20 @@ const Search = () => {
                             justifyContent: "center", // Căn giữa các phần tử
                             alignItems: "center",
                             gap: 1,
-                        }}>
+                        }}
+                    >
                         <Autocomplete
                             freeSolo
                             options={cities}
                             value={departure}
-                            onChange={(event: React.SyntheticEvent, newValue: string | null) => {
+                            onChange={(
+                                event: React.SyntheticEvent,
+                                newValue: string | null
+                            ) => {
                                 if (newValue === destination) {
-                                    toast.error("Nơi xuất phát và nơi đến không được giống nhau");
+                                    toast.error(
+                                        "Nơi xuất phát và nơi đến không được giống nhau"
+                                    );
                                     return;
                                 }
                                 setDeparture(newValue);
@@ -117,7 +135,9 @@ const Search = () => {
                                         ...params.InputProps,
                                         startAdornment: (
                                             <InputAdornment position="start">
-                                                <MyLocationIcon sx={{ color: "blue" }} />
+                                                <MyLocationIcon
+                                                    sx={{ color: "blue" }}
+                                                />
                                             </InputAdornment>
                                         ),
                                     }}
@@ -133,9 +153,13 @@ const Search = () => {
                             size="large"
                             sx={{
                                 position: "relative",
-                                transform: { xs: "rotate(90deg)", md: "rotate(0deg)" },
+                                transform: {
+                                    xs: "rotate(90deg)",
+                                    md: "rotate(0deg)",
+                                },
                                 padding: "8px", // Reduced padding
-                            }}>
+                            }}
+                        >
                             <SwapHorizIcon />
                         </IconButton>
 
@@ -144,9 +168,14 @@ const Search = () => {
                             freeSolo
                             options={cities}
                             value={destination}
-                            onChange={(event: React.SyntheticEvent, newValue: string | null) => {
+                            onChange={(
+                                event: React.SyntheticEvent,
+                                newValue: string | null
+                            ) => {
                                 if (newValue === departure) {
-                                    toast.warn("Nơi xuất phát và nơi đến không được giống nhau");
+                                    toast.warn(
+                                        "Nơi xuất phát và nơi đến không được giống nhau"
+                                    );
                                     return;
                                 }
                                 setDestination(newValue);
@@ -164,7 +193,9 @@ const Search = () => {
                                         ...params.InputProps,
                                         startAdornment: (
                                             <InputAdornment position="start">
-                                                <PlaceIcon sx={{ color: "red" }} />
+                                                <PlaceIcon
+                                                    sx={{ color: "red" }}
+                                                />
                                             </InputAdornment>
                                         ),
                                     }}
@@ -174,7 +205,10 @@ const Search = () => {
                     </Box>
 
                     {/* Thời gian */}
-                    <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={vi}>
+                    <LocalizationProvider
+                        dateAdapter={AdapterDateFns}
+                        adapterLocale={vi}
+                    >
                         <DatePicker
                             label="Ngày đi"
                             value={selectedDate}
@@ -232,7 +266,8 @@ const Search = () => {
                                 color: "black",
                                 textTransform: "none",
                                 fontSize: "16px",
-                            }}>
+                            }}
+                        >
                             Tìm kiếm
                         </Button>
                     </div>

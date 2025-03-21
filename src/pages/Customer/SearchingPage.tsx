@@ -12,6 +12,8 @@ import {
     Typography,
     Pagination,
     Skeleton,
+    Tabs,
+    Tab,
 } from "@mui/material";
 import StarIcon from "@mui/icons-material/Star";
 import SeatSelect from "../../components/Customer/SeatSelect";
@@ -22,9 +24,23 @@ import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import dayjs from "dayjs";
 import Details from "../../components/Customer/Details";
+import { toast } from "react-toastify";
 
 interface SearchResult {
-    data: {
+    outboundTrips: {
+        scheduleId: string;
+        routeName: string;
+        departureLocation: string;
+        arrivalLocation: string;
+        departureTime: string;
+        arrivalTime: string;
+        travelDuration: string;
+        price: number;
+        busImage: string;
+        busType: string;
+        availableSeats: number;
+    }[];
+    returnTrips?: {
         scheduleId: string;
         routeName: string;
         departureLocation: string;
@@ -51,8 +67,12 @@ const SearchingPage = () => {
 
     const [expandedId, setExpandedId] = useState<string | null>(null);
     const [seatSelectId, setSeatSelectId] = useState<string | null>(null);
+    const [activeTab, setActiveTab] = useState<"outbound" | "return">(
+        "outbound"
+    );
     const [searchResults, setSearchResults] = useState<SearchResult>({
-        data: [],
+        outboundTrips: [],
+        returnTrips: [],
         pagination: {
             pageNumber: 0,
             pageSize: 0,
@@ -73,7 +93,10 @@ const SearchingPage = () => {
         setSeatSelectId((prev) => (prev === id ? null : id));
     };
 
-    const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
+    const handlePageChange = (
+        event: React.ChangeEvent<unknown>,
+        value: number
+    ) => {
         setCurrentPage(value);
     };
 
@@ -117,8 +140,10 @@ const SearchingPage = () => {
                 departureLocation: searchParams.get("departureLocation") || "",
                 arrivalLocation: searchParams.get("arrivalLocation") || "",
                 departureDate: searchParams.get("departureDate") || "",
+                returnDate: searchParams.get("returnDate") || "",
                 sortBy: searchParams.get("sortBy") || sortBy,
-                sortDirection: searchParams.get("sortDirection") || sortDirection,
+                sortDirection:
+                    searchParams.get("sortDirection") || sortDirection,
                 pageNumber: currentPage,
                 pageSize: 5,
             };
@@ -130,6 +155,7 @@ const SearchingPage = () => {
                 setSearchResults(response.data);
             } catch (error) {
                 console.error("Error fetching search results:", error);
+                toast.error("Có lỗi xảy ra khi tìm kiếm chuyến xe");
             } finally {
                 setSearchLoading(false);
             }
@@ -138,7 +164,9 @@ const SearchingPage = () => {
     }, [location, currentPage, sortBy, sortDirection]);
 
     return (
-        <div style={{ backgroundColor: "rgb(243,243,243)", minHeight: "100vh" }}>
+        <div
+            style={{ backgroundColor: "rgb(243,243,243)", minHeight: "100vh" }}
+        >
             <Header />
             <Container>
                 <Search />
@@ -156,7 +184,8 @@ const SearchingPage = () => {
                             borderColor: "rgb(209 213 219)",
                             height: "fit-content",
                             mr: 2,
-                        }}>
+                        }}
+                    >
                         <FormControl>
                             <FormLabel
                                 id="sort-options-label"
@@ -165,14 +194,16 @@ const SearchingPage = () => {
                                     fontSize: "18px",
                                     color: "black",
                                     "&.Mui-focused": { color: "black" },
-                                }}>
+                                }}
+                            >
                                 Sắp xếp
                             </FormLabel>
                             <RadioGroup
                                 aria-labelledby="sort-options-label"
                                 defaultValue="default"
                                 name="radio-buttons-group"
-                                onChange={handleSortChange}>
+                                onChange={handleSortChange}
+                            >
                                 <FormControlLabel
                                     value="default"
                                     control={<Radio />}
@@ -202,6 +233,41 @@ const SearchingPage = () => {
                         </FormControl>
                     </Box>
 
+                    {searchResults.returnTrips && (
+                        <Box
+                            sx={{
+                                mb: 2,
+                                borderBottom: 1,
+                                borderColor: "divider",
+                            }}
+                        >
+                            <Tabs
+                                value={activeTab}
+                                onChange={(_, newValue) =>
+                                    setActiveTab(newValue)
+                                }
+                                aria-label="trip tabs"
+                            >
+                                <Tab
+                                    label="Chuyến đi"
+                                    value="outbound"
+                                    sx={{
+                                        textTransform: "none",
+                                        fontWeight: 600,
+                                    }}
+                                />
+                                <Tab
+                                    label="Chuyến về"
+                                    value="return"
+                                    sx={{
+                                        textTransform: "none",
+                                        fontWeight: 600,
+                                    }}
+                                />
+                            </Tabs>
+                        </Box>
+                    )}
+
                     {/* Search Results */}
                     <Box display="flex" flexDirection="column" width="100%">
                         {searchLoading ? (
@@ -220,7 +286,8 @@ const SearchingPage = () => {
                                         gap: 2,
                                         width: "100%",
                                         minHeight: "270px",
-                                    }}>
+                                    }}
+                                >
                                     <Box display="flex" gap={2} height="full">
                                         {/* Skeleton for image */}
                                         <Skeleton
@@ -235,7 +302,8 @@ const SearchingPage = () => {
                                             flexDirection="column"
                                             className="w-full"
                                             gap={1}
-                                            justifyContent="space-around">
+                                            justifyContent="space-around"
+                                        >
                                             {/* Skeleton for text information */}
                                             <Skeleton
                                                 variant="text"
@@ -243,14 +311,21 @@ const SearchingPage = () => {
                                                 height={30}
                                                 animation="wave"
                                             />
-                                            <Skeleton variant="text" width="40%" animation="wave" />
+                                            <Skeleton
+                                                variant="text"
+                                                width="40%"
+                                                animation="wave"
+                                            />
                                             <Skeleton
                                                 variant="text"
                                                 width="30%"
                                                 sx={{ mb: 2 }}
                                                 animation="wave"
                                             />
-                                            <Box display="flex" justifyContent="space-between">
+                                            <Box
+                                                display="flex"
+                                                justifyContent="space-between"
+                                            >
                                                 <Skeleton
                                                     variant="text"
                                                     width="50%"
@@ -266,9 +341,15 @@ const SearchingPage = () => {
                                     </Box>
                                 </Box>
                             ))
-                        ) : searchResults.data?.length > 0 ? (
+                        ) : (activeTab === "outbound"
+                              ? searchResults.outboundTrips
+                              : searchResults.returnTrips ?? []
+                          )?.length > 0 ? (
                             // Hiển thị dữ liệu khi đã tải xong
-                            searchResults.data.map((result) => (
+                            (activeTab === "outbound"
+                                ? searchResults.outboundTrips
+                                : searchResults.returnTrips ?? []
+                            ).map((result) => (
                                 <Box
                                     key={result.scheduleId}
                                     mb={3}
@@ -285,7 +366,8 @@ const SearchingPage = () => {
                                         minHeight: "270px",
                                         transition: "box-shadow 0.3s",
                                         "&:hover": { boxShadow: 10 },
-                                    }}>
+                                    }}
+                                >
                                     <Box display="flex" gap={2} height="full">
                                         <img
                                             src={result.busImage}
@@ -297,15 +379,18 @@ const SearchingPage = () => {
                                             flexDirection="column"
                                             className="w-full"
                                             gap={1}
-                                            justifyContent="space-around">
+                                            justifyContent="space-around"
+                                        >
                                             <Box
                                                 display="flex"
                                                 justifyContent="space-between"
-                                                alignItems="center">
+                                                alignItems="center"
+                                            >
                                                 <div>
                                                     <Typography
                                                         variant="h6"
-                                                        className="flex space-x-2 items-center justify-center">
+                                                        className="flex space-x-2 items-center justify-center"
+                                                    >
                                                         <span className="text-blue-700 font-bold">
                                                             {result.routeName}
                                                         </span>
@@ -315,10 +400,12 @@ const SearchingPage = () => {
                                                                 backgroundColor:
                                                                     "rgb(36, 116, 229)",
                                                                 height: "fit-content",
-                                                            }}>
+                                                            }}
+                                                        >
                                                             <StarIcon
                                                                 sx={{
-                                                                    fontSize: "14px",
+                                                                    fontSize:
+                                                                        "14px",
                                                                     mb: "2px",
                                                                     color: "white",
                                                                 }}
@@ -337,48 +424,67 @@ const SearchingPage = () => {
                                                         fontWeight: 700,
                                                         fontSize: "20px",
                                                         marginBottom: "30px",
-                                                    }}>
-                                                    {new Intl.NumberFormat("vi-VN", {
-                                                        style: "currency",
-                                                        currency: "VND",
-                                                    }).format(result.price)}
+                                                    }}
+                                                >
+                                                    {new Intl.NumberFormat(
+                                                        "vi-VN",
+                                                        {
+                                                            style: "currency",
+                                                            currency: "VND",
+                                                        }
+                                                    ).format(result.price)}
                                                 </Typography>
                                             </Box>
                                             <Box
                                                 display="flex"
                                                 justifyContent="space-between"
-                                                alignItems="center">
+                                                alignItems="center"
+                                            >
                                                 <Box
                                                     display="flex"
-                                                    className="space-x-2 items-center">
+                                                    className="space-x-2 items-center"
+                                                >
                                                     <LocationRoute />
                                                     <Box className="text-gray-600">
                                                         <Typography className="text-xl font-bold">
-                                                            {dayjs(result.departureTime).format(
-                                                                "HH:mm"
-                                                            )}
+                                                            {dayjs(
+                                                                result.departureTime
+                                                            ).format("HH:mm")}
                                                             <span className="mx-1 font-normal text-base">
-                                                                • {result.departureLocation}
+                                                                •{" "}
+                                                                {
+                                                                    result.departureLocation
+                                                                }
                                                             </span>
                                                         </Typography>
                                                         <Typography className="text-sm py-1">
-                                                            {result.travelDuration}
+                                                            {
+                                                                result.travelDuration
+                                                            }
                                                         </Typography>
                                                         <Typography className="text-xl font-bold text-gray-500">
-                                                            {dayjs(result.arrivalTime).format(
-                                                                "HH:mm"
-                                                            )}
+                                                            {dayjs(
+                                                                result.arrivalTime
+                                                            ).format("HH:mm")}
                                                             <span className="mx-1 font-normal text-base">
-                                                                • {result.arrivalLocation}
+                                                                •{" "}
+                                                                {
+                                                                    result.arrivalLocation
+                                                                }
                                                             </span>
                                                         </Typography>
                                                     </Box>
                                                 </Box>
                                                 <Box textAlign="right">
                                                     <Typography className="text-gray-700 text-base my-1">
-                                                        Còn {result.availableSeats} chỗ trống
+                                                        Còn{" "}
+                                                        {result.availableSeats}{" "}
+                                                        chỗ trống
                                                     </Typography>
-                                                    <Box display="flex" alignItems="center">
+                                                    <Box
+                                                        display="flex"
+                                                        alignItems="center"
+                                                    >
                                                         <Box
                                                             display="flex"
                                                             alignItems="center"
@@ -387,17 +493,27 @@ const SearchingPage = () => {
                                                                     result.scheduleId
                                                                 )
                                                             }
-                                                            sx={{ cursor: "pointer", mr: 2 }}>
+                                                            sx={{
+                                                                cursor: "pointer",
+                                                                mr: 2,
+                                                            }}
+                                                        >
                                                             <Typography
                                                                 color="primary"
                                                                 sx={{
-                                                                    textDecoration: "underline",
-                                                                    display: "flex",
-                                                                    alignItems: "center",
-                                                                }}>
-                                                                Thông tin chi tiết
+                                                                    textDecoration:
+                                                                        "underline",
+                                                                    display:
+                                                                        "flex",
+                                                                    alignItems:
+                                                                        "center",
+                                                                }}
+                                                            >
+                                                                Thông tin chi
+                                                                tiết
                                                             </Typography>
-                                                            {expandedId === result.scheduleId ? (
+                                                            {expandedId ===
+                                                            result.scheduleId ? (
                                                                 <ArrowDropUpIcon color="primary" />
                                                             ) : (
                                                                 <ArrowDropDownIcon color="primary" />
@@ -408,10 +524,13 @@ const SearchingPage = () => {
                                                             color="primary"
                                                             size="small"
                                                             onClick={() =>
-                                                                handleSelectTrip(result.scheduleId)
+                                                                handleSelectTrip(
+                                                                    result.scheduleId
+                                                                )
                                                             }
                                                             sx={{
-                                                                textTransform: "none",
+                                                                textTransform:
+                                                                    "none",
                                                                 backgroundColor:
                                                                     seatSelectId ===
                                                                     result.scheduleId
@@ -419,9 +538,12 @@ const SearchingPage = () => {
                                                                         : "rgb(255, 199, 0)",
                                                                 color: "black",
                                                                 p: "8px 16px",
-                                                                fontWeight: "bold",
-                                                            }}>
-                                                            {seatSelectId === result.scheduleId
+                                                                fontWeight:
+                                                                    "bold",
+                                                            }}
+                                                        >
+                                                            {seatSelectId ===
+                                                            result.scheduleId
                                                                 ? "Đóng"
                                                                 : "Chọn chuyến"}
                                                         </Button>
@@ -431,7 +553,9 @@ const SearchingPage = () => {
                                         </Box>
                                     </Box>
                                     {expandedId === result.scheduleId && (
-                                        <Details scheduleId={result.scheduleId} />
+                                        <Details
+                                            scheduleId={result.scheduleId}
+                                        />
                                     )}
                                     {seatSelectId === result.scheduleId && (
                                         <SeatSelect
@@ -443,7 +567,8 @@ const SearchingPage = () => {
                             ))
                         ) : (
                             <Typography>
-                                Rất tiếc, hiện không có chuyến xe nào phù hợp với tiêu chí của bạn.
+                                Rất tiếc, hiện không có chuyến xe nào phù hợp
+                                với tiêu chí của bạn.
                             </Typography>
                         )}
                     </Box>
