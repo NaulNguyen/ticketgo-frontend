@@ -193,7 +193,7 @@ const VoucherManagement = () => {
                     }}
                 >
                     <DiscountIcon sx={{ fontSize: 35 }} />
-                    Quản lý Voucher
+                    Quản lý mã giảm giá
                 </Typography>
                 <Button
                     variant="contained"
@@ -338,7 +338,10 @@ const VoucherManagement = () => {
                                             textAlign: "center",
                                         }}
                                     >
-                                        {voucher.status.toUpperCase()}
+                                        {voucher.status.toUpperCase() ===
+                                        "ACTIVE"
+                                            ? "Có hiệu lực"
+                                            : "Vô hiệu lực"}
                                     </Box>
                                 </TableCell>
                                 <TableCell>
