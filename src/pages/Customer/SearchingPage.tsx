@@ -12,8 +12,6 @@ import {
     Typography,
     Pagination,
     Skeleton,
-    Tabs,
-    Tab,
 } from "@mui/material";
 import StarIcon from "@mui/icons-material/Star";
 import SeatSelect from "../../components/Customer/SeatSelect";
@@ -27,31 +25,21 @@ import Details from "../../components/Customer/Details";
 import { toast } from "react-toastify";
 
 interface SearchResult {
-    outboundTrips: {
+    data: {
         scheduleId: string;
         routeName: string;
-        departureLocation: string;
-        arrivalLocation: string;
-        departureTime: string;
-        arrivalTime: string;
-        travelDuration: string;
-        price: number;
         busImage: string;
         busType: string;
-        availableSeats: number;
-    }[];
-    returnTrips?: {
-        scheduleId: string;
-        routeName: string;
-        departureLocation: string;
-        arrivalLocation: string;
+        busId: string;
         departureTime: string;
+        departureLocation: string;
+        departureAddress: string;
+        arrivalAddress: string;
         arrivalTime: string;
-        travelDuration: string;
+        arrivalLocation: string;
         price: number;
-        busImage: string;
-        busType: string;
         availableSeats: number;
+        travelDuration: string;
     }[];
     pagination: {
         pageNumber: number;
@@ -67,12 +55,8 @@ const SearchingPage = () => {
 
     const [expandedId, setExpandedId] = useState<string | null>(null);
     const [seatSelectId, setSeatSelectId] = useState<string | null>(null);
-    const [activeTab, setActiveTab] = useState<"outbound" | "return">(
-        "outbound"
-    );
     const [searchResults, setSearchResults] = useState<SearchResult>({
-        outboundTrips: [],
-        returnTrips: [],
+        data: [],
         pagination: {
             pageNumber: 0,
             pageSize: 0,
@@ -153,6 +137,7 @@ const SearchingPage = () => {
                     params
                 );
                 setSearchResults(response.data);
+                console.log(response.data);
             } catch (error) {
                 console.error("Error fetching search results:", error);
                 toast.error("Có lỗi xảy ra khi tìm kiếm chuyến xe");
@@ -233,41 +218,6 @@ const SearchingPage = () => {
                         </FormControl>
                     </Box>
 
-                    {searchResults.returnTrips && (
-                        <Box
-                            sx={{
-                                mb: 2,
-                                borderBottom: 1,
-                                borderColor: "divider",
-                            }}
-                        >
-                            <Tabs
-                                value={activeTab}
-                                onChange={(_, newValue) =>
-                                    setActiveTab(newValue)
-                                }
-                                aria-label="trip tabs"
-                            >
-                                <Tab
-                                    label="Chuyến đi"
-                                    value="outbound"
-                                    sx={{
-                                        textTransform: "none",
-                                        fontWeight: 600,
-                                    }}
-                                />
-                                <Tab
-                                    label="Chuyến về"
-                                    value="return"
-                                    sx={{
-                                        textTransform: "none",
-                                        fontWeight: 600,
-                                    }}
-                                />
-                            </Tabs>
-                        </Box>
-                    )}
-
                     {/* Search Results */}
                     <Box display="flex" flexDirection="column" width="100%">
                         {searchLoading ? (
@@ -341,15 +291,8 @@ const SearchingPage = () => {
                                     </Box>
                                 </Box>
                             ))
-                        ) : (activeTab === "outbound"
-                              ? searchResults.outboundTrips
-                              : searchResults.returnTrips ?? []
-                          )?.length > 0 ? (
-                            // Hiển thị dữ liệu khi đã tải xong
-                            (activeTab === "outbound"
-                                ? searchResults.outboundTrips
-                                : searchResults.returnTrips ?? []
-                            ).map((result) => (
+                        ) : searchResults.data.length > 0 ? (
+                            searchResults.data.map((result) => (
                                 <Box
                                     key={result.scheduleId}
                                     mb={3}
