@@ -20,6 +20,7 @@ import { toast } from "react-toastify";
 import { useDispatch } from "react-redux";
 import { booking } from "../../actions/user.action";
 import { axiosWithJWT } from "../../config/axiosConfig";
+import UserService from "../../service/UserService";
 
 interface Seat {
     ticketCode: string;
@@ -67,8 +68,37 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
     const { getUserInfor } = useAppAccessor();
     const userInfo = getUserInfor();
 
-    const handleNext = () => {
-        setActiveStep((prevActiveStep) => prevActiveStep + 1);
+    const handleNext = async () => {
+        if (activeStep === 1) {
+            if (!selectedPickup || !selectedDropoff) {
+                toast.error("Vui lòng chọn điểm đón và điểm trả");
+                return;
+            }
+
+            if (!selectedSeats || selectedSeats.length === 0) {
+                toast.error("Vui lòng chọn ghế");
+                return;
+            }
+            try {
+                const requestData = {
+                    ticketCodes: selectedSeats.map((seat) => seat.ticketCode),
+                    pickupStopId: selectedPickup,
+                    dropoffStopId: selectedDropoff,
+                    scheduleId: scheduleId,
+                };
+                await UserService.savePriceAndTripInfo(requestData);
+                setActiveStep((prevActiveStep) => prevActiveStep + 1);
+                toast.success("Lưu thông tin đặt vé thành công");
+            } catch (error: any) {
+                console.error("Error saving booking info:", error);
+                toast.error(
+                    error.response?.data?.message ||
+                        "Có lỗi xảy ra khi lưu thông tin đặt vé"
+                );
+            }
+        } else {
+            setActiveStep((prevActiveStep) => prevActiveStep + 1);
+        }
     };
 
     const handleBack = () => {
@@ -79,7 +109,9 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
         setSelectedPickup(Number(event.target.value));
     };
 
-    const handleDropoffChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleDropoffChange = (
+        event: React.ChangeEvent<HTMLInputElement>
+    ) => {
         setSelectedDropoff(Number(event.target.value));
     };
 
@@ -89,9 +121,9 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
 
     useEffect(() => {
         if (activeStep === 2) {
-            navigate("/booking-confirm");
+            navigate(`/booking-confirm?scheduleId=${scheduleId}`);
         }
-    }, [activeStep, navigate]);
+    }, [activeStep, navigate, scheduleId]);
 
     useEffect(() => {
         const fetchSeatsData = async () => {
@@ -130,7 +162,11 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
 
     useEffect(() => {
         const saveBooking = async () => {
-            if (selectedSeats.length > 0 && selectedPickup !== null && selectedDropoff !== null) {
+            if (
+                selectedSeats.length > 0 &&
+                selectedPickup !== null &&
+                selectedDropoff !== null
+            ) {
                 const bookingData = {
                     scheduleId,
                     ticketCodes: selectedSeats.map((seat) => seat.ticketCode),
@@ -176,9 +212,15 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
                 if (response.data) {
                     setIsModalOpen(true);
                 } else {
-                    if (selectedSeats.some((s) => s.ticketCode === selectedSeat.ticketCode)) {
+                    if (
+                        selectedSeats.some(
+                            (s) => s.ticketCode === selectedSeat.ticketCode
+                        )
+                    ) {
                         setSelectedSeats((prev) =>
-                            prev.filter((s) => s.ticketCode !== selectedSeat.ticketCode)
+                            prev.filter(
+                                (s) => s.ticketCode !== selectedSeat.ticketCode
+                            )
                         );
                     } else {
                         setSelectedSeats((prev) => [...prev, selectedSeat]);
@@ -186,7 +228,9 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
                 }
             } catch (error) {
                 console.error("Error checking payment status:", error);
-                toast.error("Không thể kiểm tra trạng thái thanh toán. Vui lòng thử lại sau.");
+                toast.error(
+                    "Không thể kiểm tra trạng thái thanh toán. Vui lòng thử lại sau."
+                );
             } finally {
                 setSelectedSeat(null); // Reset the selected seat after processing
             }
@@ -215,11 +259,21 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
                                     },
                                 ],
                             },
-                        }}>
+                        }}
+                    >
                         <Box
-                            sx={{ cursor: seat.isAvailable ? "pointer" : "not-allowed" }}
-                            onClick={() => seat.isAvailable && toggleSeatSelection(seat)}>
-                            {selectedSeats.some((s) => s.ticketCode === seat.ticketCode) ? (
+                            sx={{
+                                cursor: seat.isAvailable
+                                    ? "pointer"
+                                    : "not-allowed",
+                            }}
+                            onClick={() =>
+                                seat.isAvailable && toggleSeatSelection(seat)
+                            }
+                        >
+                            {selectedSeats.some(
+                                (s) => s.ticketCode === seat.ticketCode
+                            ) ? (
                                 <SelectedSeat />
                             ) : seat.isAvailable ? (
                                 <EmptySeat />
@@ -233,9 +287,17 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
         ));
 
     return (
-        <Box display="flex" flexDirection="column" justifyContent="space-around" gap={3}>
+        <Box
+            display="flex"
+            flexDirection="column"
+            justifyContent="space-around"
+            gap={3}
+        >
             <Divider />
-            <Stepper activeStep={activeStep} sx={{ minWidth: "600px", margin: "auto" }}>
+            <Stepper
+                activeStep={activeStep}
+                sx={{ minWidth: "600px", margin: "auto" }}
+            >
                 {steps.map((label, index) => {
                     const stepProps: { completed?: boolean } = {};
                     const labelProps: { optional?: React.ReactNode } = {};
@@ -254,12 +316,14 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
                         display="flex"
                         flexDirection="column"
                         justifyContent="center"
-                        alignItems="center">
+                        alignItems="center"
+                    >
                         <Box display="flex" flexDirection="column">
                             <Typography
                                 variant="h6"
                                 fontWeight="bold"
-                                sx={{ fontSize: "16px", color: "black" }}>
+                                sx={{ fontSize: "16px", color: "black" }}
+                            >
                                 Chú thích
                             </Typography>
                             <Box gap={3} display="flex" flexDirection="column">
@@ -288,18 +352,21 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
                             display="flex"
                             flexDirection="column"
                             justifyContent="center"
-                            alignItems="center">
+                            alignItems="center"
+                        >
                             <Typography
                                 variant="h6"
                                 fontWeight="bold"
-                                sx={{ fontSize: "16px", color: "black" }}>
+                                sx={{ fontSize: "16px", color: "black" }}
+                            >
                                 Tầng dưới
                             </Typography>
                             <Box
                                 flex={1}
                                 display="flex"
                                 justifyContent="center"
-                                alignItems="center">
+                                alignItems="center"
+                            >
                                 <Box
                                     sx={{
                                         display: "flex",
@@ -307,7 +374,8 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
                                         justifyContent: "center",
                                         alignItems: "center",
                                         width:
-                                            seatsData?.floor_1 && seatsData?.floor_1[0].length === 2
+                                            seatsData?.floor_1 &&
+                                            seatsData?.floor_1[0].length === 2
                                                 ? "160px"
                                                 : "200px",
                                         height: "300px",
@@ -315,23 +383,27 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
                                         padding: "24px 0 24px 0",
                                         borderTopLeftRadius: "40px",
                                         borderTopRightRadius: "40px",
-                                    }}>
+                                    }}
+                                >
                                     <Box
                                         sx={{
                                             alignSelf: "start",
                                             ml:
                                                 seatsData?.floor_1 &&
-                                                seatsData?.floor_1[0].length === 2
+                                                seatsData?.floor_1[0].length ===
+                                                    2
                                                     ? 5
                                                     : 3.5,
                                             mb: 1,
                                             pointerEvents: "none",
                                             cursor: "not-allowed",
-                                        }}>
+                                        }}
+                                    >
                                         <Wheel />
                                     </Box>
                                     <Box>
-                                        {seatsData?.floor_1 && renderSeats(seatsData.floor_1)}
+                                        {seatsData?.floor_1 &&
+                                            renderSeats(seatsData.floor_1)}
                                     </Box>
                                 </Box>
                             </Box>
@@ -342,18 +414,21 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
                             display="flex"
                             flexDirection="column"
                             justifyContent="center"
-                            alignItems="center">
+                            alignItems="center"
+                        >
                             <Typography
                                 variant="h6"
                                 fontWeight="bold"
-                                sx={{ fontSize: "16px", color: "black" }}>
+                                sx={{ fontSize: "16px", color: "black" }}
+                            >
                                 Tầng trên
                             </Typography>
                             <Box
                                 flex={1}
                                 display="flex"
                                 justifyContent="center"
-                                alignItems="center">
+                                alignItems="center"
+                            >
                                 <Box
                                     sx={{
                                         display: "flex",
@@ -361,7 +436,8 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
                                         justifyContent: "center",
                                         alignItems: "center",
                                         width:
-                                            seatsData?.floor_1 && seatsData?.floor_1[0].length === 2
+                                            seatsData?.floor_1 &&
+                                            seatsData?.floor_1[0].length === 2
                                                 ? "160px"
                                                 : "200px",
                                         height: "300px",
@@ -369,7 +445,8 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
                                         padding: "24px 0 24px 0",
                                         borderTopLeftRadius: "40px",
                                         borderTopRightRadius: "40px",
-                                    }}>
+                                    }}
+                                >
                                     <Box
                                         sx={{
                                             width: "100%",
@@ -377,9 +454,11 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
                                             alignSelf: "start",
                                             ml: 1,
                                             mb: 4,
-                                        }}></Box>
+                                        }}
+                                    ></Box>
                                     <Box>
-                                        {seatsData?.floor_2 && renderSeats(seatsData.floor_2)}
+                                        {seatsData?.floor_2 &&
+                                            renderSeats(seatsData.floor_2)}
                                     </Box>
                                 </Box>
                             </Box>
@@ -388,14 +467,25 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
                 )}
 
                 {activeStep > 0 && routeStops && (
-                    <Box display="flex" flexDirection="column" alignItems="center" mt={2}>
-                        <Box display="flex" justifyContent="center" alignItems="center" gap={2}>
+                    <Box
+                        display="flex"
+                        flexDirection="column"
+                        alignItems="center"
+                        mt={2}
+                    >
+                        <Box
+                            display="flex"
+                            justifyContent="center"
+                            alignItems="center"
+                            gap={2}
+                        >
                             <Box>
                                 <Typography
                                     variant="subtitle1"
                                     sx={{ mb: 2 }}
                                     fontSize={18}
-                                    fontWeight={700}>
+                                    fontWeight={700}
+                                >
                                     Điểm đón
                                 </Typography>
                                 <Box
@@ -403,7 +493,8 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
                                         maxHeight: "450px",
                                         overflowY: "auto",
                                         paddingRight: "10px",
-                                    }}>
+                                    }}
+                                >
                                     {routeStops.pickup.map((stop, index) => {
                                         const arrivalTime = new Date(
                                             stop.arrivalTime
@@ -417,25 +508,45 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
                                                 key={index}
                                                 display="flex"
                                                 alignItems="center"
-                                                sx={{ paddingTop: "13px" }}>
+                                                sx={{ paddingTop: "13px" }}
+                                            >
                                                 {/* Radio Button */}
                                                 <Radio
                                                     sx={{ marginRight: 2 }}
                                                     value={stop.stopId}
                                                     name={`pickup-stop-${index}`}
-                                                    checked={selectedPickup === stop.stopId}
-                                                    onChange={handlePickupChange}
+                                                    checked={
+                                                        selectedPickup ===
+                                                        stop.stopId
+                                                    }
+                                                    onChange={
+                                                        handlePickupChange
+                                                    }
                                                 />
-                                                <Typography display="flex" alignItems="center">
+                                                <Typography
+                                                    display="flex"
+                                                    alignItems="center"
+                                                >
                                                     <span
                                                         style={{
                                                             fontWeight: "bold",
                                                             marginRight: "8px",
-                                                        }}>
+                                                        }}
+                                                    >
                                                         {arrivalTime}
                                                     </span>
-                                                    <span style={{ marginRight: "8px" }}>•</span>
-                                                    <span style={{ width: "190px" }}>
+                                                    <span
+                                                        style={{
+                                                            marginRight: "8px",
+                                                        }}
+                                                    >
+                                                        •
+                                                    </span>
+                                                    <span
+                                                        style={{
+                                                            width: "190px",
+                                                        }}
+                                                    >
                                                         {stop.location}
                                                     </span>
                                                 </Typography>
@@ -450,7 +561,8 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
                                     variant="subtitle1"
                                     sx={{ mb: 2 }}
                                     fontSize={18}
-                                    fontWeight={700}>
+                                    fontWeight={700}
+                                >
                                     Điểm trả
                                 </Typography>
                                 <Box
@@ -458,7 +570,8 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
                                         maxHeight: "450px",
                                         overflowY: "auto",
                                         paddingRight: "10px",
-                                    }}>
+                                    }}
+                                >
                                     {routeStops.dropoff.map((stop, index) => {
                                         const arrivalTime = new Date(
                                             stop.arrivalTime
@@ -472,25 +585,45 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
                                                 key={index}
                                                 display="flex"
                                                 alignItems="center"
-                                                sx={{ paddingTop: "13px" }}>
+                                                sx={{ paddingTop: "13px" }}
+                                            >
                                                 {/* Radio Button */}
                                                 <Radio
                                                     sx={{ marginRight: 2 }}
                                                     value={stop.stopId}
                                                     name={`dropoff-stop-${index}`}
-                                                    checked={selectedDropoff === stop.stopId}
-                                                    onChange={handleDropoffChange}
+                                                    checked={
+                                                        selectedDropoff ===
+                                                        stop.stopId
+                                                    }
+                                                    onChange={
+                                                        handleDropoffChange
+                                                    }
                                                 />
-                                                <Typography display="flex" alignItems="center">
+                                                <Typography
+                                                    display="flex"
+                                                    alignItems="center"
+                                                >
                                                     <span
                                                         style={{
                                                             fontWeight: "bold",
                                                             marginRight: "8px",
-                                                        }}>
+                                                        }}
+                                                    >
                                                         {arrivalTime}
                                                     </span>
-                                                    <span style={{ marginRight: "8px" }}>•</span>
-                                                    <span style={{ width: "190px" }}>
+                                                    <span
+                                                        style={{
+                                                            marginRight: "8px",
+                                                        }}
+                                                    >
+                                                        •
+                                                    </span>
+                                                    <span
+                                                        style={{
+                                                            width: "190px",
+                                                        }}
+                                                    >
                                                         {stop.location}
                                                     </span>
                                                 </Typography>
@@ -512,7 +645,8 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
                     justifyContent="space-between"
                     gap={2}
                     alignItems="center"
-                    marginTop={3}>
+                    marginTop={3}
+                >
                     {activeStep === 0 ? (
                         <Box sx={{ width: "120px" }} />
                     ) : (
@@ -535,26 +669,45 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
                             }}
                             onClick={handleBack}
                             startIcon={
-                                <ArrowBackIosIcon fontSize="small" sx={{ marginRight: "4px" }} />
-                            }>
+                                <ArrowBackIosIcon
+                                    fontSize="small"
+                                    sx={{ marginRight: "4px" }}
+                                />
+                            }
+                        >
                             Quay lại
                         </Button>
                     )}
 
-                    <Box display="flex" justifyContent="flex-end" gap={2} alignItems="center">
+                    <Box
+                        display="flex"
+                        justifyContent="flex-end"
+                        gap={2}
+                        alignItems="center"
+                    >
                         <div>
-                            <p className="inline-block text-sm mr-1">Tổng cộng: </p>
+                            <p className="inline-block text-sm mr-1">
+                                Tổng cộng:{" "}
+                            </p>
                             <span
                                 style={{
                                     color: "rgb(0, 96, 196)",
                                     fontWeight: "bold",
                                     fontSize: "14px",
-                                }}>
-                                {new Intl.NumberFormat("en-US").format(calculateTotalPrice())}đ
+                                }}
+                            >
+                                {new Intl.NumberFormat("en-US").format(
+                                    calculateTotalPrice()
+                                )}
+                                đ
                             </span>
                         </div>
-                        {(selectedSeats.length > 0 && activeStep === 0 && !isModalOpen) ||
-                        (activeStep === 1 && selectedPickup && selectedDropoff) ? (
+                        {(selectedSeats.length > 0 &&
+                            activeStep === 0 &&
+                            !isModalOpen) ||
+                        (activeStep === 1 &&
+                            selectedPickup &&
+                            selectedDropoff) ? (
                             <Button
                                 sx={{
                                     textTransform: "none",
@@ -563,7 +716,8 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
                                     padding: "6px 12px",
                                     fontSize: "14px",
                                 }}
-                                onClick={handleNext}>
+                                onClick={handleNext}
+                            >
                                 Tiếp tục
                             </Button>
                         ) : null}
@@ -574,7 +728,8 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
                 open={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 aria-labelledby="confirm-exit-title"
-                aria-describedby="confirm-exit-description">
+                aria-describedby="confirm-exit-description"
+            >
                 <Box
                     sx={{
                         position: "absolute",
@@ -590,8 +745,13 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
                         borderRadius: "10px",
                         textAlign: "center",
                         outline: "none",
-                    }}>
-                    <Typography id="confirm-exit-title" variant="h6" fontWeight={700}>
+                    }}
+                >
+                    <Typography
+                        id="confirm-exit-title"
+                        variant="h6"
+                        fontWeight={700}
+                    >
                         Bạn có đặt chỗ chưa hoàn tất
                     </Typography>
                     <Typography id="confirm-exit-description" sx={{ mt: 2 }}>
@@ -604,7 +764,8 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
                             mt: 3,
                             gap: 2,
                             flexDirection: "column",
-                        }}>
+                        }}
+                    >
                         <Button
                             variant="outlined"
                             onClick={() => setIsModalOpen(false)}
@@ -613,7 +774,8 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
                                 textTransform: "none",
                                 color: "black",
                                 border: "none",
-                            }}>
+                            }}
+                        >
                             Tiếp tục thanh toán
                         </Button>
                     </Box>

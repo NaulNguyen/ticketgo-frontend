@@ -22,6 +22,7 @@ import { EstimatedPrice, TripInfo } from "../../global";
 const PaymentMethod = () => {
     const location = useLocation();
     const navigate = useNavigate();
+    const scheduleId = new URLSearchParams(location.search).get("scheduleId");
     const [paymentProcessing, setPaymentProcessing] = useState(false);
     const { fullName, phoneNumber, email } = location.state || {};
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -51,7 +52,14 @@ const PaymentMethod = () => {
         const pickupStopId = lastBooking?.pickupStopId;
         const dropOffStopId = lastBooking?.dropOffStopId;
         try {
-            const response = await UserService.vnPay({ fullName, email, phoneNumber, pickupStopId, dropOffStopId, estimatedPrice })
+            const response = await UserService.vnPay({
+                fullName,
+                email,
+                phoneNumber,
+                pickupStopId,
+                dropOffStopId,
+                estimatedPrice,
+            });
             const paymentUrl = response.data;
             window.location.href = paymentUrl;
         } catch (error) {
@@ -63,42 +71,41 @@ const PaymentMethod = () => {
     };
 
     useEffect(() => {
-        const fetchTotalPrice = async () => {
-            const lastBooking = userInfo?.booking[userInfo.booking.length - 1]; // Get the most recent booking
-            const allTicketCodes = lastBooking?.ticketCodes || []; // Get ticketCodes for the latest booking
+        const fetchBookingInfo = async () => {
+            if (!scheduleId) {
+                console.error("No schedule ID found");
+                navigate("/");
+                return;
+            }
 
-            if (allTicketCodes.length > 0) {
-                try {
-                    const response = await UserService.priceEstimate(allTicketCodes);
-                    setEstimatedPrice(response.data.data);
-                } catch (error) {
-                    console.error("Error fetching estimated prices:", error);
-                }
+            try {
+                const response = await UserService.getBookingInfo(scheduleId);
+                const { prices, tripInformation } = response.data.data;
+
+                setEstimatedPrice({
+                    totalPrice: prices.totalPrice,
+                    unitPrice: prices.unitPrice,
+                    quantity: prices.quantity,
+                    seatNumbers: prices.seatNumbers,
+                });
+
+                setTripInfo({
+                    departureTime: tripInformation.departureTime,
+                    licensePlate: tripInformation.licensePlate,
+                    busType: tripInformation.busType,
+                    pickupTime: tripInformation.pickupTime,
+                    pickupLocation: tripInformation.pickupLocation,
+                    dropoffTime: tripInformation.dropoffTime,
+                    dropoffLocation: tripInformation.dropoffLocation,
+                });
+            } catch (error) {
+                console.error("Error fetching booking info:", error);
+                toast.error("Có lỗi xảy ra khi tải thông tin đặt vé");
             }
         };
 
-        fetchTotalPrice();
-    }, [userInfo]);
-
-    useEffect(() => {
-        const fetchTripInfo = async () => {
-            const lastBooking = userInfo?.booking[userInfo.booking.length - 1]; // Get the most recent booking
-            const pickupStopId = lastBooking?.pickupStopId;
-            const dropOffStopId = lastBooking?.dropOffStopId;
-            const scheduleId = lastBooking?.scheduleId;
-
-            if (pickupStopId && dropOffStopId && scheduleId) {
-                try {
-                    const response = await UserService.tripInfor({ pickupStopId, dropOffStopId, scheduleId });
-                    setTripInfo(response.data.data);
-                } catch (error) {
-                    console.error("Error fetching trip info:", error);
-                }
-            }
-        };
-
-        fetchTripInfo();
-    }, [userInfo]);
+        fetchBookingInfo();
+    }, [scheduleId, navigate]);
 
     useEffect(() => {
         const handleBeforeUnload = (e: any) => {
@@ -118,7 +125,11 @@ const PaymentMethod = () => {
         const handlePopState = (e: PopStateEvent) => {
             if (!isNavigating) {
                 // Chỉ xử lý nếu không đang điều hướng
-                window.history.pushState(null, "/payment-method", window.location.href); // Ngăn quay lại trang trước
+                window.history.pushState(
+                    null,
+                    "/payment-method",
+                    window.location.href
+                ); // Ngăn quay lại trang trước
                 setIsModalOpen(true); // Hiển thị modal tùy chỉnh
             }
         };
@@ -153,23 +164,30 @@ const PaymentMethod = () => {
                     height: "100%",
                     minWidth: "450px",
                     paddingBottom: "80px",
-                }}>
+                }}
+            >
                 <Header />
                 <Container
                     sx={{
                         paddingY: "20px",
                         justifyContent: "center",
                         alignItems: "flex-start",
-                    }}>
+                    }}
+                >
                     <Button
-                        startIcon={<ArrowBackIosIcon sx={{ fontSize: "8px", color: "#484848" }} />}
+                        startIcon={
+                            <ArrowBackIosIcon
+                                sx={{ fontSize: "8px", color: "#484848" }}
+                            />
+                        }
                         sx={{
                             fontSize: "16px",
                             textTransform: "none",
                             fontWeight: "bold",
                             "&:hover": { backgroundColor: "transparent" },
                         }}
-                        onClick={() => setIsModalOpen(true)}>
+                        onClick={() => setIsModalOpen(true)}
+                    >
                         Quay lại
                     </Button>
                     <Container
@@ -177,7 +195,8 @@ const PaymentMethod = () => {
                             display: "flex",
                             justifyContent: "center",
                             alignItems: "flex-start",
-                        }}>
+                        }}
+                    >
                         <Box display="flex" flexDirection="column">
                             <Box
                                 sx={{
@@ -191,10 +210,15 @@ const PaymentMethod = () => {
                                     marginTop: "20px",
                                     width: "700px",
                                     minHeight: "fit-content",
-                                }}>
+                                }}
+                            >
                                 <Typography
                                     variant="h5"
-                                    sx={{ fontWeight: "bold", fontSize: "18px" }}>
+                                    sx={{
+                                        fontWeight: "bold",
+                                        fontSize: "18px",
+                                    }}
+                                >
                                     Phương thức thanh toán
                                 </Typography>
                                 <RadioGroup>
@@ -209,15 +233,19 @@ const PaymentMethod = () => {
                                                         src="https://229a2c9fe669f7b.cmccloud.com.vn/httpImage/vn_pay.svg"
                                                         alt="vnpay"
                                                     />
-                                                    <Typography>Thanh toán VNPAY</Typography>
+                                                    <Typography>
+                                                        Thanh toán VNPAY
+                                                    </Typography>
                                                 </Box>
                                                 <Typography
                                                     sx={{
                                                         fontSize: "14px",
                                                         color: "gray",
                                                         marginTop: 1,
-                                                    }}>
-                                                    Thiết bị cần cài đặt Ứng dụng ngân hàng (Mobile
+                                                    }}
+                                                >
+                                                    Thiết bị cần cài đặt Ứng
+                                                    dụng ngân hàng (Mobile
                                                     Banking) hoặc Ví VNPAY
                                                 </Typography>
                                             </Box>
@@ -237,43 +265,60 @@ const PaymentMethod = () => {
                                     marginTop: "20px",
                                     width: "700px",
                                     minHeight: "fit-content",
-                                }}>
+                                }}
+                            >
                                 <Typography
                                     variant="h5"
-                                    sx={{ fontWeight: "bold", fontSize: "18px" }}>
+                                    sx={{
+                                        fontWeight: "bold",
+                                        fontSize: "18px",
+                                    }}
+                                >
                                     Thông tin liên hệ
                                 </Typography>
                                 <Box>
-                                    <Box display="flex" justifyContent="space-between">
+                                    <Box
+                                        display="flex"
+                                        justifyContent="space-between"
+                                    >
                                         <Typography>Tên người đặt</Typography>
                                         <Typography
                                             sx={{
                                                 fontWeight: "bold",
                                                 fontSize: "16px",
                                                 marginBottom: 2,
-                                            }}>
+                                            }}
+                                        >
                                             {fullName}
                                         </Typography>
                                     </Box>
-                                    <Box display="flex" justifyContent="space-between">
+                                    <Box
+                                        display="flex"
+                                        justifyContent="space-between"
+                                    >
                                         <Typography>Số điện thoại</Typography>
                                         <Typography
                                             sx={{
                                                 fontWeight: "bold",
                                                 fontSize: "16px",
                                                 marginBottom: 2,
-                                            }}>
+                                            }}
+                                        >
                                             {phoneNumber}
                                         </Typography>
                                     </Box>
-                                    <Box display="flex" justifyContent="space-between">
+                                    <Box
+                                        display="flex"
+                                        justifyContent="space-between"
+                                    >
                                         <Typography>Email </Typography>
                                         <Typography
                                             sx={{
                                                 fontWeight: "bold",
                                                 fontSize: "16px",
                                                 marginBottom: 2,
-                                            }}>
+                                            }}
+                                        >
                                             {email}
                                         </Typography>
                                     </Box>
@@ -282,7 +327,10 @@ const PaymentMethod = () => {
                         </Box>
 
                         {/* Trip Summary and Details Box */}
-                        <TripSummary tripInfo={tripInfo} estimatedPrice={estimatedPrice} />
+                        <TripSummary
+                            tripInfo={tripInfo}
+                            estimatedPrice={estimatedPrice}
+                        />
                     </Container>
                 </Container>
             </div>
@@ -297,7 +345,8 @@ const PaymentMethod = () => {
                     alignItems: "center",
                     padding: "20px",
                     height: "100px",
-                }}>
+                }}
+            >
                 <Box sx={{ textAlign: "center", marginRight: "20px" }}>
                     <Button
                         variant="contained"
@@ -314,19 +363,30 @@ const PaymentMethod = () => {
                         }}
                         startIcon={<HealthAndSafetyIcon />}
                         onClick={handlePaymentClick}
-                        disabled={paymentProcessing}>
+                        disabled={paymentProcessing}
+                    >
                         Thanh toán
                     </Button>
-                    <Typography variant="body2" sx={{ fontSize: "14px", color: "gray" }}>
-                        Bằng việc nhấn nút Thanh toán, bạn đồng ý với Chính sách bảo mật thanh toán
+                    <Typography
+                        variant="body2"
+                        sx={{ fontSize: "14px", color: "gray" }}
+                    >
+                        Bằng việc nhấn nút Thanh toán, bạn đồng ý với Chính sách
+                        bảo mật thanh toán
                     </Typography>
                 </Box>
 
                 <Box marginBottom={3}>
-                    <Typography variant="body2" sx={{ fontSize: "14px", color: "gray" }}>
+                    <Typography
+                        variant="body2"
+                        sx={{ fontSize: "14px", color: "gray" }}
+                    >
                         Bạn sẽ sớm nhận được biển số xe, số điện thoại tài xế
                     </Typography>
-                    <Typography variant="body2" sx={{ fontSize: "14px", color: "gray" }}>
+                    <Typography
+                        variant="body2"
+                        sx={{ fontSize: "14px", color: "gray" }}
+                    >
                         và dễ dàng thay đổi điểm đón trả sau khi đặt.
                     </Typography>
                 </Box>
@@ -335,7 +395,8 @@ const PaymentMethod = () => {
                 open={isModalOpen}
                 onClose={handleContinuePayment}
                 aria-labelledby="confirm-exit-title"
-                aria-describedby="confirm-exit-description">
+                aria-describedby="confirm-exit-description"
+            >
                 <Box
                     sx={{
                         position: "absolute",
@@ -351,13 +412,18 @@ const PaymentMethod = () => {
                         borderRadius: "10px",
                         textAlign: "center",
                         outline: "none",
-                    }}>
-                    <Typography id="confirm-exit-title" variant="h6" fontWeight={700}>
+                    }}
+                >
+                    <Typography
+                        id="confirm-exit-title"
+                        variant="h6"
+                        fontWeight={700}
+                    >
                         Bạn có chắc muốn thoát?
                     </Typography>
                     <Typography id="confirm-exit-description" sx={{ mt: 2 }}>
-                        Nếu bạn không tiến hành thanh toán thì chỗ đặt sẽ bị hủy và bạn cần đặt vé
-                        mới!
+                        Nếu bạn không tiến hành thanh toán thì chỗ đặt sẽ bị hủy
+                        và bạn cần đặt vé mới!
                     </Typography>
                     <Box
                         sx={{
@@ -366,7 +432,8 @@ const PaymentMethod = () => {
                             mt: 3,
                             gap: 2,
                             flexDirection: "column",
-                        }}>
+                        }}
+                    >
                         <Button
                             color="error"
                             onClick={handleConfirmExit}
@@ -374,7 +441,8 @@ const PaymentMethod = () => {
                                 color: "#2474e5",
                                 textTransform: "none",
                                 textDecoration: "underline",
-                            }}>
+                            }}
+                        >
                             Xác nhận
                         </Button>
                         <Button
@@ -385,7 +453,8 @@ const PaymentMethod = () => {
                                 textTransform: "none",
                                 color: "black",
                                 border: "none",
-                            }}>
+                            }}
+                        >
                             Tiếp tục thanh toán
                         </Button>
                     </Box>

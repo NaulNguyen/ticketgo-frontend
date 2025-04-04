@@ -1,6 +1,13 @@
 import axios from "axios";
 import { axiosWithJWT } from "../config/axiosConfig";
 
+interface SaveBookingInfoRequest {
+    ticketCodes: string[];
+    pickupStopId: number;
+    dropoffStopId: number;
+    scheduleId: string;
+}
+
 class UserService {
     static BASE_URL = "http://localhost:8080";
 
@@ -74,12 +81,12 @@ class UserService {
         return response;
     }
 
-    static async ticketReserve(ticketCodes: any) {
+    static async ticketReserve(scheduleId: number | string) {
         try {
             const response = await axiosWithJWT.post(
                 `${UserService.BASE_URL}/api/v1/seats/reserve`,
                 {
-                    ticketCodes,
+                    scheduleId: Number(scheduleId)
                 }
             );
             return response;
@@ -99,38 +106,52 @@ class UserService {
         }
     }
 
-    static async priceEstimate(ticketCodes: any) {
-        try {
-            const response = await axiosWithJWT.post(
-                `${UserService.BASE_URL}/api/v1/bookings/estimated-prices`,
-                {
-                    ticketCodes,
-                }
-            );
-            return response;
-        } catch (error) {
-            throw error;
-        }
-    }
-
-    static async tripInfor({ pickupStopId, dropOffStopId, scheduleId }: any) {
-        try {
-            const response = await axiosWithJWT.get(
-                `${UserService.BASE_URL}/api/v1/bookings/trip-info`,
-                {
-                    params: { pickupStopId, dropOffStopId, scheduleId }
-                }
-            );
-            return response;
-        } catch (error) {
-            throw error;
-        }
-    }
-
     static async bookingHistory() {
         try {
             const response = await axiosWithJWT.get(
                 `${UserService.BASE_URL}/api/v1/bookings/history?pageNumber=1&pageSize=5`
+            );
+            return response;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    static async savePriceAndTripInfo(data: SaveBookingInfoRequest) {
+        try {
+            const response = await axiosWithJWT.post(
+                `${UserService.BASE_URL}/api/v1/bookings/info`, {
+                    ticketCodes: data.ticketCodes,
+                    pickupStopId: data.pickupStopId,
+                    dropoffStopId: data.dropoffStopId,
+                    scheduleId: data.scheduleId,
+                }
+            );
+            return response;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    static async getBookingInfo(scheduleId: string) {
+        try {
+            const response = await axiosWithJWT.get(
+                `${UserService.BASE_URL}/api/v1/bookings/info`,
+                {
+                    params: { scheduleId }
+                }
+            );
+            return response;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    static async getRemainingTime(scheduleId: string, seatNumber: string) {
+        try {
+            const ticketCode = `TICKET-${scheduleId}-${seatNumber}`;
+            const response = await axiosWithJWT.get(
+                `${UserService.BASE_URL}/api/v1/tickets/${ticketCode}/remain-time`
             );
             return response;
         } catch (error) {

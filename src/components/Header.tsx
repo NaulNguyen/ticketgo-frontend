@@ -24,16 +24,21 @@ import Cookies from "js-cookie";
 import { useDispatch } from "react-redux";
 import { asyncUserInfor, logout } from "../actions/user.action";
 import { toast } from "react-toastify";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import UserService from "../service/UserService";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import MenuIcon from "@mui/icons-material/Menu";
 
 const Header = ({ onToggleDrawer }: { onToggleDrawer?: () => void }) => {
-    const [modalState, setModalState] = useState({ isRegisterOpen: false, isLoginOpen: false });
+    const [modalState, setModalState] = useState({
+        isRegisterOpen: false,
+        isLoginOpen: false,
+    });
     const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
-    const [timeLeft, setTimeLeft] = useState(300);
     const [timeoutModalOpen, setTimeoutModalOpen] = useState(false);
+    const [searchParams] = useSearchParams();
+    const scheduleId = searchParams.get("scheduleId");
+    const [remainingTime, setRemainingTime] = useState<number | null>(null);
 
     const dispatch = useDispatch();
     const open = Boolean(anchorEl);
@@ -65,7 +70,8 @@ const Header = ({ onToggleDrawer }: { onToggleDrawer?: () => void }) => {
         navigate("/");
     };
 
-    const closeModal = () => setModalState({ isRegisterOpen: false, isLoginOpen: false });
+    const closeModal = () =>
+        setModalState({ isRegisterOpen: false, isLoginOpen: false });
 
     const StyledBadge = styled(Badge)(({ theme }) => ({
         "& .MuiBadge-badge": {
@@ -106,13 +112,54 @@ const Header = ({ onToggleDrawer }: { onToggleDrawer?: () => void }) => {
 
     useEffect(() => {
         let timer: NodeJS.Timeout;
-        if (isPaymentMethod && timeLeft > 0) {
-            timer = setInterval(() => setTimeLeft((prev) => prev - 1), 1000);
-        } else if (timeLeft === 0) {
-            setTimeoutModalOpen(true);
+
+        const fetchRemainingTime = async () => {
+            try {
+                // Get booking info to get seat numbers
+                const bookingInfo = await UserService.getBookingInfo(
+                    scheduleId!
+                );
+                const seatNumber = bookingInfo.data.data.prices.seatNumbers[0];
+
+                // Get remaining time
+                const response = await UserService.getRemainingTime(
+                    scheduleId!,
+                    seatNumber
+                );
+                setRemainingTime(response.data.data.remainingTime);
+            } catch (error) {
+                console.error("Error fetching remaining time:", error);
+                setTimeoutModalOpen(true);
+            }
+        };
+
+        if (isPaymentMethod && scheduleId) {
+            fetchRemainingTime();
+
+            // Start countdown timer
+            timer = setInterval(() => {
+                setRemainingTime((prev) => {
+                    if (prev === null || prev <= 0) {
+                        clearInterval(timer);
+                        setTimeoutModalOpen(true);
+                        return 0;
+                    }
+                    return prev - 1;
+                });
+            }, 1000);
         }
-        return () => clearInterval(timer);
-    }, [isPaymentMethod, timeLeft]);
+
+        return () => {
+            if (timer) clearInterval(timer);
+        };
+    }, [isPaymentMethod, scheduleId]);
+
+    const formatTime = (time: number | null) => {
+        if (time === null) return "0:00";
+        const minutes = Math.floor(time / 60);
+        const seconds = time % 60;
+        return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
+    };
 
     useEffect(() => {
         const fetchUserInfo = async () => {
@@ -130,15 +177,16 @@ const Header = ({ onToggleDrawer }: { onToggleDrawer?: () => void }) => {
         }
     }, [dispatch]);
 
-    const handleCloseTimeoutModal = () => {
-        setTimeoutModalOpen(false);
-        navigate("/search");
-    };
-
-    const formatTime = (time: number) => {
-        const minutes = Math.floor(time / 60);
-        const seconds = time % 60;
-        return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
+    const handleCloseTimeoutModal = async () => {
+        try {
+            await UserService.cancleTicketReserve();
+            toast.success("Đã hủy chỗ đặt thành công");
+        } catch (error) {
+            console.error("Error canceling reservation:", error);
+        } finally {
+            setTimeoutModalOpen(false);
+            navigate("/");
+        }
     };
 
     const handleNavigation = (path: string) => {
@@ -157,17 +205,26 @@ const Header = ({ onToggleDrawer }: { onToggleDrawer?: () => void }) => {
                             "&:hover": {
                                 backgroundColor: "rgba(255, 255, 255, 0.1)",
                             },
-                        }}>
+                        }}
+                    >
                         <MenuIcon />
                     </IconButton>
                 )}
                 <div className="cursor-pointer" onClick={handleNavigateClick}>
-                    <span className="font-pacifico text-4xl text-white">TicketGo</span>
+                    <span className="font-pacifico text-4xl text-white">
+                        TicketGo
+                    </span>
                 </div>
             </div>
             {isPaymentMethod && (
                 <Box display="flex" gap={1}>
-                    <Typography sx={{ color: "white", fontWeight: "bold", fontSize: "20px" }}>
+                    <Typography
+                        sx={{
+                            color: "white",
+                            fontWeight: "bold",
+                            fontSize: "20px",
+                        }}
+                    >
                         Thời gian thanh toán còn lại{" "}
                     </Typography>
                     <Typography
@@ -178,8 +235,9 @@ const Header = ({ onToggleDrawer }: { onToggleDrawer?: () => void }) => {
                             padding: "0px 4px",
                             backgroundColor: "rgb(235, 87, 87)",
                             borderRadius: "8px",
-                        }}>
-                        {formatTime(timeLeft)}
+                        }}
+                    >
+                        {formatTime(remainingTime)}
                     </Typography>
                 </Box>
             )}
@@ -188,7 +246,8 @@ const Header = ({ onToggleDrawer }: { onToggleDrawer?: () => void }) => {
                 open={timeoutModalOpen}
                 onClose={handleCloseTimeoutModal}
                 aria-labelledby="timeout-modal"
-                aria-describedby="timeout-modal-description">
+                aria-describedby="timeout-modal-description"
+            >
                 <Box
                     sx={{
                         position: "absolute",
@@ -204,12 +263,14 @@ const Header = ({ onToggleDrawer }: { onToggleDrawer?: () => void }) => {
                         borderRadius: "10px",
                         textAlign: "center",
                         outline: "none",
-                    }}>
+                    }}
+                >
                     <Typography variant="h6" sx={{ mb: 2, fontWeight: "700" }}>
                         Thời hạn thanh toán vé đã hết
                     </Typography>
                     <Typography sx={{ mb: 3, fontSize: "14px" }}>
-                        Xin quý khách vui lòng đặt lại vé khác. Ticketgo chân thành cảm ơn.
+                        Xin quý khách vui lòng đặt lại vé khác. Ticketgo chân
+                        thành cảm ơn.
                     </Typography>
                     <Button
                         variant="contained"
@@ -221,7 +282,8 @@ const Header = ({ onToggleDrawer }: { onToggleDrawer?: () => void }) => {
                             textTransform: "none",
                             fontWeight: "bold",
                             "&:hover": { backgroundColor: "#2474e5" },
-                        }}>
+                        }}
+                    >
                         Đã hiểu
                     </Button>
                 </Box>
@@ -231,11 +293,16 @@ const Header = ({ onToggleDrawer }: { onToggleDrawer?: () => void }) => {
                     onClick={handleAvatarClick}
                     aria-controls={open ? "account-menu" : undefined}
                     aria-haspopup="true"
-                    aria-expanded={open ? "true" : undefined}>
+                    aria-expanded={open ? "true" : undefined}
+                >
                     <StyledBadge
                         overlap="circular"
-                        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-                        variant="dot">
+                        anchorOrigin={{
+                            vertical: "bottom",
+                            horizontal: "right",
+                        }}
+                        variant="dot"
+                    >
                         <Avatar src={userInfo.user.imageUrl} />
                     </StyledBadge>
                 </IconButton>
@@ -250,7 +317,8 @@ const Header = ({ onToggleDrawer }: { onToggleDrawer?: () => void }) => {
                             fontWeight: "bold",
                         }}
                         startIcon={<LoginIcon />}
-                        onClick={() => openModal("login")}>
+                        onClick={() => openModal("login")}
+                    >
                         Đăng nhập
                     </Button>
                 </div>
@@ -291,10 +359,12 @@ const Header = ({ onToggleDrawer }: { onToggleDrawer?: () => void }) => {
                     },
                 }}
                 transformOrigin={{ horizontal: "right", vertical: "top" }}
-                anchorOrigin={{ horizontal: "right", vertical: "bottom" }}>
+                anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
+            >
                 <MenuItem
                     sx={{ paddingX: "20px", paddingY: "10px" }}
-                    onClick={() => handleNavigation("/profile")}>
+                    onClick={() => handleNavigation("/profile")}
+                >
                     <ListItemIcon>
                         <PersonIcon fontSize="small" />
                     </ListItemIcon>
@@ -304,7 +374,8 @@ const Header = ({ onToggleDrawer }: { onToggleDrawer?: () => void }) => {
                     <Box>
                         <MenuItem
                             sx={{ paddingX: "20px", paddingY: "10px" }}
-                            onClick={() => handleNavigation("/booking-history")}>
+                            onClick={() => handleNavigation("/booking-history")}
+                        >
                             <ListItemIcon>
                                 <LoyaltyIcon fontSize="small" />
                             </ListItemIcon>
@@ -321,14 +392,18 @@ const Header = ({ onToggleDrawer }: { onToggleDrawer?: () => void }) => {
                 {userInfo?.user.role === "ROLE_BUS_COMPANY" && (
                     <MenuItem
                         sx={{ paddingX: "20px", paddingY: "10px" }}
-                        onClick={() => handleNavigation("/dashboard")}>
+                        onClick={() => handleNavigation("/dashboard")}
+                    >
                         <ListItemIcon>
                             <DashboardIcon fontSize="small" />
                         </ListItemIcon>
                         Trang quản lý
                     </MenuItem>
                 )}
-                <MenuItem sx={{ paddingX: "20px", paddingY: "10px" }} onClick={handleLogout}>
+                <MenuItem
+                    sx={{ paddingX: "20px", paddingY: "10px" }}
+                    onClick={handleLogout}
+                >
                     <ListItemIcon>
                         <Logout fontSize="small" />
                     </ListItemIcon>
@@ -339,7 +414,8 @@ const Header = ({ onToggleDrawer }: { onToggleDrawer?: () => void }) => {
                 open={modalState.isRegisterOpen}
                 onClose={closeModal}
                 aria-labelledby="register-modal"
-                aria-describedby="modal-register-user-company">
+                aria-describedby="modal-register-user-company"
+            >
                 <Box
                     sx={{
                         position: "absolute",
@@ -352,8 +428,12 @@ const Header = ({ onToggleDrawer }: { onToggleDrawer?: () => void }) => {
                         boxShadow: 24,
                         p: 4,
                         borderRadius: "10px",
-                    }}>
-                    <Registration onClose={closeModal} onLoginClick={() => openModal("login")} />
+                    }}
+                >
+                    <Registration
+                        onClose={closeModal}
+                        onLoginClick={() => openModal("login")}
+                    />
                 </Box>
             </Modal>
 
@@ -361,7 +441,8 @@ const Header = ({ onToggleDrawer }: { onToggleDrawer?: () => void }) => {
                 open={modalState.isLoginOpen}
                 onClose={closeModal}
                 aria-labelledby="login-modal"
-                aria-describedby="modal-login-user">
+                aria-describedby="modal-login-user"
+            >
                 <Box
                     sx={{
                         position: "absolute",
@@ -374,8 +455,12 @@ const Header = ({ onToggleDrawer }: { onToggleDrawer?: () => void }) => {
                         boxShadow: 24,
                         p: 4,
                         borderRadius: "10px",
-                    }}>
-                    <Login onClose={closeModal} onRegisterClick={() => openModal("register")} />
+                    }}
+                >
+                    <Login
+                        onClose={closeModal}
+                        onRegisterClick={() => openModal("register")}
+                    />
                 </Box>
             </Modal>
         </header>
