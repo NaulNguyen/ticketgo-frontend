@@ -49,6 +49,11 @@ interface RouteStop {
     stopId: number;
 }
 
+interface BookingStepResponse {
+    step: number;
+    vnPayUrl: string | null;
+}
+
 const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
     const [seatsData, setSeatsData] = useState<FloorData | null>(null);
     const [selectedSeats, setSelectedSeats] = useState<Seat[]>([]);
@@ -67,6 +72,78 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
 
     const { getUserInfor } = useAppAccessor();
     const userInfo = getUserInfor();
+
+    useEffect(() => {
+        const checkBookingStep = async () => {
+            if (!selectedSeat) return;
+
+            try {
+                const response = await axiosWithJWT.get<{
+                    status: number;
+                    message: string;
+                    data: BookingStepResponse;
+                }>(
+                    `http://localhost:8080/api/v1/bookings/step?scheduleId=${scheduleId}`
+                );
+
+                const { step, vnPayUrl } = response.data.data;
+
+                switch (step) {
+                    case 1:
+                        if (
+                            selectedSeats.some(
+                                (s) => s.ticketCode === selectedSeat.ticketCode
+                            )
+                        ) {
+                            setSelectedSeats((prev) =>
+                                prev.filter(
+                                    (s) =>
+                                        s.ticketCode !== selectedSeat.ticketCode
+                                )
+                            );
+                        } else {
+                            setSelectedSeats((prev) => [...prev, selectedSeat]);
+                        }
+                        break;
+
+                    case 2:
+                        setIsModalOpen(true);
+                        break;
+
+                    case 3:
+                        setIsModalOpen(true);
+                        if (vnPayUrl) {
+                            window.localStorage.setItem("vnPayUrl", vnPayUrl);
+                        }
+                        break;
+
+                    default:
+                        console.error("Unknown booking step:", step);
+                        break;
+                }
+            } catch (error) {
+                console.error("Error checking booking step:", error);
+                toast.error(
+                    "Không thể kiểm tra trạng thái đặt vé. Vui lòng thử lại sau."
+                );
+            } finally {
+                setSelectedSeat(null);
+            }
+        };
+
+        checkBookingStep();
+    }, [selectedSeat, selectedSeats, scheduleId]);
+
+    const handleModalContinue = () => {
+        const vnPayUrl = window.localStorage.getItem("vnPayUrl");
+        if (vnPayUrl) {
+            window.location.href = vnPayUrl;
+            window.localStorage.removeItem("vnPayUrl");
+        } else {
+            navigate(`/payment-method?scheduleId=${scheduleId}`);
+        }
+        setIsModalOpen(false);
+    };
 
     const handleNext = async () => {
         if (activeStep === 1) {
@@ -199,45 +276,6 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
         }
         setSelectedSeat(seat); // Set the clicked seat
     };
-
-    useEffect(() => {
-        const checkPaymentStatus = async () => {
-            if (!selectedSeat) return; // Exit if no seat is selected
-
-            try {
-                const response = await axiosWithJWT.get(
-                    "http://localhost:8080/api/v1/bookings/in-progress"
-                );
-
-                if (response.data) {
-                    setIsModalOpen(true);
-                } else {
-                    if (
-                        selectedSeats.some(
-                            (s) => s.ticketCode === selectedSeat.ticketCode
-                        )
-                    ) {
-                        setSelectedSeats((prev) =>
-                            prev.filter(
-                                (s) => s.ticketCode !== selectedSeat.ticketCode
-                            )
-                        );
-                    } else {
-                        setSelectedSeats((prev) => [...prev, selectedSeat]);
-                    }
-                }
-            } catch (error) {
-                console.error("Error checking payment status:", error);
-                toast.error(
-                    "Không thể kiểm tra trạng thái thanh toán. Vui lòng thử lại sau."
-                );
-            } finally {
-                setSelectedSeat(null); // Reset the selected seat after processing
-            }
-        };
-
-        checkPaymentStatus();
-    }, [selectedSeat, selectedSeats]);
 
     const renderSeats = (seats: Seat[][]) =>
         seats.map((row, rowIndex) => (
@@ -768,7 +806,7 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
                     >
                         <Button
                             variant="outlined"
-                            onClick={() => setIsModalOpen(false)}
+                            onClick={handleModalContinue}
                             sx={{
                                 backgroundColor: "rgb(255, 211, 51)",
                                 textTransform: "none",
