@@ -6,10 +6,14 @@ import {
     IconButton,
     InputAdornment,
     TextField,
+    ToggleButton,
+    ToggleButtonGroup,
 } from "@mui/material";
 import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
 import MyLocationIcon from "@mui/icons-material/MyLocation";
 import PlaceIcon from "@mui/icons-material/Place";
+import ArrowRightAltIcon from "@mui/icons-material/ArrowRightAlt";
+import CompareArrowsIcon from "@mui/icons-material/CompareArrows";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -24,11 +28,26 @@ const Search = () => {
     const [destination, setDestination] = useState<string | null>(null);
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [returnDate, setReturnDate] = useState<Date | null>(null);
+    const [tripType, setTripType] = useState<"one-way" | "round-trip">(
+        "one-way"
+    );
 
     const location = useLocation();
     const navigate = useNavigate();
 
     const isHome = location.pathname === "/";
+
+    const handleTripTypeChange = (
+        event: React.MouseEvent<HTMLElement>,
+        newTripType: "one-way" | "round-trip" | null
+    ) => {
+        if (newTripType !== null) {
+            setTripType(newTripType);
+            if (newTripType === "one-way") {
+                setReturnDate(null);
+            }
+        }
+    };
 
     useEffect(() => {
         const searchParams = new URLSearchParams(location.search);
@@ -94,28 +113,79 @@ const Search = () => {
                         : "bg-white p-4 md:p-6 rounded-lg shadow-lg border border-gray-300"
                 }`}
             >
-                <div className="flex flex-col md:flex-row items-center md:space-y-0 md:space-x-2">
-                    {/* Nơi xuất phát */}
+                <Box sx={{ mb: 4, display: "flex", justifyContent: "center" }}>
+                    <ToggleButtonGroup
+                        value={tripType}
+                        exclusive
+                        onChange={handleTripTypeChange}
+                        aria-label="trip type"
+                        sx={{
+                            backgroundColor: "#f8fafc",
+                            padding: "4px",
+                            borderRadius: "28px !important",
+                            border: "1px solid #e2e8f0",
+                            "& .MuiToggleButton-root": {
+                                px: 4,
+                                py: 1.5,
+                                borderRadius: "24px !important",
+                                border: "none",
+                                color: "#64748b",
+                                "&.Mui-selected": {
+                                    backgroundColor: "#1976d2",
+                                    color: "white",
+                                    boxShadow:
+                                        "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                                    "&:hover": {
+                                        backgroundColor: "#1565c0",
+                                    },
+                                },
+                                "&:not(.Mui-selected)": {
+                                    "&:hover": {
+                                        backgroundColor: "#f1f5f9",
+                                    },
+                                },
+                            },
+                        }}
+                    >
+                        <ToggleButton value="one-way" aria-label="one way">
+                            <ArrowRightAltIcon sx={{ mr: 1 }} />
+                            Một chiều
+                        </ToggleButton>
+                        <ToggleButton
+                            value="round-trip"
+                            aria-label="round trip"
+                        >
+                            <CompareArrowsIcon sx={{ mr: 1 }} />
+                            Khứ hồi
+                        </ToggleButton>
+                    </ToggleButtonGroup>
+                </Box>
+                {/* Nơi xuất phát */}
+                {/* Search Form */}
+                <Box
+                    sx={{
+                        display: "flex",
+                        flexDirection: { xs: "column", md: "row" },
+                        gap: 2,
+                    }}
+                >
+                    {/* Location Selectors */}
                     <Box
                         sx={{
-                            width: "100%",
                             display: "flex",
-                            flexDirection: { xs: "column", md: "row" },
-                            justifyContent: "center", // Căn giữa các phần tử
                             alignItems: "center",
                             gap: 1,
+                            flex: 3, // Increased from 2 to 3 to make it wider
+                            minWidth: "500px",
                         }}
                     >
                         <Autocomplete
                             freeSolo
                             options={cities}
                             value={departure}
-                            onChange={(
-                                event: React.SyntheticEvent,
-                                newValue: string | null
-                            ) => {
+                            onChange={(event, newValue) => {
                                 if (newValue === destination) {
-                                    toast.error(
+                                    toast.warn(
                                         "Nơi xuất phát và nơi đến không được giống nhau"
                                     );
                                     return;
@@ -129,14 +199,20 @@ const Search = () => {
                                     variant="outlined"
                                     fullWidth
                                     sx={{
-                                        width: "150px",
+                                        minWidth: "215px",
+                                        "& .MuiOutlinedInput-root": {
+                                            backgroundColor: "#f8fafc",
+                                            "&:hover fieldset": {
+                                                borderColor: "#1976d2",
+                                            },
+                                        },
                                     }}
                                     InputProps={{
                                         ...params.InputProps,
                                         startAdornment: (
                                             <InputAdornment position="start">
                                                 <MyLocationIcon
-                                                    sx={{ color: "blue" }}
+                                                    sx={{ color: "#1976d2" }}
                                                 />
                                             </InputAdornment>
                                         ),
@@ -145,33 +221,25 @@ const Search = () => {
                             )}
                         />
 
-                        {/* Swap Button - Vertical for mobile, Horizontal for desktop */}
                         <IconButton
-                            color="primary"
                             onClick={handleSwap}
-                            aria-label="swap"
-                            size="large"
                             sx={{
-                                position: "relative",
-                                transform: {
-                                    xs: "rotate(90deg)",
-                                    md: "rotate(0deg)",
+                                backgroundColor: "#f8fafc",
+                                border: "1px solid #e2e8f0",
+                                "&:hover": {
+                                    backgroundColor: "#f1f5f9",
                                 },
-                                padding: "8px", // Reduced padding
+                                p: 2,
                             }}
                         >
-                            <SwapHorizIcon />
+                            <SwapHorizIcon color="primary" />
                         </IconButton>
 
-                        {/* Nơi đến */}
                         <Autocomplete
                             freeSolo
                             options={cities}
                             value={destination}
-                            onChange={(
-                                event: React.SyntheticEvent,
-                                newValue: string | null
-                            ) => {
+                            onChange={(event, newValue) => {
                                 if (newValue === departure) {
                                     toast.warn(
                                         "Nơi xuất phát và nơi đến không được giống nhau"
@@ -187,14 +255,20 @@ const Search = () => {
                                     variant="outlined"
                                     fullWidth
                                     sx={{
-                                        width: "150px",
+                                        minWidth: "215px",
+                                        "& .MuiOutlinedInput-root": {
+                                            backgroundColor: "#f8fafc",
+                                            "&:hover fieldset": {
+                                                borderColor: "#1976d2",
+                                            },
+                                        },
                                     }}
                                     InputProps={{
                                         ...params.InputProps,
                                         startAdornment: (
                                             <InputAdornment position="start">
                                                 <PlaceIcon
-                                                    sx={{ color: "red" }}
+                                                    sx={{ color: "#ef4444" }}
                                                 />
                                             </InputAdornment>
                                         ),
@@ -204,53 +278,64 @@ const Search = () => {
                         />
                     </Box>
 
-                    {/* Thời gian */}
+                    {/* Date Pickers */}
                     <LocalizationProvider
                         dateAdapter={AdapterDateFns}
                         adapterLocale={vi}
                     >
-                        <DatePicker
-                            label="Ngày đi"
-                            value={selectedDate}
-                            onChange={(date) => setSelectedDate(date)}
-                            minDate={new Date()}
-                            disablePast
-                            format="eeee, dd/MM/yyyy"
-                            formatDensity="spacious"
-                            slotProps={{
-                                textField: {
-                                    variant: "outlined",
-                                    fullWidth: true,
-                                },
-                                day: {
-                                    sx: {
-                                        width: 36,
-                                        height: 36,
-                                    },
-                                },
+                        <Box
+                            sx={{
+                                display: "flex",
+                                gap: 1,
+                                flex: 2,
+                                mt: "2px",
                             }}
-                        />
-                        <DatePicker
-                            label="Ngày về"
-                            value={returnDate}
-                            onChange={(date) => setReturnDate(date)}
-                            minDate={selectedDate || undefined}
-                            disablePast
-                            format="eeee, dd/MM/yyyy"
-                            formatDensity="spacious"
-                            slotProps={{
-                                textField: {
-                                    variant: "outlined",
-                                    fullWidth: true,
-                                },
-                                day: {
-                                    sx: {
-                                        width: 36,
-                                        height: 36,
+                        >
+                            <DatePicker
+                                label="Ngày đi"
+                                value={selectedDate}
+                                onChange={(date) => setSelectedDate(date)}
+                                minDate={new Date()}
+                                disablePast
+                                format="EEE, dd/MM/yyyy"
+                                slotProps={{
+                                    textField: {
+                                        fullWidth: true,
+                                        sx: {
+                                            "& .MuiOutlinedInput-root": {
+                                                backgroundColor: "#f8fafc",
+                                                "&:hover fieldset": {
+                                                    borderColor: "#1976d2",
+                                                },
+                                            },
+                                        },
                                     },
-                                },
-                            }}
-                        />
+                                }}
+                            />
+                            {tripType === "round-trip" && (
+                                <DatePicker
+                                    label="Ngày về"
+                                    value={returnDate}
+                                    onChange={(date) => setReturnDate(date)}
+                                    minDate={selectedDate || undefined}
+                                    disablePast
+                                    format="EEE, dd/MM/yyyy"
+                                    slotProps={{
+                                        textField: {
+                                            fullWidth: true,
+                                            sx: {
+                                                "& .MuiOutlinedInput-root": {
+                                                    backgroundColor: "#f8fafc",
+                                                    "&:hover fieldset": {
+                                                        borderColor: "#1976d2",
+                                                    },
+                                                },
+                                            },
+                                        },
+                                    }}
+                                />
+                            )}
+                        </Box>
                     </LocalizationProvider>
 
                     {/* Search Button */}
@@ -271,7 +356,7 @@ const Search = () => {
                             Tìm kiếm
                         </Button>
                     </div>
-                </div>
+                </Box>
             </div>
         </div>
     );
