@@ -6,6 +6,8 @@ import {
     Tab,
     Tabs,
     Typography,
+    Paper,
+    Avatar,
 } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import TranslateIcon from "@mui/icons-material/Translate";
@@ -17,6 +19,8 @@ import WbIncandescentIcon from "@mui/icons-material/WbIncandescent";
 import BedIcon from "@mui/icons-material/Bed";
 import axios from "axios";
 import { axiosWithJWT } from "../../config/axiosConfig";
+import PhoneIcon from "@mui/icons-material/Phone";
+import BadgeIcon from "@mui/icons-material/Badge";
 
 interface RouteStop {
     location: string;
@@ -58,7 +62,7 @@ const amenityIcons: { [key: string]: React.ReactNode } = {
     "Búa phá kính": <HardwareIcon sx={{ marginX: "8px", color: "blue" }} />,
 };
 
-interface Driver {
+interface DriverInfo {
     driverId: number;
     name: string;
     licenseNumber: string;
@@ -71,7 +75,7 @@ const Details: React.FC<DetailsProps> = ({ scheduleId }) => {
     const [routeStops, setRouteStops] = useState<RouteStopsData | null>(null);
     const [policies, setPolicies] = useState<Policy[]>([]);
     const [amenities, setAmenities] = useState<Amenity[]>([]);
-    const [driver, setDriver] = useState<Driver | null>(null);
+    const [driverInfo, setDriverInfo] = useState<DriverInfo | null>(null);
 
     const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
         setTabIndex(newValue);
@@ -124,17 +128,18 @@ const Details: React.FC<DetailsProps> = ({ scheduleId }) => {
 
     useEffect(() => {
         if (tabIndex === 3) {
-            const fetchDriver = async () => {
+            const fetchDriverInfo = async () => {
                 try {
                     const response = await axiosWithJWT.get(
-                        `http://localhost:8080/api/v1/drivers/${scheduleId}`
+                        `http://localhost:8080/api/v1/drivers/schedule?scheduleId=${scheduleId}`
                     );
-                    setDriver(response.data.data);
-                } catch (err) {
-                    console.error("Failed to fetch driver", err);
+                    setDriverInfo(response.data.data);
+                } catch (error) {
+                    console.error("Error fetching driver info:", error);
                 }
             };
-            fetchDriver();
+
+            fetchDriverInfo();
         }
     }, [tabIndex, scheduleId]);
 
@@ -191,7 +196,7 @@ const Details: React.FC<DetailsProps> = ({ scheduleId }) => {
             </Tabs>
 
             {/* Tab Content */}
-            <Box sx={{ px: 3, pb: 3, minHeight: "500px" }}>
+            <Box sx={{ px: 3, pb: 3, minHeight: "content-fit" }}>
                 {tabIndex === 0 && routeStops && (
                     <Box>
                         <Divider />
@@ -429,94 +434,85 @@ const Details: React.FC<DetailsProps> = ({ scheduleId }) => {
                     </Box>
                 )}
 
-                {tabIndex === 3 && driver && (
-                    <Box>
+                {tabIndex === 3 && driverInfo && (
+                    <>
                         <Divider />
-                        <Box sx={{ mt: 3, display: "flex", gap: 3 }}>
+                        <Paper
+                            elevation={0}
+                            sx={{
+                                p: 3,
+                                mt: 2,
+                                borderRadius: 2,
+                                bgcolor: "#f8fafc",
+                                border: "1px solid #e2e8f0",
+                            }}
+                        >
                             <Box
                                 sx={{
-                                    width: 200,
-                                    height: 200,
-                                    borderRadius: 2,
-                                    overflow: "hidden",
-                                    border: "2px solid #1976d2",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 3,
+                                    mb: 2,
                                 }}
                             >
-                                <img
-                                    src={driver.imageUrl}
-                                    alt={driver.name}
-                                    style={{
-                                        width: "100%",
-                                        height: "100%",
-                                        objectFit: "cover",
+                                <Avatar
+                                    src={driverInfo.imageUrl}
+                                    sx={{
+                                        width: 100,
+                                        height: 100,
+                                        border: "3px solid #1976d2",
                                     }}
                                 />
+                                <Box>
+                                    <Typography
+                                        variant="h6"
+                                        fontWeight="bold"
+                                        color="primary"
+                                    >
+                                        {driverInfo.name}
+                                    </Typography>
+                                </Box>
                             </Box>
-                            <Box sx={{ flex: 1 }}>
-                                <Typography
-                                    variant="h6"
-                                    sx={{
-                                        fontSize: 24,
-                                        fontWeight: 700,
-                                        color: "#1976d2",
-                                        mb: 2,
-                                    }}
-                                >
-                                    {driver.name}
-                                </Typography>
+
+                            <Divider sx={{ my: 2 }} />
+
+                            <Box
+                                sx={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    gap: 2,
+                                }}
+                            >
                                 <Box
                                     sx={{
                                         display: "flex",
-                                        flexDirection: "column",
+                                        alignItems: "center",
                                         gap: 2,
                                     }}
                                 >
-                                    <Box
-                                        sx={{
-                                            display: "flex",
-                                            gap: 1,
-                                            alignItems: "center",
-                                        }}
-                                    >
-                                        <Typography
-                                            sx={{
-                                                fontSize: 16,
-                                                fontWeight: 600,
-                                                color: "text.secondary",
-                                                width: 150,
-                                            }}
-                                        >
-                                            Bằng lái xe:
-                                        </Typography>
-                                        <Typography sx={{ fontSize: 16 }}>
-                                            {driver.licenseNumber}
-                                        </Typography>
-                                    </Box>
-                                    <Box
-                                        sx={{
-                                            display: "flex",
-                                            gap: 1,
-                                            alignItems: "center",
-                                        }}
-                                    >
-                                        <Typography
-                                            sx={{
-                                                fontSize: 16,
-                                                fontWeight: 600,
-                                                color: "text.secondary",
-                                                width: 150,
-                                            }}
-                                        >
-                                            Số điện thoại:
-                                        </Typography>
-                                        <Typography sx={{ fontSize: 16 }}>
-                                            {driver.phoneNumber}
-                                        </Typography>
-                                    </Box>
+                                    <PhoneIcon color="primary" />
+                                    <Typography>
+                                        <strong>Số điện thoại:</strong>{" "}
+                                        {driverInfo.phoneNumber}
+                                    </Typography>
+                                </Box>
+
+                                <Box
+                                    sx={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 2,
+                                    }}
+                                >
+                                    <BadgeIcon color="primary" />
+                                    <Typography>
+                                        <strong>Bằng lái:</strong>{" "}
+                                        {driverInfo.licenseNumber}
+                                    </Typography>
                                 </Box>
                             </Box>
-                        </Box>
-                    </Box>
+                        </Paper>
+                    </>
                 )}
             </Box>
         </Box>
