@@ -5,19 +5,24 @@ import UserService from "../../service/UserService";
 import { BookingHistoryItem } from "../../global";
 
 const BookingHistory = () => {
-    const [bookingHistoryData, setBookingHistoryData] = useState<BookingHistoryItem[]>([]);
+    const [bookingHistoryData, setBookingHistoryData] = useState<
+        BookingHistoryItem[]
+    >([]);
     const formatPrice = (price: string): string => {
         const number = parseFloat(price);
         if (isNaN(number)) return price;
         return new Intl.NumberFormat("en-US").format(number);
     };
+
     useEffect(() => {
         const fetchBookingHistory = async () => {
             try {
                 const response = await UserService.bookingHistory();
                 setBookingHistoryData(response.data.data);
             } catch (err) {
-                console.log("Failed to load booking history. Please try again later.");
+                console.log(
+                    "Failed to load booking history. Please try again later."
+                );
             }
         };
         fetchBookingHistory();
@@ -30,14 +35,18 @@ const BookingHistory = () => {
                 flexDirection: "column",
                 minHeight: "100vh",
                 backgroundColor: "#f0f0f0",
-            }}>
+            }}
+        >
             {/* Header */}
             <Header />
 
             {/* Main Content */}
             <Box sx={{ flexGrow: 1, padding: 2 }}>
                 {bookingHistoryData.length > 0 && (
-                    <Typography variant="h5" sx={{ fontWeight: "bold", padding: "12px", ml: 34 }}>
+                    <Typography
+                        variant="h5"
+                        sx={{ fontWeight: "bold", padding: "12px", ml: 34 }}
+                    >
                         Lịch sử đặt vé
                     </Typography>
                 )}
@@ -56,7 +65,8 @@ const BookingHistory = () => {
                                 backgroundColor: "white",
                                 width: "60%",
                                 margin: "16px auto",
-                            }}>
+                            }}
+                        >
                             <Box sx={{ width: "100%" }}>
                                 <Typography
                                     sx={{
@@ -71,27 +81,37 @@ const BookingHistory = () => {
                                         alignItems: "center",
                                         justifyContent: "space-between",
                                         paddingLeft: "374px",
-                                    }}>
+                                    }}
+                                >
                                     <span>{booking.ticketCode}</span>
                                     <Typography
                                         sx={{
                                             fontWeight: "bold",
                                             backgroundColor:
                                                 booking.status === "Đã xác nhận"
-                                                    ? "#b3e5fc" // Light blue
-                                                    : booking.status === "Đã hoàn thành"
-                                                    ? "#4caf50" // Green
-                                                    : booking.status === "Đã hủy"
-                                                    ? "#f44336" // Red
-                                                    : booking.status === "Đã hoàn tiền"
-                                                    ? "#ffeb3b"
-                                                    : "transparent", // Yellow
-                                            color: "white",
+                                                    ? "#00C853"
+                                                    : booking.status ===
+                                                      "Đã hoàn thành"
+                                                    ? "#FFD700"
+                                                    : booking.status ===
+                                                      "Đã hủy"
+                                                    ? "#FF1744"
+                                                    : booking.status ===
+                                                      "Đã hoàn tiền"
+                                                    ? "#FF9100"
+                                                    : "transparent",
+                                            color:
+                                                booking.status ===
+                                                "Đã hoàn thành"
+                                                    ? "#000"
+                                                    : "#fff",
                                             padding: "4px 12px",
                                             borderRadius: "4px",
                                             display: "inline-block",
-                                        }}>
-                                        {booking.status} {/* Aligned to the right */}
+                                        }}
+                                    >
+                                        {booking.status}{" "}
+                                        {/* Aligned to the right */}
                                     </Typography>
                                 </Typography>
                                 <Box
@@ -101,9 +121,17 @@ const BookingHistory = () => {
                                         justifyContent: "center",
                                         gap: 3,
                                         paddingY: 2,
-                                    }}>
-                                    <Typography sx={{ fontWeight: "bold", marginRight: "8px" }}>
-                                        <span className="font-thin">Địa điểm đón:</span>{" "}
+                                    }}
+                                >
+                                    <Typography
+                                        sx={{
+                                            fontWeight: "bold",
+                                            marginRight: "8px",
+                                        }}
+                                    >
+                                        <span className="font-thin">
+                                            Địa điểm đón:
+                                        </span>{" "}
                                         {booking.pickupLocation}
                                     </Typography>
                                     {/* Bus icon */}
@@ -111,8 +139,12 @@ const BookingHistory = () => {
                                         width="40px"
                                         height="40px"
                                         viewBox="0 -2.03 20.051 20.051"
-                                        xmlns="http://www.w3.org/2000/svg">
-                                        <g id="bus" transform="translate(-2 -4)">
+                                        xmlns="http://www.w3.org/2000/svg"
+                                    >
+                                        <g
+                                            id="bus"
+                                            transform="translate(-2 -4)"
+                                        >
                                             <path
                                                 id="secondary"
                                                 fill="#2ca9bc"
@@ -144,19 +176,45 @@ const BookingHistory = () => {
                                             />
                                         </g>
                                     </svg>
-                                    <Typography sx={{ fontWeight: "bold", marginLeft: "8px" }}>
-                                        <span className="font-thin">Địa điểm trả:</span>{" "}
+                                    <Typography
+                                        sx={{
+                                            fontWeight: "bold",
+                                            marginLeft: "8px",
+                                        }}
+                                    >
+                                        <span className="font-thin">
+                                            Địa điểm trả:
+                                        </span>{" "}
                                         {booking.dropoffLocation}
                                     </Typography>
                                 </Box>
-                                <Box padding={2} gap={2} display="flex" flex={1}>
+                                <Box
+                                    padding={2}
+                                    gap={2}
+                                    display="flex"
+                                    flex={1}
+                                >
                                     <Box flex={1} pl={5}>
-                                        <Typography sx={{ fontWeight: "bold", marginBottom: 2 }}>
-                                            <span className="font-thin">Biển số xe: </span>
+                                        <Typography
+                                            sx={{
+                                                fontWeight: "bold",
+                                                marginBottom: 2,
+                                            }}
+                                        >
+                                            <span className="font-thin">
+                                                Biển số xe:{" "}
+                                            </span>
                                             {booking.licensePlate}
                                         </Typography>
-                                        <Typography sx={{ fontWeight: "bold", marginBottom: 2 }}>
-                                            <span className="font-thin">Số ghế:</span>{" "}
+                                        <Typography
+                                            sx={{
+                                                fontWeight: "bold",
+                                                marginBottom: 2,
+                                            }}
+                                        >
+                                            <span className="font-thin">
+                                                Số ghế:
+                                            </span>{" "}
                                             {booking.seatNumber}
                                         </Typography>
                                         <Typography sx={{ fontWeight: "bold" }}>
@@ -168,16 +226,32 @@ const BookingHistory = () => {
                                     </Box>
                                     <Divider orientation="vertical" flexItem />
                                     <Box flex={1}>
-                                        <Typography sx={{ fontWeight: "bold", marginBottom: 2 }}>
-                                            <span className="font-thin">Tên Liên Lạc:</span>{" "}
+                                        <Typography
+                                            sx={{
+                                                fontWeight: "bold",
+                                                marginBottom: 2,
+                                            }}
+                                        >
+                                            <span className="font-thin">
+                                                Tên Liên Lạc:
+                                            </span>{" "}
                                             {booking.contactName}
                                         </Typography>
-                                        <Typography sx={{ fontWeight: "bold", marginBottom: 2 }}>
-                                            <span className="font-thin">Email:</span>{" "}
+                                        <Typography
+                                            sx={{
+                                                fontWeight: "bold",
+                                                marginBottom: 2,
+                                            }}
+                                        >
+                                            <span className="font-thin">
+                                                Email:
+                                            </span>{" "}
                                             {booking.contactEmail}
                                         </Typography>
                                         <Typography sx={{ fontWeight: "bold" }}>
-                                            <span className="font-thin">Giá:</span>{" "}
+                                            <span className="font-thin">
+                                                Giá:
+                                            </span>{" "}
                                             {formatPrice(booking.price)} VND
                                         </Typography>
                                     </Box>
@@ -195,22 +269,24 @@ const BookingHistory = () => {
                             padding: "20px",
                             backgroundColor: "#f0f0f0",
                             marginTop: "100px",
-                        }}>
+                        }}
+                    >
                         <Box
                             sx={{
                                 backgroundColor: "#ffffff",
                                 padding: "30px",
                                 borderRadius: "8px",
                                 boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
-                            }}>
+                            }}
+                        >
                             <Typography variant="h3" fontWeight="bold" mb={3}>
                                 <span className="font-pacifico text-6xl">
                                     Cảm ơn bạn đã truy cập vào TicketGo!
                                 </span>
                             </Typography>
                             <Typography variant="body1" fontSize="18px">
-                                Hiện tại bạn chưa có lịch sử đặt vé nào. Hãy đặt vé ngay để trải
-                                nghiệm dịch vụ của chúng tôi!
+                                Hiện tại bạn chưa có lịch sử đặt vé nào. Hãy đặt
+                                vé ngay để trải nghiệm dịch vụ của chúng tôi!
                             </Typography>
                         </Box>
                     </Box>
