@@ -63,11 +63,17 @@ const BookingConfirm = () => {
         }
 
         try {
+            await UserService.saveContactInfo({
+                scheduleId,
+                contactName: fullName,
+                contactPhone: phoneNumber,
+                contactEmail: email,
+            });
+
+            // Then reserve ticket
             const response = await UserService.ticketReserve(scheduleId);
             if (response.status === 200) {
-                navigate(`/payment-method?scheduleId=${scheduleId}`, {
-                    state: { fullName, phoneNumber, email },
-                });
+                navigate(`/payment-method?scheduleId=${scheduleId}`);
             }
         } catch (error: any) {
             console.error("Error reserving seat:", error);

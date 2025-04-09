@@ -7,6 +7,12 @@ interface SaveBookingInfoRequest {
     dropoffStopId: number;
     scheduleId: string;
 }
+interface SavedContactInfo {
+    scheduleId: string;
+    contactName: string;
+    contactPhone: string;
+    contactEmail: string;
+}
 
 class UserService {
     static BASE_URL = "http://localhost:8080";
@@ -133,6 +139,36 @@ class UserService {
         }
     }
 
+    static async saveContactInfo(data: SavedContactInfo) {
+        try {
+            const response = await axiosWithJWT.post(
+                `${UserService.BASE_URL}/api/v1/bookings/saveContactInfo`,
+                {
+                    scheduleId: data.scheduleId,
+                    contactName: data.contactName,
+                    contactPhone: data.contactPhone,
+                    contactEmail: data.contactEmail
+                }
+            );
+            return response;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    static async getSavedContactInfo(scheduleId: string) {
+        try {
+            const response = await axiosWithJWT.get<{
+                status: number;
+                message: string;
+                data: SavedContactInfo;
+            }>(`${UserService.BASE_URL}/api/v1/bookings/getSavedContactInfo?scheduleId=${scheduleId}`);
+            return response.data;
+        } catch (error) {
+            throw error;
+        }
+    }
+
     static async getBookingInfo(scheduleId: string) {
         try {
             const response = await axiosWithJWT.get(
@@ -159,7 +195,7 @@ class UserService {
         }
     }
 
-    static async vnPay({ fullName, email, phoneNumber, pickupStopId, dropOffStopId, estimatedPrice }: any) {
+    static async vnPay({ fullName, email, phoneNumber, scheduleId }: any) {
         try {
             const response = await axiosWithJWT.post(
                 `${UserService.BASE_URL}/api/v1/payment/vnpay`,
@@ -167,9 +203,7 @@ class UserService {
                     contactName: fullName,
                     contactEmail: email,
                     contactPhone: phoneNumber,
-                    pickupStopId: pickupStopId,
-                    dropoffStopId: dropOffStopId,
-                    totalPrice: estimatedPrice.totalPrice,
+                    scheduleId: scheduleId
                 }
             );
             return response;

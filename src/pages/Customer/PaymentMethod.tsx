@@ -11,7 +11,6 @@ import {
     Typography,
 } from "@mui/material";
 import HealthAndSafetyIcon from "@mui/icons-material/HealthAndSafety";
-import useAppAccessor from "../../hook/useAppAccessor";
 import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import ArrowBackIosIcon from "@mui/icons-material/ArrowBackIos";
@@ -24,7 +23,6 @@ const PaymentMethod = () => {
     const navigate = useNavigate();
     const scheduleId = new URLSearchParams(location.search).get("scheduleId");
     const [paymentProcessing, setPaymentProcessing] = useState(false);
-    const { fullName, phoneNumber, email } = location.state || {};
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isNavigating, setIsNavigating] = useState(false);
     const [estimatedPrice, setEstimatedPrice] = useState<EstimatedPrice>({
@@ -42,23 +40,43 @@ const PaymentMethod = () => {
         dropoffTime: "",
         dropoffLocation: "",
     });
-    const { getUserInfor } = useAppAccessor();
-    const userInfo = getUserInfor();
+    const [contactInfo, setContactInfo] = useState({
+        fullName: "",
+        phoneNumber: "",
+        email: "",
+    });
+
+    useEffect(() => {
+        const fetchContactInfo = async () => {
+            if (!scheduleId) return;
+
+            try {
+                const response = await UserService.getSavedContactInfo(
+                    scheduleId
+                );
+                setContactInfo({
+                    fullName: response.data.contactName,
+                    phoneNumber: response.data.contactPhone,
+                    email: response.data.contactEmail,
+                });
+            } catch (error) {
+                console.error("Error fetching contact info:", error);
+                toast.error("Không thể tải thông tin liên hệ");
+            }
+        };
+
+        fetchContactInfo();
+    }, [scheduleId]);
 
     const handlePaymentClick = async () => {
         setIsNavigating(true);
         setPaymentProcessing(true);
-        const lastBooking = userInfo?.booking[userInfo.booking.length - 1]; // Get the most recent booking
-        const pickupStopId = lastBooking?.pickupStopId;
-        const dropOffStopId = lastBooking?.dropOffStopId;
         try {
             const response = await UserService.vnPay({
-                fullName,
-                email,
-                phoneNumber,
-                pickupStopId,
-                dropOffStopId,
-                estimatedPrice,
+                fullName: contactInfo.fullName,
+                email: contactInfo.email,
+                phoneNumber: contactInfo.phoneNumber,
+                scheduleId,
             });
             const paymentUrl = response.data;
             window.location.href = paymentUrl;
@@ -289,7 +307,7 @@ const PaymentMethod = () => {
                                                 marginBottom: 2,
                                             }}
                                         >
-                                            {fullName}
+                                            {contactInfo.fullName}
                                         </Typography>
                                     </Box>
                                     <Box
@@ -304,14 +322,14 @@ const PaymentMethod = () => {
                                                 marginBottom: 2,
                                             }}
                                         >
-                                            {phoneNumber}
+                                            {contactInfo.phoneNumber}
                                         </Typography>
                                     </Box>
                                     <Box
                                         display="flex"
                                         justifyContent="space-between"
                                     >
-                                        <Typography>Email </Typography>
+                                        <Typography>Email</Typography>
                                         <Typography
                                             sx={{
                                                 fontWeight: "bold",
@@ -319,7 +337,7 @@ const PaymentMethod = () => {
                                                 marginBottom: 2,
                                             }}
                                         >
-                                            {email}
+                                            {contactInfo.email}
                                         </Typography>
                                     </Box>
                                 </Box>
