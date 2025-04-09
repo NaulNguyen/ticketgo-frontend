@@ -15,11 +15,11 @@ function App() {
         >
             <BrowserRouter>
                 <div>
-                    <SpeedInsights />
                     <Provider store={store}>
                         <div className="text-sm">
                             <ToastContainer />
                         </div>
+                        <SpeedInsights />
                         <AppRoutes />
                     </Provider>
                 </div>
