@@ -73,6 +73,7 @@ export interface BookingHistoryItem {
     seatNumber: string;
     licensePlate: string;
     contactEmail: string;
-    price: string;
+    discountedPrice: string;
+    originalPrice: string;
     status: string;
 }

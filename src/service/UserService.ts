@@ -195,7 +195,7 @@ class UserService {
         }
     }
 
-    static async vnPay({ fullName, email, phoneNumber, scheduleId }: any) {
+    static async vnPay({ fullName, email, phoneNumber, scheduleId, promotionId }: any) {
         try {
             const response = await axiosWithJWT.post(
                 `${UserService.BASE_URL}/api/v1/payment/vnpay`,
@@ -203,7 +203,8 @@ class UserService {
                     contactName: fullName,
                     contactEmail: email,
                     contactPhone: phoneNumber,
-                    scheduleId: scheduleId
+                    scheduleId: scheduleId,
+                    promotionId: promotionId
                 }
             );
             return response;

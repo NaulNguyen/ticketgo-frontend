@@ -8,16 +8,22 @@ const BookingHistory = () => {
     const [bookingHistoryData, setBookingHistoryData] = useState<
         BookingHistoryItem[]
     >([]);
-    const formatPrice = (price: string): string => {
+
+    const formatPrice = (
+        originalPrice: string,
+        discountedPrice: string | null
+    ): string => {
+        const price = discountedPrice || originalPrice;
         const number = parseFloat(price);
-        if (isNaN(number)) return price;
-        return new Intl.NumberFormat("en-US").format(number);
+        if (isNaN(number)) return originalPrice;
+        return new Intl.NumberFormat("vi-VN").format(number);
     };
 
     useEffect(() => {
         const fetchBookingHistory = async () => {
             try {
                 const response = await UserService.bookingHistory();
+                console.log(response.data.data);
                 setBookingHistoryData(response.data.data);
             } catch (err) {
                 console.log(
@@ -252,7 +258,32 @@ const BookingHistory = () => {
                                             <span className="font-thin">
                                                 Giá:
                                             </span>{" "}
-                                            {formatPrice(booking.price)} VND
+                                            {formatPrice(
+                                                booking.originalPrice,
+                                                booking.discountedPrice
+                                            )}{" "}
+                                            VND
+                                            {booking.discountedPrice &&
+                                                booking.discountedPrice !==
+                                                    booking.originalPrice && (
+                                                    <Typography
+                                                        component="span"
+                                                        sx={{
+                                                            textDecoration:
+                                                                "line-through",
+                                                            color: "text.secondary",
+                                                            ml: 1,
+                                                            fontSize: "0.9em",
+                                                        }}
+                                                    >
+                                                        (
+                                                        {formatPrice(
+                                                            booking.originalPrice,
+                                                            null
+                                                        )}{" "}
+                                                        VND)
+                                                    </Typography>
+                                                )}
                                         </Typography>
                                     </Box>
                                 </Box>

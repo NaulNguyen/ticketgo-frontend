@@ -45,6 +45,19 @@ const PaymentMethod = () => {
         phoneNumber: "",
         email: "",
     });
+    const [selectedPromotion, setSelectedPromotion] = useState<{
+        promotionId: number;
+        discountPercentage: number;
+    } | null>(null);
+
+    const handlePromotionSelect = (
+        promotion: {
+            promotionId: number;
+            discountPercentage: number;
+        } | null
+    ) => {
+        setSelectedPromotion(promotion);
+    };
 
     useEffect(() => {
         const fetchContactInfo = async () => {
@@ -77,6 +90,7 @@ const PaymentMethod = () => {
                 email: contactInfo.email,
                 phoneNumber: contactInfo.phoneNumber,
                 scheduleId,
+                promotionId: selectedPromotion?.promotionId,
             });
             const paymentUrl = response.data;
             window.location.href = paymentUrl;
@@ -348,6 +362,7 @@ const PaymentMethod = () => {
                         <TripSummary
                             tripInfo={tripInfo}
                             estimatedPrice={estimatedPrice}
+                            onPromotionSelect={handlePromotionSelect}
                         />
                     </Container>
                 </Container>
