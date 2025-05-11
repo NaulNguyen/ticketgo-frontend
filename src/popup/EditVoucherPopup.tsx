@@ -49,7 +49,7 @@ const EditVoucherPopup: React.FC<EditVoucherPopupProps> = ({
                 console.log(values);
                 console.log(voucherId);
                 const response = await axiosWithJWT.post(
-                    `http://localhost:8080/api/v1/promotions/${voucherId}`,
+                    `http://178.128.16.200:8080/api/v1/promotions/${voucherId}`,
                     {
                         ...values,
                         discountPercentage: Number(values.discountPercentage),
@@ -75,7 +75,7 @@ const EditVoucherPopup: React.FC<EditVoucherPopupProps> = ({
                 setIsLoading(true);
                 try {
                     const response = await axiosWithJWT.get(
-                        `http://localhost:8080/api/v1/promotions/${voucherId}`
+                        `http://178.128.16.200:8080/api/v1/promotions/${voucherId}`
                     );
                     console.log(response);
                     const data = response.data.data;

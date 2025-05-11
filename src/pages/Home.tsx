@@ -1,8 +1,17 @@
 import React, { useEffect, useState, useCallback, memo } from "react";
 import { DestinationCard, Footer, Header, Search } from "../components";
-import { Typography, Box, Skeleton, Fade, Container, Paper } from "@mui/material";
+import {
+    Typography,
+    Box,
+    Skeleton,
+    Fade,
+    Container,
+    Paper,
+} from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import BoxChat from "../components/BoxChat";
+import useAppAccessor from "../hook/useAppAccessor";
 
 type RouteData = {
     routeImage: string;
@@ -26,13 +35,18 @@ const Home = () => {
     const [homepageData, setHomepageData] = useState<HomepageData | null>(null);
     const [loadingRoutes, setLoadingRoutes] = useState(true);
     const [loadingHomepage, setLoadingHomepage] = useState(true);
+    const { getUserInfor } = useAppAccessor();
+    const userInfor = getUserInfor();
     const navigate = useNavigate();
+
+    const shouldShowChat =
+        userInfor && userInfor.user.role !== "ROLE_BUS_COMPANY";
 
     // Memoized fetch functions
     const fetchRoutes = useCallback(async () => {
         try {
             const response = await axios.get(
-                "http://localhost:8080/api/v1/routes/popular"
+                "http://178.128.16.200:8080/api/v1/routes/popular"
             );
             const data = response.data;
             if (data.status === 200) {
@@ -50,7 +64,7 @@ const Home = () => {
     const fetchHomepageData = useCallback(async () => {
         try {
             const response = await axios.get(
-                "http://localhost:8080/api/v1/homepage"
+                "http://178.128.16.200:8080/api/v1/homepage"
             );
             const data = response.data;
             if (data.status === 200) {
@@ -81,8 +95,16 @@ const Home = () => {
     );
 
     const LoadingSkeleton = memo(() => (
-        <Paper elevation={2} sx={{ width: 280, height: "fit-content", p: 2, borderRadius: 2 }}>
-            <Skeleton variant="rectangular" width="100%" height={180} sx={{ borderRadius: 1 }} />
+        <Paper
+            elevation={2}
+            sx={{ width: 280, height: "fit-content", p: 2, borderRadius: 2 }}
+        >
+            <Skeleton
+                variant="rectangular"
+                width="100%"
+                height={180}
+                sx={{ borderRadius: 1 }}
+            />
             <Box sx={{ pt: 1.5 }}>
                 <Skeleton width="85%" height={28} />
                 <Skeleton width="60%" height={24} />
@@ -96,7 +118,11 @@ const Home = () => {
             <Box className="relative">
                 {loadingHomepage ? (
                     <Box sx={{ width: "100%", height: 480 }}>
-                        <Skeleton variant="rectangular" width="100%" height="100%" />
+                        <Skeleton
+                            variant="rectangular"
+                            width="100%"
+                            height="100%"
+                        />
                     </Box>
                 ) : (
                     homepageData && (
@@ -129,7 +155,8 @@ const Home = () => {
                             mr: 2,
                             borderRadius: 1,
                         },
-                    }}>
+                    }}
+                >
                     Tuyến đường phổ biến
                 </Typography>
 
@@ -140,22 +167,33 @@ const Home = () => {
                         gap: 3,
                         justifyContent: "center",
                         mb: 6,
-                    }}>
+                    }}
+                >
                     {loadingRoutes
-                        ? Array.from({ length: 4 }).map((_, i) => <LoadingSkeleton key={i} />)
+                        ? Array.from({ length: 4 }).map((_, i) => (
+                              <LoadingSkeleton key={i} />
+                          ))
                         : routes.map((route, i) => (
-                              <Fade in={!loadingRoutes} timeout={800 + i * 200} key={i}>
+                              <Fade
+                                  in={!loadingRoutes}
+                                  timeout={800 + i * 200}
+                                  key={i}
+                              >
                                   <Paper
                                       elevation={2}
-                                      onClick={() => handleRouteClick(route.routeName)}
+                                      onClick={() =>
+                                          handleRouteClick(route.routeName)
+                                      }
                                       sx={{
-                                          transition: "transform 0.2s, box-shadow 0.2s",
+                                          transition:
+                                              "transform 0.2s, box-shadow 0.2s",
                                           "&:hover": {
                                               transform: "translateY(-4px)",
                                               boxShadow: 4,
                                           },
                                           cursor: "pointer",
-                                      }}>
+                                      }}
+                                  >
                                       <MemoizedDestinationCard
                                           routeImage={route.routeImage}
                                           routeName={route.routeName}
@@ -181,7 +219,8 @@ const Home = () => {
                             mr: 2,
                             borderRadius: 1,
                         },
-                    }}>
+                    }}
+                >
                     Về chúng tôi
                 </Typography>
 
@@ -203,16 +242,27 @@ const Home = () => {
                                     bgcolor: "#ffffff",
                                     maxWidth: "1000px", // Added maxWidth
                                     margin: "0 auto", // Center the paper
-                                }}>
+                                }}
+                            >
                                 <Box
-                                    sx={{ p: 4, display: "flex", flexDirection: "column", gap: 4 }}>
+                                    sx={{
+                                        p: 4,
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        gap: 4,
+                                    }}
+                                >
                                     <Box
                                         sx={{
                                             display: "flex",
                                             alignItems: "center",
                                             gap: 4,
-                                            flexWrap: { xs: "wrap", md: "nowrap" },
-                                        }}>
+                                            flexWrap: {
+                                                xs: "wrap",
+                                                md: "nowrap",
+                                            },
+                                        }}
+                                    >
                                         <Typography
                                             variant="body1"
                                             sx={{
@@ -220,7 +270,8 @@ const Home = () => {
                                                 fontSize: "1.1rem",
                                                 lineHeight: 1.8,
                                                 color: "#2c3e50",
-                                            }}>
+                                            }}
+                                        >
                                             <span
                                                 dangerouslySetInnerHTML={{
                                                     __html: homepageData.description
@@ -236,7 +287,10 @@ const Home = () => {
                                             component="img"
                                             src="https://res.cloudinary.com/dj1h07rea/image/upload/v1733365012/z6098699997331_d46ffa1573577506f3613cbe5cd50ec3_gxauhr.jpg"
                                             sx={{
-                                                width: { xs: "100%", md: "50%" }, // Changed to 50% width
+                                                width: {
+                                                    xs: "100%",
+                                                    md: "50%",
+                                                }, // Changed to 50% width
                                                 height: 550,
                                                 objectFit: "cover",
                                                 borderRadius: 2,
@@ -250,13 +304,20 @@ const Home = () => {
                                             display: "flex",
                                             alignItems: "center",
                                             gap: 4,
-                                            flexWrap: { xs: "wrap-reverse", md: "nowrap" },
-                                        }}>
+                                            flexWrap: {
+                                                xs: "wrap-reverse",
+                                                md: "nowrap",
+                                            },
+                                        }}
+                                    >
                                         <Box
                                             component="img"
                                             src="https://res.cloudinary.com/dj1h07rea/image/upload/v1733365012/z6098697156421_1d372dc62b02c82a30aee123a2c3d485_s4kai3.jpg"
                                             sx={{
-                                                width: { xs: "100%", md: "50%" }, // Changed to 50% width
+                                                width: {
+                                                    xs: "100%",
+                                                    md: "50%",
+                                                }, // Changed to 50% width
                                                 height: 550,
                                                 objectFit: "cover",
                                                 borderRadius: 2,
@@ -270,7 +331,8 @@ const Home = () => {
                                                 fontSize: "1.1rem",
                                                 lineHeight: 1.8,
                                                 color: "#2c3e50",
-                                            }}>
+                                            }}
+                                        >
                                             <span
                                                 dangerouslySetInnerHTML={{
                                                     __html: homepageData.description
@@ -290,6 +352,7 @@ const Home = () => {
                 </Box>
             </Container>
             <MemoizedFooter />
+            {shouldShowChat && <BoxChat />}
         </Box>
     );
 };

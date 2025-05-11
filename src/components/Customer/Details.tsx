@@ -8,6 +8,7 @@ import {
     Typography,
     Paper,
     Avatar,
+    Button,
 } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import TranslateIcon from "@mui/icons-material/Translate";
@@ -21,6 +22,8 @@ import axios from "axios";
 import { axiosWithJWT } from "../../config/axiosConfig";
 import PhoneIcon from "@mui/icons-material/Phone";
 import BadgeIcon from "@mui/icons-material/Badge";
+import DownloadIcon from "@mui/icons-material/Download";
+import { generateCustomerListPDF } from "../../utils/generateCustomerListPDF";
 
 interface RouteStop {
     location: string;
@@ -44,6 +47,14 @@ interface Policy {
 interface Amenity {
     name: string;
     description: string;
+}
+
+interface Customer {
+    customerPhone: string;
+    customerName: string;
+    seatNumber: number;
+    pickupLocation: string;
+    dropoffLocation: string;
 }
 
 const amenityIcons: { [key: string]: React.ReactNode } = {
@@ -76,6 +87,7 @@ const Details: React.FC<DetailsProps> = ({ scheduleId }) => {
     const [policies, setPolicies] = useState<Policy[]>([]);
     const [amenities, setAmenities] = useState<Amenity[]>([]);
     const [driverInfo, setDriverInfo] = useState<DriverInfo | null>(null);
+    const [customers, setCustomers] = useState<Customer[]>([]);
 
     const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
         setTabIndex(newValue);
@@ -85,7 +97,7 @@ const Details: React.FC<DetailsProps> = ({ scheduleId }) => {
         const fetchRouteStops = async () => {
             try {
                 const response = await axios.get(
-                    `http://localhost:8080/api/v1/route-stops?scheduleId=${scheduleId}`
+                    `http://178.128.16.200:8080/api/v1/route-stops?scheduleId=${scheduleId}`
                 );
                 setRouteStops(response.data.data);
             } catch (error) {
@@ -103,7 +115,7 @@ const Details: React.FC<DetailsProps> = ({ scheduleId }) => {
             const fetchPolicies = async () => {
                 try {
                     const response = await axios.get(
-                        "http://localhost:8080/api/v1/policies"
+                        "http://178.128.16.200:8080/api/v1/policies"
                     );
                     setPolicies(response.data.data);
                 } catch (err) {
@@ -115,7 +127,7 @@ const Details: React.FC<DetailsProps> = ({ scheduleId }) => {
             const fetchAmenities = async () => {
                 try {
                     const response = await axios.get(
-                        "http://localhost:8080/api/v1/amenities"
+                        "http://178.128.16.200:8080/api/v1/amenities"
                     );
                     setAmenities(response.data.data);
                 } catch (err) {
@@ -131,7 +143,7 @@ const Details: React.FC<DetailsProps> = ({ scheduleId }) => {
             const fetchDriverInfo = async () => {
                 try {
                     const response = await axiosWithJWT.get(
-                        `http://localhost:8080/api/v1/drivers/schedule?scheduleId=${scheduleId}`
+                        `http://178.128.16.200:8080/api/v1/drivers/schedule?scheduleId=${scheduleId}`
                     );
                     setDriverInfo(response.data.data);
                 } catch (error) {
@@ -140,6 +152,22 @@ const Details: React.FC<DetailsProps> = ({ scheduleId }) => {
             };
 
             fetchDriverInfo();
+        }
+    }, [tabIndex, scheduleId]);
+
+    useEffect(() => {
+        if (tabIndex === 4 && scheduleId) {
+            const fetchCustomers = async () => {
+                try {
+                    const response = await axiosWithJWT.get(
+                        `http://178.128.16.200:8080/api/v1/schedules/${scheduleId}/customers`
+                    );
+                    setCustomers(response.data.data);
+                } catch (error) {
+                    console.error("Error fetching customers:", error);
+                }
+            };
+            fetchCustomers();
         }
     }, [tabIndex, scheduleId]);
 
@@ -188,6 +216,20 @@ const Details: React.FC<DetailsProps> = ({ scheduleId }) => {
                             fontWeight: "500",
                             color:
                                 tabIndex === 3
+                                    ? "rgb(24, 144, 255)"
+                                    : "inherit",
+                        }}
+                    />
+                )}
+                {window.location.pathname.includes("dashboard") && (
+                    <Tab
+                        label="Danh sách khách hàng"
+                        sx={{
+                            textTransform: "none",
+                            fontSize: "16px",
+                            fontWeight: "500",
+                            color:
+                                tabIndex === 4
                                     ? "rgb(24, 144, 255)"
                                     : "inherit",
                         }}
@@ -513,6 +555,130 @@ const Details: React.FC<DetailsProps> = ({ scheduleId }) => {
                             </Box>
                         </Paper>
                     </>
+                )}
+
+                {tabIndex === 4 && (
+                    <Box>
+                        <Divider />
+                        <Box
+                            sx={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                                mt: 2,
+                                mb: 3,
+                            }}
+                        >
+                            <Typography
+                                variant="h6"
+                                fontSize={18}
+                                fontWeight={700}
+                            >
+                                Danh sách khách hàng
+                            </Typography>
+                            <Button
+                                variant="contained"
+                                startIcon={<DownloadIcon />}
+                                onClick={() =>
+                                    generateCustomerListPDF(
+                                        customers,
+                                        scheduleId
+                                    )
+                                }
+                                sx={{
+                                    textTransform: "none",
+                                    bgcolor: "#1976d2",
+                                    "&:hover": {
+                                        bgcolor: "#1565c0",
+                                    },
+                                }}
+                            >
+                                Tải xuống PDF
+                            </Button>
+                        </Box>
+
+                        <Paper
+                            sx={{
+                                width: "100%",
+                                overflow: "hidden",
+                                borderRadius: 2,
+                                border: "1px solid #e0e0e0",
+                            }}
+                        >
+                            {customers.map((customer, index) => (
+                                <Box
+                                    key={index}
+                                    sx={{
+                                        p: 2,
+                                        borderBottom:
+                                            index === customers.length - 1
+                                                ? "none"
+                                                : "1px solid #e0e0e0",
+                                        "&:hover": {
+                                            bgcolor: "rgba(0, 0, 0, 0.02)",
+                                        },
+                                    }}
+                                >
+                                    <Box
+                                        sx={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: 2,
+                                            mb: 1,
+                                        }}
+                                    >
+                                        <Typography
+                                            variant="subtitle1"
+                                            fontWeight={600}
+                                        >
+                                            {customer.customerName}
+                                        </Typography>
+                                        <Typography
+                                            sx={{
+                                                bgcolor: "primary.main",
+                                                color: "white",
+                                                px: 1,
+                                                py: 0.5,
+                                                borderRadius: 1,
+                                                fontSize: "0.875rem",
+                                            }}
+                                        >
+                                            Ghế {customer.seatNumber}
+                                        </Typography>
+                                    </Box>
+                                    <Box
+                                        sx={{
+                                            display: "flex",
+                                            flexDirection: "column",
+                                            gap: 0.5,
+                                        }}
+                                    >
+                                        <Typography
+                                            variant="body2"
+                                            color="text.secondary"
+                                        >
+                                            <strong>Số điện thoại:</strong>{" "}
+                                            {customer.customerPhone}
+                                        </Typography>
+                                        <Typography
+                                            variant="body2"
+                                            color="text.secondary"
+                                        >
+                                            <strong>Điểm đón:</strong>{" "}
+                                            {customer.pickupLocation}
+                                        </Typography>
+                                        <Typography
+                                            variant="body2"
+                                            color="text.secondary"
+                                        >
+                                            <strong>Điểm trả:</strong>{" "}
+                                            {customer.dropoffLocation}
+                                        </Typography>
+                                    </Box>
+                                </Box>
+                            ))}
+                        </Paper>
+                    </Box>
                 )}
             </Box>
         </Box>

@@ -12,7 +12,7 @@ import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import DirectionsBusIcon from "@mui/icons-material/DirectionsBus";
 import { format } from "date-fns";
-import vi from "date-fns/locale/vi";
+import { vi } from "date-fns/locale";
 import { EstimatedPrice, TripInfo } from "../../global";
 import { axiosWithJWT } from "../../config/axiosConfig";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
@@ -107,7 +107,7 @@ const TripSummary: React.FC<TripSummaryProps> = ({
         const fetchPromotions = async () => {
             try {
                 const response = await axiosWithJWT.get(
-                    "http://localhost:8080/api/v1/promotions/active",
+                    "http://178.128.16.200:8080/api/v1/promotions/active",
                     {
                         params: {
                             pageNumber: 1,

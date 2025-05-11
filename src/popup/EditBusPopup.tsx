@@ -84,7 +84,7 @@ const EditBusPopup: React.FC<EditBusPopupProps> = ({
                 };
 
                 const response = await axiosWithJWT.post(
-                    `http://localhost:8080/api/v1/buses/${busId}`,
+                    `http://178.128.16.200:8080/api/v1/buses/${busId}`,
                     requestData
                 );
 
@@ -109,7 +109,7 @@ const EditBusPopup: React.FC<EditBusPopupProps> = ({
                 setLoading(true);
                 try {
                     const response = await axiosWithJWT.get(
-                        `http://localhost:8080/api/v1/buses/${busId}`
+                        `http://178.128.16.200:8080/api/v1/buses/${busId}`
                     );
                     const busData = response.data.data;
                     formik.setValues({

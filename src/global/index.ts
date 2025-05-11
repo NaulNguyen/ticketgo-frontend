@@ -1,3 +1,5 @@
+import { number } from "yup";
+
 export type GlobalState = {
     user: UserState;
 };
@@ -10,6 +12,7 @@ export type UserState = {
 };
 
 export type UserInformation = {
+    userId: string | number;
     email: string;
     role: string;
     imageUrl: string;

@@ -16,13 +16,16 @@ const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({ onClose }) => {
     const handleGoogleLoginSuccess = async (response: any) => {
         try {
             const googleToken = response.access_token;
-            const googleResponse = await UserService.loginWithGoogle(googleToken);
+            const googleResponse = await UserService.loginWithGoogle(
+                googleToken
+            );
 
             if (googleResponse.data.status === 200) {
                 const { accessToken, refreshToken } = googleResponse.data.data;
                 Cookies.set("accessToken", accessToken);
                 Cookies.set("refreshToken", refreshToken);
                 const userInfoResponse = await UserService.fetchUserInfor();
+                console.log("User info response:", userInfoResponse.data);
                 dispatch(asyncUserInfor(userInfoResponse));
                 toast.success("Đăng nhập với Google thành công");
                 onClose();
@@ -35,7 +38,8 @@ const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({ onClose }) => {
 
     const login = useGoogleLogin({
         onSuccess: handleGoogleLoginSuccess,
-        onError: (error) => toast.error("Google login error: " + error.error_description),
+        onError: (error) =>
+            toast.error("Google login error: " + error.error_description),
     });
 
     return (
@@ -56,7 +60,8 @@ const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({ onClose }) => {
                     backgroundColor: "rgba(0, 0, 0, 0.04)",
                 },
                 marginX: "auto",
-            }}>
+            }}
+        >
             <img
                 alt="Google logo"
                 src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/1024px-Google_%22G%22_logo.svg.png"

@@ -10,12 +10,18 @@ import {
     Legend,
     ResponsiveContainer,
 } from "recharts";
-import { Box, CircularProgress, Typography, TextField, Stack } from "@mui/material";
+import {
+    Box,
+    CircularProgress,
+    Typography,
+    TextField,
+    Stack,
+} from "@mui/material";
 import { axiosWithJWT } from "../../config/axiosConfig";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import viLocale from "date-fns/locale/vi";
+import { vi } from "date-fns/locale";
 
 interface CustomTooltipProps {
     active?: boolean;
@@ -27,8 +33,12 @@ interface StatisticsChartProps {
     selectedSubIndex: number;
 }
 
-const StatisticsChart: React.FC<StatisticsChartProps> = ({ selectedSubIndex }) => {
-    const [activeTab, setActiveTab] = useState<"daily" | "monthly" | "yearly">("daily");
+const StatisticsChart: React.FC<StatisticsChartProps> = ({
+    selectedSubIndex,
+}) => {
+    const [activeTab, setActiveTab] = useState<"daily" | "monthly" | "yearly">(
+        "daily"
+    );
     const [data, setData] = useState<any[]>([]);
     const [startDate, setStartDate] = useState("2024-11-01");
     const [endDate, setEndDate] = useState("2024-11-30");
@@ -38,7 +48,7 @@ const StatisticsChart: React.FC<StatisticsChartProps> = ({ selectedSubIndex }) =
     const fetchData = async () => {
         setLoading(true);
         try {
-            const baseUrl = "http://localhost:8080/api/v1/revenues";
+            const baseUrl = "http://178.128.16.200:8080/api/v1/revenues";
             let url = "";
 
             switch (activeTab) {
@@ -98,7 +108,11 @@ const StatisticsChart: React.FC<StatisticsChartProps> = ({ selectedSubIndex }) =
         });
     };
 
-    const CustomTooltip: React.FC<CustomTooltipProps> = ({ active, payload, label }) => {
+    const CustomTooltip: React.FC<CustomTooltipProps> = ({
+        active,
+        payload,
+        label,
+    }) => {
         if (!active || !payload?.length) return null;
 
         return (
@@ -111,11 +125,18 @@ const StatisticsChart: React.FC<StatisticsChartProps> = ({ selectedSubIndex }) =
                     p: 2,
                     boxShadow: 3,
                     minWidth: 200,
-                }}>
+                }}
+            >
                 <Typography
                     variant="subtitle1"
                     gutterBottom
-                    sx={{ fontWeight: "bold", borderBottom: 1, pb: 1, borderColor: "grey.300" }}>
+                    sx={{
+                        fontWeight: "bold",
+                        borderBottom: 1,
+                        pb: 1,
+                        borderColor: "grey.300",
+                    }}
+                >
                     {activeTab === "yearly"
                         ? "Năm: "
                         : activeTab === "monthly"
@@ -124,8 +145,12 @@ const StatisticsChart: React.FC<StatisticsChartProps> = ({ selectedSubIndex }) =
                     {formatDate(label || "")}
                 </Typography>
                 <Box sx={{ mt: 1 }}>
-                    <Typography variant="body1" sx={{ mb: 1, color: "#4a90e2" }}>
-                        <strong>Doanh thu:</strong> {formatCurrency(payload[0].value)}
+                    <Typography
+                        variant="body1"
+                        sx={{ mb: 1, color: "#4a90e2" }}
+                    >
+                        <strong>Doanh thu:</strong>{" "}
+                        {formatCurrency(payload[0].value)}
                     </Typography>
                     <Typography variant="body1" sx={{ color: "#82ca9d" }}>
                         <strong>Vé đã bán:</strong> {payload[1].value}
@@ -138,14 +163,19 @@ const StatisticsChart: React.FC<StatisticsChartProps> = ({ selectedSubIndex }) =
     const renderDateInputs = () => {
         if (activeTab === "daily") {
             return (
-                <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={viLocale}>
+                <LocalizationProvider
+                    dateAdapter={AdapterDateFns}
+                    adapterLocale={vi}
+                >
                     <Stack direction="row" spacing={2} sx={{ mb: 3 }}>
                         <DatePicker
                             label="Từ ngày"
                             value={new Date(startDate)}
                             onChange={(newValue) => {
                                 if (newValue) {
-                                    setStartDate(newValue.toISOString().split("T")[0]);
+                                    setStartDate(
+                                        newValue.toISOString().split("T")[0]
+                                    );
                                 }
                             }}
                         />
@@ -154,7 +184,9 @@ const StatisticsChart: React.FC<StatisticsChartProps> = ({ selectedSubIndex }) =
                             value={new Date(endDate)}
                             onChange={(newValue) => {
                                 if (newValue) {
-                                    setEndDate(newValue.toISOString().split("T")[0]);
+                                    setEndDate(
+                                        newValue.toISOString().split("T")[0]
+                                    );
                                 }
                             }}
                         />
@@ -198,7 +230,8 @@ const StatisticsChart: React.FC<StatisticsChartProps> = ({ selectedSubIndex }) =
                             right: 30,
                             left: 20,
                             bottom: 10,
-                        }}>
+                        }}
+                    >
                         <CartesianGrid strokeDasharray="3 3" stroke="#ccc" />
                         <XAxis
                             dataKey="period"
@@ -238,8 +271,16 @@ const StatisticsChart: React.FC<StatisticsChartProps> = ({ selectedSubIndex }) =
                             stroke="#0047ab"
                             strokeWidth={3}
                             name="Xu hướng doanh thu"
-                            dot={activeTab === "yearly" ? false : { r: 5, fill: "#0047ab" }}
-                            activeDot={activeTab === "yearly" ? false : { r: 8, fill: "#2171cd" }}
+                            dot={
+                                activeTab === "yearly"
+                                    ? false
+                                    : { r: 5, fill: "#0047ab" }
+                            }
+                            activeDot={
+                                activeTab === "yearly"
+                                    ? false
+                                    : { r: 8, fill: "#2171cd" }
+                            }
                         />
                         <Line
                             yAxisId="right"
@@ -248,8 +289,16 @@ const StatisticsChart: React.FC<StatisticsChartProps> = ({ selectedSubIndex }) =
                             stroke="#008000"
                             strokeWidth={3}
                             name="Xu hướng vé bán"
-                            dot={activeTab === "yearly" ? false : { r: 5, fill: "#008000" }}
-                            activeDot={activeTab === "yearly" ? false : { r: 8, fill: "#4d9d6a" }}
+                            dot={
+                                activeTab === "yearly"
+                                    ? false
+                                    : { r: 5, fill: "#008000" }
+                            }
+                            activeDot={
+                                activeTab === "yearly"
+                                    ? false
+                                    : { r: 8, fill: "#4d9d6a" }
+                            }
                         />
                     </ComposedChart>
                 </ResponsiveContainer>

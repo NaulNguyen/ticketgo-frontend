@@ -5,6 +5,7 @@ const initialState: UserState = {
     isAuthenticated: false,
     isLoading: false,
     user: {
+        userId: "",
         email: "",
         role: "",
         imageUrl: "",

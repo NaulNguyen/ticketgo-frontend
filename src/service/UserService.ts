@@ -15,7 +15,7 @@ interface SavedContactInfo {
 }
 
 class UserService {
-    static BASE_URL = "http://localhost:8080";
+    static BASE_URL = "http://178.128.16.200:8080";
 
     static async register(userData: any) {
         try {

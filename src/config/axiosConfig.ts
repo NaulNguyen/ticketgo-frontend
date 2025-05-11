@@ -2,7 +2,7 @@ import axios, { AxiosRequestConfig } from "axios";
 import Cookies from "js-cookie";
 import { toast } from "react-toastify";
 
-const API_URL = "http://localhost:8080";
+const API_URL = "http://178.128.16.200:8080";
 
 // Axios instances
 const axiosWithJWT = axios.create({

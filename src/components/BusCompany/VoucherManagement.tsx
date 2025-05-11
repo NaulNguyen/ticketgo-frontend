@@ -84,7 +84,7 @@ const VoucherManagement = () => {
         setIsLoading(true);
         try {
             const response = await axiosWithJWT.get<PromotionResponse>(
-                `http://localhost:8080/api/v1/promotions?pageNumber=${page}&pageSize=${pageSize}`
+                `http://178.128.16.200:8080/api/v1/promotions?pageNumber=${page}&pageSize=${pageSize}`
             );
             setVouchers(response.data.data);
             setTotalPages(response.data.totalPages);
@@ -99,7 +99,7 @@ const VoucherManagement = () => {
     const handleDeleteVoucher = async (id: string) => {
         try {
             const response = await axiosWithJWT.delete(
-                `http://localhost:8080/api/v1/promotions/${id}`
+                `http://178.128.16.200:8080/api/v1/promotions/${id}`
             );
             if (response.status === 200) {
                 toast.success("Xóa voucher thành công");

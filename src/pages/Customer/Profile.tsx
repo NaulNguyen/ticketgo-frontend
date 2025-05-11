@@ -37,7 +37,7 @@ const Profile = () => {
 
         try {
             const updateResponse = await axiosWithJWT.post(
-                "http://localhost:8080/api/v1/users",
+                "http://178.128.16.200:8080/api/v1/users",
                 updatedValues
             );
             if (updateResponse.status === 200) {
@@ -78,7 +78,8 @@ const Profile = () => {
                     borderRadius: 2,
                     marginBottom: 5,
                     backgroundColor: "#ffffff",
-                }}>
+                }}
+            >
                 <Box display="flex" justifyContent="center" mb={3}>
                     <Avatar
                         src={userInfo?.imageUrl || ""}
@@ -126,7 +127,8 @@ const Profile = () => {
                         variant="contained"
                         color="primary"
                         type="submit"
-                        sx={{ marginTop: 2 }}>
+                        sx={{ marginTop: 2 }}
+                    >
                         Lưu Thay Đổi
                     </Button>
                 </form>

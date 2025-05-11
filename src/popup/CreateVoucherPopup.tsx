@@ -49,7 +49,7 @@ const CreateVoucherPopup: React.FC<CreateVoucherPopupProps> = ({
         onSubmit: async (values) => {
             try {
                 const response = await axiosWithJWT.post(
-                    "http://localhost:8080/api/v1/promotions",
+                    "http://178.128.16.200:8080/api/v1/promotions",
                     {
                         ...values,
                         discountPercentage: Number(values.discountPercentage),

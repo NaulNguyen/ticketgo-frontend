@@ -83,7 +83,7 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
                     message: string;
                     data: BookingStepResponse;
                 }>(
-                    `http://localhost:8080/api/v1/bookings/step?scheduleId=${scheduleId}`
+                    `http://178.128.16.200:8080/api/v1/bookings/step?scheduleId=${scheduleId}`
                 );
 
                 const { step, vnPayUrl } = response.data.data;
@@ -206,7 +206,7 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
         const fetchSeatsData = async () => {
             try {
                 const response = await axios.get(
-                    `http://localhost:8080/api/v1/seats?scheduleId=${scheduleId}`
+                    `http://178.128.16.200:8080/api/v1/seats?scheduleId=${scheduleId}`
                 );
                 if (response.data.status === 200) {
                     setSeatsData(response.data.data);
@@ -226,7 +226,7 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
             const fetchRouteStops = async () => {
                 try {
                     const response = await axios.get(
-                        `http://localhost:8080/api/v1/route-stops?scheduleId=${scheduleId}`
+                        `http://178.128.16.200:8080/api/v1/route-stops?scheduleId=${scheduleId}`
                     );
                     setRouteStops(response.data.data);
                 } catch (error) {

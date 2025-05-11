@@ -20,7 +20,7 @@ const AccountActivation = () => {
                 if (token) {
                     try {
                         const response = await axios.put(
-                            "http://localhost:8080/api/v1/auth/activate",
+                            "http://178.128.16.200:8080/api/v1/auth/activate",
                             { token },
                             {
                                 headers: {
@@ -29,7 +29,9 @@ const AccountActivation = () => {
                             }
                         );
                         if (response.data.status === 200) {
-                            toast.success("Tài khoản của bạn đã được kích hoạt thành công");
+                            toast.success(
+                                "Tài khoản của bạn đã được kích hoạt thành công"
+                            );
                             toast.info("Vui lòng đăng nhập để sử dụng dịch vụ");
                             setTimeout(() => navigate("/"), 3000);
                         } else if (response.data.status === 410) {
@@ -66,21 +68,24 @@ const AccountActivation = () => {
                     textAlign: "center",
                     padding: "20px",
                     backgroundColor: "#f0f0f0",
-                }}>
+                }}
+            >
                 <Box
                     sx={{
                         backgroundColor: "#ffffff",
                         padding: "30px",
                         borderRadius: "8px",
                         boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
-                    }}>
+                    }}
+                >
                     <Typography variant="h3" fontWeight="bold" mb={3}>
                         <span className="font-pacifico text-6xl">
                             Cảm ơn bạn đã đăng ký tài khoản với TicketGo!
                         </span>
                     </Typography>
                     <Typography variant="body1" fontSize="18px">
-                        Vui lòng chờ một chút trong khi chúng tôi kích hoạt tài khoản cho bạn.
+                        Vui lòng chờ một chút trong khi chúng tôi kích hoạt tài
+                        khoản cho bạn.
                     </Typography>
                 </Box>
             </Box>
