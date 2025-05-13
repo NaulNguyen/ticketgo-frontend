@@ -37,7 +37,7 @@ const Profile = () => {
 
         try {
             const updateResponse = await axiosWithJWT.post(
-                "http://178.128.16.200:8080/api/v1/users",
+                "https://ticketgo.site/api/v1/users",
                 updatedValues
             );
             if (updateResponse.status === 200) {

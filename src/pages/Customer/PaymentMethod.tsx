@@ -172,9 +172,9 @@ const PaymentMethod = () => {
         };
     }, [isNavigating]);
 
-    const handleConfirmExit = async () => {
+    const handleConfirmExit = async (scheduleId: string | number) => {
         try {
-            await UserService.cancleTicketReserve();
+            await UserService.cancleTicketReserve(scheduleId);
             toast.success("Đã hủy chỗ đặt thành công");
         } catch (error) {
             console.error("Error canceling reservation:", error);
@@ -469,7 +469,7 @@ const PaymentMethod = () => {
                     >
                         <Button
                             color="error"
-                            onClick={handleConfirmExit}
+                            onClick={() => handleConfirmExit(scheduleId!)}
                             sx={{
                                 color: "#2474e5",
                                 textTransform: "none",

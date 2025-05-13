@@ -177,9 +177,9 @@ const Header = ({ onToggleDrawer }: { onToggleDrawer?: () => void }) => {
         }
     }, [dispatch]);
 
-    const handleCloseTimeoutModal = async () => {
+    const handleCloseTimeoutModal = async (scheduleId: string) => {
         try {
-            await UserService.cancleTicketReserve();
+            await UserService.cancleTicketReserve(scheduleId);
             toast.success("Đã hủy chỗ đặt thành công");
         } catch (error) {
             console.error("Error canceling reservation:", error);
@@ -274,7 +274,7 @@ const Header = ({ onToggleDrawer }: { onToggleDrawer?: () => void }) => {
                     </Typography>
                     <Button
                         variant="contained"
-                        onClick={handleCloseTimeoutModal}
+                        onClick={() => handleCloseTimeoutModal(scheduleId!)}
                         sx={{
                             backgroundColor: "rgb(13, 46, 89)",
                             color: "white",

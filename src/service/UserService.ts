@@ -15,7 +15,7 @@ interface SavedContactInfo {
 }
 
 class UserService {
-    static BASE_URL = "http://178.128.16.200:8080";
+    static BASE_URL = "https://ticketgo.site";
 
     static async register(userData: any) {
         try {
@@ -101,10 +101,10 @@ class UserService {
         }
     }
 
-    static async cancleTicketReserve() {
+    static async cancleTicketReserve(scheduleId: number | string) {
         try {
             const response = await axiosWithJWT.post(
-                `${UserService.BASE_URL}/api/v1/seats/cancel-reserve`
+                `${UserService.BASE_URL}/api/v1/seats/cancel-reserve?scheduleId=${scheduleId}`
             );
             return response;
         } catch (error) {
@@ -115,7 +115,7 @@ class UserService {
     static async bookingHistory() {
         try {
             const response = await axiosWithJWT.get(
-                `${UserService.BASE_URL}/api/v1/bookings/history?pageNumber=1&pageSize=5`
+                `${UserService.BASE_URL}/api/v1/bookings/history?pageNumber=1&pageSize=20`
             );
             return response;
         } catch (error) {

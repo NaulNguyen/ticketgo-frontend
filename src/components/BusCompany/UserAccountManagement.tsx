@@ -84,7 +84,7 @@ const UserAccountManagement = () => {
         setLoading(true);
         try {
             const response = await axiosWithJWT.get<AccountResponse>(
-                `http://178.128.16.200:8080/api/v1/accounts?${
+                `https://ticketgo.site/api/v1/accounts?${
                     debouncedSearchTerm
                         ? `keyword=${encodeURIComponent(debouncedSearchTerm)}&`
                         : ""
@@ -108,7 +108,7 @@ const UserAccountManagement = () => {
 
         try {
             const response = await axiosWithJWT.put(
-                `http://178.128.16.200:8080/api/v1/accounts/${selectedAccount.id}/change-lock-status`
+                `https://ticketgo.site/api/v1/accounts/${selectedAccount.id}/change-lock-status`
             );
 
             if (response.status === 200) {
@@ -155,7 +155,7 @@ const UserAccountManagement = () => {
 
         try {
             const response = await axiosWithJWT.delete(
-                `http://178.128.16.200:8080/api/v1/accounts/${account.id}`
+                `https://ticketgo.site/api/v1/accounts/${account.id}`
             );
 
             if (response.status === 200) {

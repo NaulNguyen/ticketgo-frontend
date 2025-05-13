@@ -97,7 +97,7 @@ const Details: React.FC<DetailsProps> = ({ scheduleId }) => {
         const fetchRouteStops = async () => {
             try {
                 const response = await axios.get(
-                    `http://178.128.16.200:8080/api/v1/route-stops?scheduleId=${scheduleId}`
+                    `https://ticketgo.site/api/v1/route-stops?scheduleId=${scheduleId}`
                 );
                 setRouteStops(response.data.data);
             } catch (error) {
@@ -115,7 +115,7 @@ const Details: React.FC<DetailsProps> = ({ scheduleId }) => {
             const fetchPolicies = async () => {
                 try {
                     const response = await axios.get(
-                        "http://178.128.16.200:8080/api/v1/policies"
+                        "https://ticketgo.site/api/v1/policies"
                     );
                     setPolicies(response.data.data);
                 } catch (err) {
@@ -127,7 +127,7 @@ const Details: React.FC<DetailsProps> = ({ scheduleId }) => {
             const fetchAmenities = async () => {
                 try {
                     const response = await axios.get(
-                        "http://178.128.16.200:8080/api/v1/amenities"
+                        "https://ticketgo.site/api/v1/amenities"
                     );
                     setAmenities(response.data.data);
                 } catch (err) {
@@ -143,7 +143,7 @@ const Details: React.FC<DetailsProps> = ({ scheduleId }) => {
             const fetchDriverInfo = async () => {
                 try {
                     const response = await axiosWithJWT.get(
-                        `http://178.128.16.200:8080/api/v1/drivers/schedule?scheduleId=${scheduleId}`
+                        `https://ticketgo.site/api/v1/drivers/schedule?scheduleId=${scheduleId}`
                     );
                     setDriverInfo(response.data.data);
                 } catch (error) {
@@ -160,7 +160,7 @@ const Details: React.FC<DetailsProps> = ({ scheduleId }) => {
             const fetchCustomers = async () => {
                 try {
                     const response = await axiosWithJWT.get(
-                        `http://178.128.16.200:8080/api/v1/schedules/${scheduleId}/customers`
+                        `https://ticketgo.site/api/v1/schedules/${scheduleId}/customers`
                     );
                     setCustomers(response.data.data);
                 } catch (error) {

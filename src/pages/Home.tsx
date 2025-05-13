@@ -46,7 +46,7 @@ const Home = () => {
     const fetchRoutes = useCallback(async () => {
         try {
             const response = await axios.get(
-                "http://178.128.16.200:8080/api/v1/routes/popular"
+                "https://ticketgo.site/api/v1/routes/popular"
             );
             const data = response.data;
             if (data.status === 200) {
@@ -64,7 +64,7 @@ const Home = () => {
     const fetchHomepageData = useCallback(async () => {
         try {
             const response = await axios.get(
-                "http://178.128.16.200:8080/api/v1/homepage"
+                "https://ticketgo.site/api/v1/homepage"
             );
             const data = response.data;
             if (data.status === 200) {

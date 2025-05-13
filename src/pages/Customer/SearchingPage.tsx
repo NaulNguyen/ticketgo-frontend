@@ -133,7 +133,7 @@ const SearchingPage = () => {
             };
             try {
                 const response = await axios.post(
-                    "http://178.128.16.200:8080/api/v1/routes/search",
+                    "https://ticketgo.site/api/v1/routes/search",
                     params
                 );
                 setSearchResults(response.data);

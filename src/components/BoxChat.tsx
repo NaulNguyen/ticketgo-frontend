@@ -54,7 +54,7 @@ const BoxChat = () => {
         if (!shouldShowChat || !info) return;
 
         const client = new Client({
-            webSocketFactory: () => new SockJS("http://178.128.16.200:8080/ws"),
+            webSocketFactory: () => new SockJS("https://ticketgo.site/ws"),
             reconnectDelay: 5000,
             heartbeatIncoming: 4000,
             heartbeatOutgoing: 4000,

@@ -107,7 +107,7 @@ const TripSummary: React.FC<TripSummaryProps> = ({
         const fetchPromotions = async () => {
             try {
                 const response = await axiosWithJWT.get(
-                    "http://178.128.16.200:8080/api/v1/promotions/active",
+                    "https://ticketgo.site/api/v1/promotions/active",
                     {
                         params: {
                             pageNumber: 1,

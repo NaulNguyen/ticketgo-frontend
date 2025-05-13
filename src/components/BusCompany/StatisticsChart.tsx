@@ -48,7 +48,7 @@ const StatisticsChart: React.FC<StatisticsChartProps> = ({
     const fetchData = async () => {
         setLoading(true);
         try {
-            const baseUrl = "http://178.128.16.200:8080/api/v1/revenues";
+            const baseUrl = "https://ticketgo.site/api/v1/revenues";
             let url = "";
 
             switch (activeTab) {

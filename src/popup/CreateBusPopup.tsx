@@ -131,7 +131,7 @@ const CreateBusPopup: React.FC<CreateBusPopupProps> = ({
                 };
 
                 const response = await axiosWithJWT.post(
-                    "http://178.128.16.200:8080/api/v1/buses",
+                    "https://ticketgo.site/api/v1/buses",
                     requestData
                 );
 

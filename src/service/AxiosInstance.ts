@@ -6,7 +6,7 @@ const saveNewAccessToken = (newAccessToken: any) => {
 };
 
 const AxiosInstance = axios.create({
-    baseURL: "http://178.128.16.200:8080",
+    baseURL: "https://ticketgo.site",
 });
 
 // Add a response interceptor to handle token expiration

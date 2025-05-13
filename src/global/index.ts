@@ -66,17 +66,22 @@ export interface TripInfo {
 }
 
 export interface BookingHistoryItem {
-    ticketCode: string;
-    contactName: string;
-    routeName: string;
-    departureDate: string;
-    pickupTime: string;
-    pickupLocation: string;
-    dropoffLocation: string;
-    seatNumber: string;
-    licensePlate: string;
-    contactEmail: string;
-    discountedPrice: string;
-    originalPrice: string;
-    status: string;
+  bookingId: number;
+  bookingDate: string;
+  seatInfos: string;
+  contactName: string;
+  routeName: string;
+  departureDate: string;
+  pickupTime: string;
+  pickupLocation: string;
+  dropoffLocation: string;
+  licensePlate: string;
+  contactEmail: string;
+  originalPrice: string;
+  discountedPrice: string | null;
+  status: string;
+  refundAmount: string | null;
+  refundStatus: string | null;
+  refundReason: string | null;
+  refundDate: string | null;
 }
