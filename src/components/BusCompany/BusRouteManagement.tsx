@@ -5,9 +5,6 @@ import {
     Typography,
     Pagination,
     CircularProgress,
-    TextField,
-    InputAdornment,
-    IconButton,
 } from "@mui/material";
 import StarIcon from "@mui/icons-material/Star";
 import { LocationRoute } from "../../components/IconSVG";
@@ -20,9 +17,7 @@ import AddIcon from "@mui/icons-material/Add";
 import CreateBusRoute from "../../popup/CreateBusRoute";
 import axios from "axios";
 import { toast } from "react-toastify";
-import { useDebounce } from "use-debounce";
-import SearchIcon from "@mui/icons-material/Search";
-import ClearIcon from "@mui/icons-material/Clear";
+import Search from "../Customer/Search";
 
 interface BusRoute {
     scheduleId: string;
@@ -54,8 +49,10 @@ interface SearchResult {
 const BusRouteManagement = () => {
     const [expandedId, setExpandedId] = useState<string | null>(null);
     const [isCreatePopupOpen, setIsCreatePopupOpen] = useState(false);
-    const [searchTerm, setSearchTerm] = useState("");
-    const [debouncedSearchTerm] = useDebounce(searchTerm, 500);
+    const [currentSearchParams, setCurrentSearchParams] = useState({
+        pageNumber: 1,
+        pageSize: 5,
+    });
     const [searchLoading, setSearchLoading] = useState(false);
     const [searchResults, setSearchResults] = useState<SearchResult>({
         data: [],
@@ -72,28 +69,53 @@ const BusRouteManagement = () => {
         setExpandedId((prevId) => (prevId === id ? null : id));
     };
 
+    const handleSearch = async (searchParams: any) => {
+        setSearchLoading(true);
+        const newParams = {
+            ...searchParams,
+            pageNumber: 1, // Reset to first page on new search
+            pageSize: 5,
+        };
+        try {
+            const response = await axios.post<SearchResult>(
+                "https://ticketgo.site/api/v1/routes/search",
+                {
+                    ...newParams,
+                }
+            );
+            setSearchResults(response.data);
+            setCurrentSearchParams(newParams); // Store current search params
+            setCurrentPage(1);
+        } catch (error) {
+            console.error("Error fetching search results:", error);
+            toast.error("Có lỗi xảy ra khi tìm kiếm tuyến xe");
+        } finally {
+            setSearchLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const fetchSearchResults = async () => {
+        const fetchInitialData = async () => {
             setSearchLoading(true);
             try {
                 const response = await axios.post<SearchResult>(
                     "https://ticketgo.site/api/v1/routes/search",
                     {
-                        keyword: debouncedSearchTerm,
+                        ...currentSearchParams,
                         pageNumber: currentPage,
-                        pageSize: 5,
                     }
                 );
                 setSearchResults(response.data);
             } catch (error) {
-                console.error("Error fetching search results:", error);
+                console.error("Error fetching initial data:", error);
                 toast.error("Có lỗi xảy ra khi tải danh sách tuyến xe");
             } finally {
                 setSearchLoading(false);
             }
         };
-        fetchSearchResults();
-    }, [currentPage, debouncedSearchTerm]);
+
+        fetchInitialData();
+    }, [currentPage, currentSearchParams]);
 
     const handleOpenCreatePopup = () => setIsCreatePopupOpen(true);
     const handleCloseCreatePopup = () => setIsCreatePopupOpen(false);
@@ -145,43 +167,7 @@ const BusRouteManagement = () => {
                 />
             </Box>
             <Box sx={{ mb: 3 }}>
-                <TextField
-                    fullWidth
-                    placeholder="Tìm kiếm tuyến xe..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    InputProps={{
-                        startAdornment: (
-                            <InputAdornment position="start">
-                                <SearchIcon sx={{ color: "text.secondary" }} />
-                            </InputAdornment>
-                        ),
-                        endAdornment: searchTerm && (
-                            <InputAdornment position="end">
-                                <IconButton
-                                    onClick={() => setSearchTerm("")}
-                                    size="small"
-                                >
-                                    <ClearIcon />
-                                </IconButton>
-                            </InputAdornment>
-                        ),
-                    }}
-                    sx={{
-                        backgroundColor: "white",
-                        "& .MuiOutlinedInput-root": {
-                            "& fieldset": {
-                                borderColor: "#e0e0e0",
-                            },
-                            "&:hover fieldset": {
-                                borderColor: "#1976d2",
-                            },
-                            "&.Mui-focused fieldset": {
-                                borderColor: "#1976d2",
-                            },
-                        },
-                    }}
-                />
+                <Search isDashboard onSearch={handleSearch} />
             </Box>
             {searchLoading ? (
                 <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>

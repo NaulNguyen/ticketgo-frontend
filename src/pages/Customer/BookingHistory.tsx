@@ -72,15 +72,6 @@ const BookingHistory = () => {
         fetchBookingHistory();
     }, []);
 
-    const extractSeatNumber = (seatInfo: string): string => {
-        return seatInfo.split("(")[0].trim();
-    };
-
-    const extractTicketCode = (seatInfo: string): string => {
-        const match = seatInfo.match(/TICKET-[\d\w-]+/);
-        return match ? match[0] : "";
-    };
-
     const isAfterDepartureDate = (departureDate: string): boolean => {
         const [time, date] = departureDate.split(" ");
         const [hours, minutes] = time.split(":");
@@ -183,15 +174,88 @@ const BookingHistory = () => {
                                         )}
 
                                     {/* Giữa: Mã vé (code) */}
-                                    <span
-                                        style={{
+                                    <Box
+                                        sx={{
                                             flexGrow: 1,
-                                            textAlign: "center",
+                                            display: "flex",
+                                            flexDirection: "column",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            gap: 1,
                                             marginLeft: "50px",
+                                            py: 1,
                                         }}
                                     >
-                                        {extractTicketCode(booking.seatInfos)}
-                                    </span>
+                                        <Box
+                                            sx={{
+                                                display: "flex",
+                                                alignItems: "center",
+                                                gap: 1,
+                                                color: "white",
+                                            }}
+                                        >
+                                            <Typography
+                                                sx={{
+                                                    fontSize: "1.2rem",
+                                                    opacity: 0.9,
+                                                    fontWeight: 600,
+                                                }}
+                                            >
+                                                Thông tin đặt vé xe
+                                            </Typography>
+                                        </Box>
+                                        <Box
+                                            sx={{
+                                                display: "flex",
+                                                alignItems: "center",
+                                                gap: 1,
+                                                color: "white",
+                                            }}
+                                        >
+                                            <Typography
+                                                sx={{
+                                                    fontSize: "0.9rem",
+                                                    opacity: 0.9,
+                                                }}
+                                            >
+                                                Mã vé:
+                                            </Typography>
+                                            <Typography
+                                                sx={{
+                                                    fontWeight: 600,
+                                                    fontSize: "1rem",
+                                                }}
+                                            >
+                                                #{booking.bookingId}
+                                            </Typography>
+                                        </Box>
+
+                                        <Box
+                                            sx={{
+                                                display: "flex",
+                                                alignItems: "center",
+                                                gap: 1,
+                                                color: "white",
+                                            }}
+                                        >
+                                            <Typography
+                                                sx={{
+                                                    fontSize: "0.9rem",
+                                                    opacity: 0.9,
+                                                }}
+                                            >
+                                                Ngày đặt:
+                                            </Typography>
+                                            <Typography
+                                                sx={{
+                                                    fontWeight: 500,
+                                                    fontSize: "0.95rem",
+                                                }}
+                                            >
+                                                {booking.bookingDate}
+                                            </Typography>
+                                        </Box>
+                                    </Box>
 
                                     {/* Phải: Trạng thái */}
                                     <span
@@ -331,9 +395,7 @@ const BookingHistory = () => {
                                                 <span className="font-thin">
                                                     Số ghế:
                                                 </span>{" "}
-                                                {extractSeatNumber(
-                                                    booking.seatInfos
-                                                )}
+                                                {booking.seatInfos}
                                             </Typography>
                                         </Typography>
                                         <Typography sx={{ fontWeight: "bold" }}>

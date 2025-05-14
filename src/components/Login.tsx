@@ -9,7 +9,10 @@ import {
     IconButton,
 } from "@mui/material";
 import { Formik, Form, Field, ErrorMessage } from "formik";
-import { forgotPasswordValidationSchema, loginValidationSchema } from "../schemas";
+import {
+    forgotPasswordValidationSchema,
+    loginValidationSchema,
+} from "../schemas";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import UserService from "../service/UserService";
@@ -41,18 +44,29 @@ const Login: React.FC<LoginProps> = ({ onClose, onRegisterClick }) => {
                 Cookies.set("accessToken", accessToken);
                 Cookies.set("refreshToken", refreshToken);
                 const userInfoResponse = await UserService.fetchUserInfor();
+
                 dispatch(asyncUserInfor(userInfoResponse));
+
+                if (userInfoResponse.data.role === "ROLE_BUS_COMPANY") {
+                    navigate("/dashboard");
+                }
+
                 onClose();
                 toast.success("Đăng nhập thành công");
             }
         } catch (error: any) {
-            toast.error(error.response?.data?.message || "Đã xảy ra lỗi đăng nhập.");
+            toast.error(
+                error.response?.data?.message || "Đã xảy ra lỗi đăng nhập."
+            );
         } finally {
             setLoading(false);
         }
     };
 
-    const handleForgotPassword = async (values: { email: string; forgotPasswordEmail: string }) => {
+    const handleForgotPassword = async (values: {
+        email: string;
+        forgotPasswordEmail: string;
+    }) => {
         try {
             const response = await UserService.forgotPassword({
                 email: values.forgotPasswordEmail,
@@ -61,7 +75,10 @@ const Login: React.FC<LoginProps> = ({ onClose, onRegisterClick }) => {
                 toast.success("Email khôi phục mật khẩu đã được gửi");
                 toast.info("Vui lòng kiểm tra email của bạn");
                 navigate("/resend-email", {
-                    state: { email: values.forgotPasswordEmail, from: "forgotPassword" },
+                    state: {
+                        email: values.forgotPasswordEmail,
+                        from: "forgotPassword",
+                    },
                 });
                 setShowForgotPassword(false);
                 onClose();
@@ -72,16 +89,24 @@ const Login: React.FC<LoginProps> = ({ onClose, onRegisterClick }) => {
     };
 
     return (
-        <Box display="flex" flexDirection="column" alignItems="center" padding={2}>
+        <Box
+            display="flex"
+            flexDirection="column"
+            alignItems="center"
+            padding={2}
+        >
             {showForgotPassword ? (
                 <>
                     <Box
                         display="flex"
                         alignItems="center"
                         marginBottom={2}
-                        justifyContent="center">
+                        justifyContent="center"
+                    >
                         <IconButton sx={{ mb: 2 }}>
-                            <ArrowBackIosIcon onClick={() => setShowForgotPassword(false)} />
+                            <ArrowBackIosIcon
+                                onClick={() => setShowForgotPassword(false)}
+                            />
                         </IconButton>
                         <Typography variant="h5" gutterBottom ml={15} mr={20}>
                             Quên mật khẩu
@@ -91,21 +116,25 @@ const Login: React.FC<LoginProps> = ({ onClose, onRegisterClick }) => {
                         initialValues={{ email: "", forgotPasswordEmail: "" }}
                         validationSchema={forgotPasswordValidationSchema}
                         onSubmit={handleForgotPassword}
-                        fullWidth>
+                        fullWidth
+                    >
                         {({ isSubmitting, touched, errors }) => (
                             <Form>
                                 <Box
                                     display="flex"
                                     justifyContent="center"
                                     alignItems="center"
-                                    gap={2}>
+                                    gap={2}
+                                >
                                     <Field
                                         as={TextField}
                                         label="Email"
                                         name="forgotPasswordEmail"
                                         margin="normal"
                                         variant="outlined"
-                                        helperText={<ErrorMessage name="forgotPasswordEmail" />}
+                                        helperText={
+                                            <ErrorMessage name="forgotPasswordEmail" />
+                                        }
                                         error={Boolean(
                                             touched.forgotPasswordEmail &&
                                                 errors.forgotPasswordEmail
@@ -116,7 +145,8 @@ const Login: React.FC<LoginProps> = ({ onClose, onRegisterClick }) => {
                                         type="submit"
                                         color="primary"
                                         disabled={isSubmitting}
-                                        sx={{ width: "50px", height: "50px" }}>
+                                        sx={{ width: "50px", height: "50px" }}
+                                    >
                                         {isSubmitting ? (
                                             <CircularProgress size={20} />
                                         ) : (
@@ -136,7 +166,8 @@ const Login: React.FC<LoginProps> = ({ onClose, onRegisterClick }) => {
                     <Formik
                         initialValues={{ email: "", password: "" }}
                         validationSchema={loginValidationSchema}
-                        onSubmit={handleLogin}>
+                        onSubmit={handleLogin}
+                    >
                         {({ isSubmitting, touched, errors }) => (
                             <Form>
                                 <Field
@@ -147,7 +178,9 @@ const Login: React.FC<LoginProps> = ({ onClose, onRegisterClick }) => {
                                     margin="normal"
                                     variant="outlined"
                                     helperText={<ErrorMessage name="email" />}
-                                    error={Boolean(touched.email && errors.email)}
+                                    error={Boolean(
+                                        touched.email && errors.email
+                                    )}
                                 />
                                 <Field
                                     as={TextField}
@@ -157,8 +190,12 @@ const Login: React.FC<LoginProps> = ({ onClose, onRegisterClick }) => {
                                     fullWidth
                                     margin="normal"
                                     variant="outlined"
-                                    helperText={<ErrorMessage name="password" />}
-                                    error={Boolean(touched.password && errors.password)}
+                                    helperText={
+                                        <ErrorMessage name="password" />
+                                    }
+                                    error={Boolean(
+                                        touched.password && errors.password
+                                    )}
                                 />
                                 <Button
                                     type="submit"
@@ -166,7 +203,12 @@ const Login: React.FC<LoginProps> = ({ onClose, onRegisterClick }) => {
                                     color="primary"
                                     fullWidth
                                     disabled={loading}
-                                    startIcon={loading ? <CircularProgress size={20} /> : null}>
+                                    startIcon={
+                                        loading ? (
+                                            <CircularProgress size={20} />
+                                        ) : null
+                                    }
+                                >
                                     Đăng nhập
                                 </Button>
                                 <Button
@@ -177,15 +219,19 @@ const Login: React.FC<LoginProps> = ({ onClose, onRegisterClick }) => {
                                         width: "100%",
                                         marginTop: 1,
                                     }}
-                                    onClick={() => setShowForgotPassword(true)}>
+                                    onClick={() => setShowForgotPassword(true)}
+                                >
                                     Quên mật khẩu?
                                 </Button>
-                                <Divider sx={{ marginBottom: 2, marginTop: 1 }}>Hoặc</Divider>
+                                <Divider sx={{ marginBottom: 2, marginTop: 1 }}>
+                                    Hoặc
+                                </Divider>
                                 <GoogleLoginButton onClose={onClose} />
                                 <Typography
                                     variant="body2"
                                     paddingTop={2}
-                                    sx={{ fontSize: "1rem" }}>
+                                    sx={{ fontSize: "1rem" }}
+                                >
                                     Bạn chưa có tài khoản?{" "}
                                     <Box
                                         component="span"
@@ -197,7 +243,8 @@ const Login: React.FC<LoginProps> = ({ onClose, onRegisterClick }) => {
                                                 textDecoration: "underline",
                                             },
                                         }}
-                                        onClick={onRegisterClick}>
+                                        onClick={onRegisterClick}
+                                    >
                                         Đăng ký
                                     </Box>
                                 </Typography>

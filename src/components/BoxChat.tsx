@@ -84,7 +84,7 @@ const BoxChat = () => {
         stompClient.current = client;
 
         return () => {
-            client.deactivate(); // Không cần check .connected
+            client.deactivate();
         };
     }, [shouldShowChat]);
 

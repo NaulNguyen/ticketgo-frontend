@@ -240,36 +240,74 @@ const Home = () => {
                                     borderRadius: 2,
                                     overflow: "hidden",
                                     bgcolor: "#ffffff",
-                                    maxWidth: "1000px", // Added maxWidth
-                                    margin: "0 auto", // Center the paper
+                                    maxWidth: "1200px",
+                                    margin: "0 auto",
+                                    boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
                                 }}
                             >
                                 <Box
                                     sx={{
-                                        p: 4,
+                                        p: { xs: 2, md: 5 },
                                         display: "flex",
                                         flexDirection: "column",
-                                        gap: 4,
+                                        gap: 6,
                                     }}
                                 >
+                                    {/* First Section */}
                                     <Box
                                         sx={{
                                             display: "flex",
                                             alignItems: "center",
-                                            gap: 4,
+                                            gap: { xs: 3, md: 6 },
                                             flexWrap: {
                                                 xs: "wrap",
                                                 md: "nowrap",
+                                            },
+                                            position: "relative",
+                                            "&::after": {
+                                                content: '""',
+                                                position: "absolute",
+                                                right: 0,
+                                                top: "50%",
+                                                transform: "translateY(-50%)",
+                                                width: "100%",
+                                                height: "120%",
+                                                background:
+                                                    "linear-gradient(135deg, transparent 0%, rgba(25,118,210,0.05) 100%)",
+                                                zIndex: 0,
+                                                borderRadius: 4,
                                             },
                                         }}
                                     >
                                         <Typography
                                             variant="body1"
                                             sx={{
-                                                flex: "0 0 50%", // Changed from flex: 1 to fixed 50% width
-                                                fontSize: "1.1rem",
-                                                lineHeight: 1.8,
+                                                flex: "0 0 45%",
+                                                fontSize: {
+                                                    xs: "1rem",
+                                                    md: "1.1rem",
+                                                },
+                                                lineHeight: 2,
                                                 color: "#2c3e50",
+                                                position: "relative",
+                                                zIndex: 1,
+                                                p: 3,
+                                                bgcolor:
+                                                    "rgba(255,255,255,0.9)",
+                                                borderRadius: 2,
+                                                boxShadow:
+                                                    "0 2px 12px rgba(0,0,0,0.06)",
+                                                "& .font-pacifico": {
+                                                    background:
+                                                        "linear-gradient(45deg, #1976d2, #42a5f5)",
+                                                    WebkitBackgroundClip:
+                                                        "text",
+                                                    WebkitTextFillColor:
+                                                        "transparent",
+                                                    display: "inline-block",
+                                                    transform:
+                                                        "translateY(4px)",
+                                                },
                                             }}
                                         >
                                             <span
@@ -284,53 +322,146 @@ const Home = () => {
                                             />
                                         </Typography>
                                         <Box
-                                            component="img"
-                                            src="https://res.cloudinary.com/dj1h07rea/image/upload/v1733365012/z6098699997331_d46ffa1573577506f3613cbe5cd50ec3_gxauhr.jpg"
                                             sx={{
-                                                width: {
-                                                    xs: "100%",
-                                                    md: "50%",
-                                                }, // Changed to 50% width
-                                                height: 550,
-                                                objectFit: "cover",
-                                                borderRadius: 2,
-                                                boxShadow: 3,
+                                                flex: "0 0 50%",
+                                                position: "relative",
+                                                "&::before": {
+                                                    content: '""',
+                                                    position: "absolute",
+                                                    left: -16,
+                                                    top: -16,
+                                                    right: 16,
+                                                    bottom: 16,
+                                                    border: "2px solid #1976d2",
+                                                    borderRadius: 2,
+                                                    opacity: 0.3,
+                                                    zIndex: 0,
+                                                },
                                             }}
-                                        />
+                                        >
+                                            <Box
+                                                component="img"
+                                                src="https://res.cloudinary.com/dj1h07rea/image/upload/v1733365012/z6098699997331_d46ffa1573577506f3613cbe5cd50ec3_gxauhr.jpg"
+                                                sx={{
+                                                    width: "100%",
+                                                    height: {
+                                                        xs: 400,
+                                                        md: 500,
+                                                    },
+                                                    objectFit: "cover",
+                                                    borderRadius: 2,
+                                                    boxShadow:
+                                                        "0 4px 20px rgba(0,0,0,0.15)",
+                                                    position: "relative",
+                                                    zIndex: 1,
+                                                    transition:
+                                                        "transform 0.3s ease",
+                                                    "&:hover": {
+                                                        transform:
+                                                            "scale(1.02)",
+                                                    },
+                                                }}
+                                            />
+                                        </Box>
                                     </Box>
 
+                                    {/* Second Section */}
                                     <Box
                                         sx={{
                                             display: "flex",
                                             alignItems: "center",
-                                            gap: 4,
+                                            gap: { xs: 3, md: 6 },
                                             flexWrap: {
                                                 xs: "wrap-reverse",
                                                 md: "nowrap",
                                             },
+                                            position: "relative",
+                                            "&::after": {
+                                                content: '""',
+                                                position: "absolute",
+                                                left: 0,
+                                                top: "50%",
+                                                transform: "translateY(-50%)",
+                                                width: "100%",
+                                                height: "120%",
+                                                background:
+                                                    "linear-gradient(225deg, transparent 0%, rgba(25,118,210,0.05) 100%)",
+                                                zIndex: 0,
+                                                borderRadius: 4,
+                                            },
                                         }}
                                     >
                                         <Box
-                                            component="img"
-                                            src="https://res.cloudinary.com/dj1h07rea/image/upload/v1733365012/z6098697156421_1d372dc62b02c82a30aee123a2c3d485_s4kai3.jpg"
                                             sx={{
-                                                width: {
-                                                    xs: "100%",
-                                                    md: "50%",
-                                                }, // Changed to 50% width
-                                                height: 550,
-                                                objectFit: "cover",
-                                                borderRadius: 2,
-                                                boxShadow: 3,
+                                                flex: "0 0 50%",
+                                                position: "relative",
+                                                "&::before": {
+                                                    content: '""',
+                                                    position: "absolute",
+                                                    right: -16,
+                                                    top: -16,
+                                                    left: 16,
+                                                    bottom: 16,
+                                                    border: "2px solid #1976d2",
+                                                    borderRadius: 2,
+                                                    opacity: 0.3,
+                                                    zIndex: 0,
+                                                },
                                             }}
-                                        />
+                                        >
+                                            <Box
+                                                component="img"
+                                                src="https://res.cloudinary.com/dj1h07rea/image/upload/v1733365012/z6098697156421_1d372dc62b02c82a30aee123a2c3d485_s4kai3.jpg"
+                                                sx={{
+                                                    width: "100%",
+                                                    height: {
+                                                        xs: 400,
+                                                        md: 500,
+                                                    },
+                                                    objectFit: "cover",
+                                                    borderRadius: 2,
+                                                    boxShadow:
+                                                        "0 4px 20px rgba(0,0,0,0.15)",
+                                                    position: "relative",
+                                                    zIndex: 1,
+                                                    transition:
+                                                        "transform 0.3s ease",
+                                                    "&:hover": {
+                                                        transform:
+                                                            "scale(1.02)",
+                                                    },
+                                                }}
+                                            />
+                                        </Box>
                                         <Typography
                                             variant="body1"
                                             sx={{
-                                                flex: "0 0 50%", // Changed from flex: 1 to fixed 50% width
-                                                fontSize: "1.1rem",
-                                                lineHeight: 1.8,
+                                                flex: "0 0 45%",
+                                                fontSize: {
+                                                    xs: "1rem",
+                                                    md: "1.1rem",
+                                                },
+                                                lineHeight: 2,
                                                 color: "#2c3e50",
+                                                position: "relative",
+                                                zIndex: 1,
+                                                p: 3,
+                                                bgcolor:
+                                                    "rgba(255,255,255,0.9)",
+                                                borderRadius: 2,
+                                                boxShadow:
+                                                    "0 2px 12px rgba(0,0,0,0.06)",
+                                                "& .font-pacifico": {
+                                                    background:
+                                                        "linear-gradient(45deg, #1976d2, #42a5f5)",
+                                                    WebkitBackgroundClip:
+                                                        "text",
+                                                    WebkitTextFillColor:
+                                                        "transparent",
+                                                    display: "inline-block",
+                                                    transform:
+                                                        "translateY(4px)",
+                                                },
                                             }}
                                         >
                                             <span

@@ -23,7 +23,14 @@ import { toast } from "react-toastify";
 
 const cities = ["Sài Gòn", "Vũng Tàu", "Đà Lạt", "Nha Trang", "Phan Thiết"];
 
-const Search = () => {
+interface SearchParams {
+    pageNumber: number;
+    pageSize: number;
+    departureLocation?: string;
+    arrivalLocation?: string;
+    departureDate?: string;
+}
+const Search = ({ isDashboard = false, onSearch }: any) => {
     const [departure, setDeparture] = useState<string | null>(null);
     const [destination, setDestination] = useState<string | null>(null);
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -36,6 +43,7 @@ const Search = () => {
     const navigate = useNavigate();
 
     const isHome = location.pathname === "/";
+    const isDashBoard = location.pathname === "/dashboard";
 
     const handleTripTypeChange = (
         event: React.MouseEvent<HTMLElement>,
@@ -46,6 +54,36 @@ const Search = () => {
             if (newTripType === "one-way") {
                 setReturnDate(null);
             }
+        }
+    };
+
+    const handleDashboardSearch = () => {
+        const params: SearchParams = {
+            pageNumber: 1,
+            pageSize: 5,
+        };
+
+        // Only add parameters if they have values
+        if (departure) {
+            params.departureLocation = departure;
+        }
+        if (destination) {
+            params.arrivalLocation = destination;
+        }
+        if (selectedDate) {
+            params.departureDate = format(selectedDate, "yyyy-MM-dd");
+        }
+
+        // Call the parent's onSearch function with params
+        onSearch(params);
+    };
+
+    // Update the search button click handler
+    const handleSearchClick = () => {
+        if (isDashboard) {
+            handleDashboardSearch();
+        } else {
+            handleSearch(); // Original search function
         }
     };
 
@@ -69,21 +107,31 @@ const Search = () => {
     };
 
     const handleSearch = () => {
-        if (!departure || !destination || !selectedDate) {
-            toast.warn("Hãy nhập đầy đủ thông tin");
+        if (!isDashboard) {
+            // Only validate for non-dashboard usage
+            if (!departure || !destination || !selectedDate) {
+                toast.warn("Hãy nhập đầy đủ thông tin");
+                return;
+            }
+
+            if (departure === destination) {
+                toast.warn("Nơi xuất phát và nơi đến không được giống nhau");
+                return;
+            }
+        }
+
+        if (isDashboard) {
+            handleDashboardSearch();
             return;
         }
 
-        if (departure === destination) {
-            toast.warn("Nơi xuất phát và nơi đến không được giống nhau");
-            return;
-        }
-
-        const formattedDate = format(selectedDate, "yyyy-MM-dd");
+        const formattedDate = selectedDate
+            ? format(selectedDate, "yyyy-MM-dd")
+            : "";
         const params = new URLSearchParams({
-            departureLocation: departure,
-            arrivalLocation: destination,
-            departureDate: formattedDate,
+            ...(departure && { departureLocation: departure }),
+            ...(destination && { arrivalLocation: destination }),
+            ...(formattedDate && { departureDate: formattedDate }),
             sortBy: "departureTime",
             sortDirection: "asc",
             pageNumber: "1",
@@ -91,7 +139,7 @@ const Search = () => {
         });
 
         // Only add returnDate if it exists
-        if (returnDate) {
+        if (returnDate && !isDashboard) {
             params.append("returnDate", format(returnDate, "yyyy-MM-dd"));
         }
 
@@ -113,53 +161,61 @@ const Search = () => {
                         : "bg-white p-4 md:p-6 rounded-lg shadow-lg border border-gray-300"
                 }`}
             >
-                <Box sx={{ mb: 4, display: "flex", justifyContent: "center" }}>
-                    <ToggleButtonGroup
-                        value={tripType}
-                        exclusive
-                        onChange={handleTripTypeChange}
-                        aria-label="trip type"
+                {!isDashBoard && (
+                    <Box
                         sx={{
-                            backgroundColor: "#f8fafc",
-                            padding: "4px",
-                            borderRadius: "28px !important",
-                            border: "1px solid #e2e8f0",
-                            "& .MuiToggleButton-root": {
-                                px: 4,
-                                py: 1.5,
-                                borderRadius: "24px !important",
-                                border: "none",
-                                color: "#64748b",
-                                "&.Mui-selected": {
-                                    backgroundColor: "#1976d2",
-                                    color: "white",
-                                    boxShadow:
-                                        "0 4px 6px -1px rgb(0 0 0 / 0.1)",
-                                    "&:hover": {
-                                        backgroundColor: "#1565c0",
-                                    },
-                                },
-                                "&:not(.Mui-selected)": {
-                                    "&:hover": {
-                                        backgroundColor: "#f1f5f9",
-                                    },
-                                },
-                            },
+                            mb: 4,
+                            display: "flex",
+                            justifyContent: "center",
                         }}
                     >
-                        <ToggleButton value="one-way" aria-label="one way">
-                            <ArrowRightAltIcon sx={{ mr: 1 }} />
-                            Một chiều
-                        </ToggleButton>
-                        <ToggleButton
-                            value="round-trip"
-                            aria-label="round trip"
+                        <ToggleButtonGroup
+                            value={tripType}
+                            exclusive
+                            onChange={handleTripTypeChange}
+                            aria-label="trip type"
+                            sx={{
+                                backgroundColor: "#f8fafc",
+                                padding: "4px",
+                                borderRadius: "28px !important",
+                                border: "1px solid #e2e8f0",
+                                "& .MuiToggleButton-root": {
+                                    px: 4,
+                                    py: 1.5,
+                                    borderRadius: "24px !important",
+                                    border: "none",
+                                    color: "#64748b",
+                                    "&.Mui-selected": {
+                                        backgroundColor: "#1976d2",
+                                        color: "white",
+                                        boxShadow:
+                                            "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                                        "&:hover": {
+                                            backgroundColor: "#1565c0",
+                                        },
+                                    },
+                                    "&:not(.Mui-selected)": {
+                                        "&:hover": {
+                                            backgroundColor: "#f1f5f9",
+                                        },
+                                    },
+                                },
+                            }}
                         >
-                            <CompareArrowsIcon sx={{ mr: 1 }} />
-                            Khứ hồi
-                        </ToggleButton>
-                    </ToggleButtonGroup>
-                </Box>
+                            <ToggleButton value="one-way" aria-label="one way">
+                                <ArrowRightAltIcon sx={{ mr: 1 }} />
+                                Một chiều
+                            </ToggleButton>
+                            <ToggleButton
+                                value="round-trip"
+                                aria-label="round trip"
+                            >
+                                <CompareArrowsIcon sx={{ mr: 1 }} />
+                                Khứ hồi
+                            </ToggleButton>
+                        </ToggleButtonGroup>
+                    </Box>
+                )}
                 {/* Nơi xuất phát */}
                 {/* Search Form */}
                 <Box
@@ -184,7 +240,7 @@ const Search = () => {
                             options={cities}
                             value={departure}
                             onChange={(event, newValue) => {
-                                if (newValue === destination) {
+                                if (!isDashboard && newValue === destination) {
                                     toast.warn(
                                         "Nơi xuất phát và nơi đến không được giống nhau"
                                     );
@@ -240,7 +296,7 @@ const Search = () => {
                             options={cities}
                             value={destination}
                             onChange={(event, newValue) => {
-                                if (newValue === departure) {
+                                if (!isDashboard && newValue === departure) {
                                     toast.warn(
                                         "Nơi xuất phát và nơi đến không được giống nhau"
                                     );
@@ -343,7 +399,7 @@ const Search = () => {
                         <Button
                             variant="contained"
                             size="medium"
-                            onClick={handleSearch}
+                            onClick={handleSearchClick}
                             sx={{
                                 width: { xs: "100%", md: "120px" },
                                 py: 2,

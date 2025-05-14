@@ -12,9 +12,6 @@ import {
     Button,
     Paper,
     List,
-    ListItem,
-    ListItemText,
-    ListItemAvatar,
     Avatar,
 } from "@mui/material";
 import { Client } from "@stomp/stompjs";
@@ -22,13 +19,10 @@ import SockJS from "sockjs-client";
 import { axiosWithJWT } from "../../config/axiosConfig";
 import useAppAccessor from "../../hook/useAppAccessor";
 import SendIcon from "@mui/icons-material/Send";
-import { format } from "date-fns";
 import { alpha } from "@mui/material/styles";
 import SearchIcon from "@mui/icons-material/Search";
-import { formatLastMessageTime } from "../../utils/formatLastMessageTime";
 import { ChatMessage } from "./ChatMessage";
 import { UserListItem } from "./UserListItem";
-import { debounce } from "lodash";
 
 interface Message {
     messageId: number;
@@ -63,13 +57,19 @@ const BusCompanyChat = () => {
     const chatBoxRef = useRef<HTMLDivElement>(null);
     const [users, setUsers] = useState<ChatUser[]>([]);
 
+    const memoizedGetUserInfo = useCallback(getUserInfor, []);
+    const currentUserId = useMemo(
+        () => memoizedGetUserInfo()?.user?.userId,
+        [memoizedGetUserInfo]
+    );
+
     const handleUserSelect = useCallback((user: ChatUser) => {
         setSelectedUser(user);
     }, []);
 
     // Connect to WebSocket
     useEffect(() => {
-        const userInfo = getUserInfor();
+        const userInfo = memoizedGetUserInfo();
         if (!userInfo) return;
 
         const client = new Client({
@@ -154,7 +154,7 @@ const BusCompanyChat = () => {
             }
             stompClient.current = null;
         };
-    }, [getUserInfor, selectedUser]);
+    }, [memoizedGetUserInfo]);
 
     useEffect(() => {
         const fetchChatUsers = async () => {
@@ -225,11 +225,6 @@ const BusCompanyChat = () => {
         }
     }, [newMessage, selectedUser, getUserInfor]);
 
-    const currentUserId = useMemo(
-        () => getUserInfor()?.user?.userId,
-        [getUserInfor]
-    );
-
     useEffect(() => {
         const fetchMessages = async () => {
             if (!selectedUser) {
@@ -253,12 +248,6 @@ const BusCompanyChat = () => {
 
                 if (response.data.status === 200) {
                     setMessages(response.data.data.messages);
-
-                    // Scroll to bottom after loading messages
-                    if (chatBoxRef.current) {
-                        chatBoxRef.current.scrollTop =
-                            chatBoxRef.current.scrollHeight;
-                    }
                 }
             } catch (error) {
                 console.error("Failed to fetch messages:", error);
@@ -268,7 +257,13 @@ const BusCompanyChat = () => {
         fetchMessages();
         const intervalId = setInterval(fetchMessages, 2000);
         return () => clearInterval(intervalId);
-    }, [selectedUser, getUserInfor]);
+    }, [selectedUser, memoizedGetUserInfo]);
+
+    useEffect(() => {
+        if (chatBoxRef.current) {
+            chatBoxRef.current.scrollTop = chatBoxRef.current.scrollHeight;
+        }
+    }, [messages]);
 
     return (
         <Box
