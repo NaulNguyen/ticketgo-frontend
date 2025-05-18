@@ -107,6 +107,19 @@ const CreateBusRoute: React.FC<CreateBusRouteProps> = ({
         onClose();
     };
 
+    const getDatetimeWithDepartureDate = (
+        timeOnly: any,
+        departureTime: any
+    ) => {
+        const departure = dayjs(departureTime);
+        const time = dayjs(timeOnly);
+        return departure
+            .hour(time.hour())
+            .minute(time.minute())
+            .second(0)
+            .millisecond(0);
+    };
+
     const formik = useFormik({
         initialValues: {
             routeId: "",
@@ -156,16 +169,18 @@ const CreateBusRoute: React.FC<CreateBusRouteProps> = ({
                     pickupStops: values.pickupStops.map((stop) => ({
                         location: stop.location,
                         stopOrder: stop.stopOrder,
-                        arrivalTime: dayjs(stop.arrivalTime).format(
-                            "YYYY-MM-DDTHH:mm:ss"
-                        ),
+                        arrivalTime: getDatetimeWithDepartureDate(
+                            stop.arrivalTime,
+                            values.departureTime
+                        ).format("YYYY-MM-DDTHH:mm:ss"),
                     })),
                     dropoffStops: values.dropoffStops.map((stop) => ({
                         location: stop.location,
                         stopOrder: stop.stopOrder,
-                        arrivalTime: dayjs(stop.arrivalTime).format(
-                            "YYYY-MM-DDTHH:mm:ss"
-                        ),
+                        arrivalTime: getDatetimeWithDepartureDate(
+                            stop.arrivalTime,
+                            values.departureTime
+                        ).format("YYYY-MM-DDTHH:mm:ss"),
                     })),
                 };
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Box, Button, Divider, Typography } from "@mui/material";
+import { Box, Button, Divider, Grid, Typography } from "@mui/material";
 import { Footer, Header } from "../../components";
 import UserService from "../../service/UserService";
 import { BookingHistoryItem } from "../../global";
@@ -8,11 +8,13 @@ import CancelBookingDialog from "../../popup/CancleBookingDialog";
 import { axiosWithJWT } from "../../config/axiosConfig";
 import { useSnackbar } from "notistack";
 import { formatPrice } from "../../utils/formatPrice";
+import { transform } from "typescript";
 
 const BookingHistory = () => {
     const [bookingHistoryData, setBookingHistoryData] = useState<
         BookingHistoryItem[]
     >([]);
+    console.log(bookingHistoryData);
     const [selectedBooking, setSelectedBooking] =
         useState<BookingHistoryItem | null>(null);
     const [openCancelDialog, setOpenCancelDialog] = useState(false);
@@ -21,6 +23,11 @@ const BookingHistory = () => {
     const handleCancelClick = (booking: BookingHistoryItem) => {
         setSelectedBooking(booking);
         setOpenCancelDialog(true);
+    };
+
+    const formatPickupDateTime = (pickupTime: string) => {
+        const [time, date] = pickupTime.split(" ");
+        return { time, date };
     };
 
     const handleConfirmCancel = async (
@@ -118,30 +125,34 @@ const BookingHistory = () => {
                                 display: "flex",
                                 flexDirection: "column",
                                 bgcolor: "white",
-                                borderRadius: 2,
-                                boxShadow: "0 2px 12px rgba(0,0,0,0.1)",
-                                width: "70%",
-                                margin: "20px auto",
+                                borderRadius: 3,
+                                boxShadow: "0 4px 24px rgba(0,0,0,0.1)",
+                                width: "75%",
+                                margin: "24px auto",
                                 overflow: "hidden",
+                                transition: "transform 0.2s ease",
+                                "&:hover": {
+                                    transform: "translateY(-4px)",
+                                },
                             }}
                         >
                             {/* Header */}
                             <Box sx={{ width: "100%" }}>
-                                <Typography
+                                <Box
                                     sx={{
-                                        fontWeight: "bold",
-                                        backgroundColor: "#2474e5",
+                                        backgroundColor: "#1976d2",
+                                        backgroundImage:
+                                            "linear-gradient(135deg, #1976d2 0%, #2196f3 100%)",
                                         color: "white",
-                                        padding: "8px 16px",
-                                        textAlign: "center",
-                                        borderTopLeftRadius: "4px",
-                                        borderTopRightRadius: "4px",
+                                        padding: "16px 24px",
+                                        borderBottom:
+                                            "1px solid rgba(255,255,255,0.1)",
                                         display: "flex",
                                         alignItems: "center",
                                         justifyContent: "space-between",
                                     }}
                                 >
-                                    {/* Trái: Nút Hủy vé */}
+                                    {/* Cancel Button */}
                                     {booking.status === "Đã xác nhận" &&
                                         !isAfterDepartureDate(
                                             booking.departureDate
@@ -156,16 +167,15 @@ const BookingHistory = () => {
                                             >
                                                 <DeleteIcon
                                                     sx={{
-                                                        color: "white",
                                                         fontSize: "1rem",
+                                                        mr: 0.5,
                                                     }}
                                                 />
                                                 <Typography
                                                     sx={{
-                                                        fontWeight: "bold",
-                                                        color: "white",
-                                                        textTransform: "none",
                                                         fontSize: "0.9rem",
+                                                        textTransform: "none",
+                                                        fontWeight: 600,
                                                     }}
                                                 >
                                                     Hủy vé
@@ -173,93 +183,72 @@ const BookingHistory = () => {
                                             </Button>
                                         )}
 
-                                    {/* Giữa: Mã vé (code) */}
+                                    {/* Booking Info */}
                                     <Box
                                         sx={{
-                                            flexGrow: 1,
                                             display: "flex",
                                             flexDirection: "column",
                                             alignItems: "center",
-                                            justifyContent: "center",
                                             gap: 1,
-                                            marginLeft: "50px",
-                                            py: 1,
                                         }}
                                     >
+                                        <Typography
+                                            sx={{
+                                                fontSize: "1.25rem",
+                                                fontWeight: 600,
+                                            }}
+                                        >
+                                            Thông tin đặt vé xe
+                                        </Typography>
                                         <Box
                                             sx={{
                                                 display: "flex",
-                                                alignItems: "center",
-                                                gap: 1,
-                                                color: "white",
+                                                gap: 3,
+                                                opacity: 0.9,
                                             }}
                                         >
-                                            <Typography
+                                            <Box
                                                 sx={{
-                                                    fontSize: "1.2rem",
-                                                    opacity: 0.9,
-                                                    fontWeight: 600,
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    gap: 1,
                                                 }}
                                             >
-                                                Thông tin đặt vé xe
-                                            </Typography>
-                                        </Box>
-                                        <Box
-                                            sx={{
-                                                display: "flex",
-                                                alignItems: "center",
-                                                gap: 1,
-                                                color: "white",
-                                            }}
-                                        >
-                                            <Typography
+                                                <Typography
+                                                    sx={{ fontSize: "0.9rem" }}
+                                                >
+                                                    Mã vé:
+                                                </Typography>
+                                                <Typography
+                                                    sx={{ fontWeight: 600 }}
+                                                >
+                                                    #{booking.bookingId}
+                                                </Typography>
+                                            </Box>
+                                            <Box
                                                 sx={{
-                                                    fontSize: "0.9rem",
-                                                    opacity: 0.9,
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    gap: 1,
                                                 }}
                                             >
-                                                Mã vé:
-                                            </Typography>
-                                            <Typography
-                                                sx={{
-                                                    fontWeight: 600,
-                                                    fontSize: "1rem",
-                                                }}
-                                            >
-                                                #{booking.bookingId}
-                                            </Typography>
-                                        </Box>
-
-                                        <Box
-                                            sx={{
-                                                display: "flex",
-                                                alignItems: "center",
-                                                gap: 1,
-                                                color: "white",
-                                            }}
-                                        >
-                                            <Typography
-                                                sx={{
-                                                    fontSize: "0.9rem",
-                                                    opacity: 0.9,
-                                                }}
-                                            >
-                                                Ngày đặt:
-                                            </Typography>
-                                            <Typography
-                                                sx={{
-                                                    fontWeight: 500,
-                                                    fontSize: "0.95rem",
-                                                }}
-                                            >
-                                                {booking.bookingDate}
-                                            </Typography>
+                                                <Typography
+                                                    sx={{ fontSize: "0.9rem" }}
+                                                >
+                                                    Ngày đặt:
+                                                </Typography>
+                                                <Typography
+                                                    sx={{ fontWeight: 500 }}
+                                                >
+                                                    {booking.bookingDate}
+                                                </Typography>
+                                            </Box>
                                         </Box>
                                     </Box>
 
-                                    {/* Phải: Trạng thái */}
-                                    <span
-                                        style={{
+                                    {/* Status Badge */}
+                                    <Box
+                                        sx={{
                                             fontWeight: "bold",
                                             backgroundColor:
                                                 booking.status === "Đã xác nhận"
@@ -284,184 +273,265 @@ const BookingHistory = () => {
                                             whiteSpace: "nowrap",
                                         }}
                                     >
-                                        {booking.status}
-                                    </span>
-                                </Typography>
+                                        <Typography
+                                            sx={{
+                                                color:
+                                                    booking.status ===
+                                                    "Đã hoàn thành"
+                                                        ? "#000"
+                                                        : "#fff",
+                                                fontWeight: 600,
+                                                fontSize: "0.9rem",
+                                            }}
+                                        >
+                                            {booking.status}
+                                        </Typography>
+                                    </Box>
+                                </Box>
+                                <Box sx={{ pt: 2 }}>
+                                    <Box
+                                        sx={{
+                                            display: "flex",
+                                            justifyContent: "center",
+                                        }}
+                                    >
+                                        <Typography
+                                            sx={{
+                                                fontSize: "1.1rem",
+                                                fontWeight: 600,
+                                                color: "#1976d2",
+                                                backgroundColor:
+                                                    "rgba(25, 118, 210, 0.08)",
+                                                padding: "8px 24px",
+                                                borderRadius: "20px",
+                                                boxShadow:
+                                                    "0 2px 8px rgba(25, 118, 210, 0.15)",
+                                            }}
+                                        >
+                                            Ngày khởi hành:{" "}
+                                            {
+                                                formatPickupDateTime(
+                                                    booking.pickupTime
+                                                ).date
+                                            }
+                                        </Typography>
+                                    </Box>
+                                </Box>
 
-                                <Box
-                                    sx={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                        gap: 3,
-                                        paddingY: 2,
-                                    }}
-                                >
-                                    <Typography
-                                        sx={{
-                                            fontWeight: "bold",
-                                            marginRight: "8px",
-                                        }}
+                                <Box sx={{ px: 3, py: 2 }}>
+                                    {/* ==== Thông tin hành trình ==== */}
+                                    <Grid
+                                        container
+                                        alignItems="center"
+                                        spacing={3}
                                     >
-                                        <span className="font-thin">
-                                            Địa điểm đón:
-                                        </span>{" "}
-                                        {booking.pickupLocation}
-                                    </Typography>
-                                    {/* Bus icon */}
-                                    <svg
-                                        width="40px"
-                                        height="40px"
-                                        viewBox="0 -2.03 20.051 20.051"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                    >
-                                        <g
-                                            id="bus"
-                                            transform="translate(-2 -4)"
-                                        >
-                                            <path
-                                                id="secondary"
-                                                fill="#2ca9bc"
-                                                d="M21,11H3v5a1,1,0,0,0,1,1H5a2,2,0,0,1,4,0h6a2,2,0,0,1,4,0h1a1,1,0,0,0,1-1V11Z"
-                                            />
-                                            <path
-                                                id="primary"
-                                                d="M4.91,17H4a1,1,0,0,1-1-1V6A1,1,0,0,1,4,5H18.28a1,1,0,0,1,.95.68L21,10.85l.05.31V16a1,1,0,0,1-1,1h-.91"
-                                                fill="none"
-                                                stroke="#000000"
-                                                stroke-linecap="round"
-                                                stroke-linejoin="round"
-                                                stroke-width="2"
-                                            />
-                                            <path
-                                                id="primary-2"
-                                                data-name="primary"
-                                                d="M3,11H21m-6,6H9.08M9,11h6V5H9Zm0,6a2,2,0,1,1-2-2A2,2,0,0,1,9,17Zm10,0a2,2,0,1,1-2-2A2,2,0,0,1,19,17Z"
-                                                fill="none"
-                                                stroke="#000000"
-                                                stroke-linecap="round"
-                                                stroke-linejoin="round"
-                                                stroke-width="2"
-                                            />
-                                            <path
-                                                d="M-3,21 H50"
-                                                stroke="black"
-                                                stroke-dasharray="2,1"
-                                            />
-                                        </g>
-                                    </svg>
-                                    <Typography
-                                        sx={{
-                                            fontWeight: "bold",
-                                            marginLeft: "8px",
-                                        }}
-                                    >
-                                        <span className="font-thin">
-                                            Địa điểm trả:
-                                        </span>{" "}
-                                        {booking.dropoffLocation}
-                                    </Typography>
-                                </Box>
-                                <Box
-                                    padding={2}
-                                    gap={2}
-                                    display="flex"
-                                    flex={1}
-                                >
-                                    <Box flex={1} pl={5}>
-                                        <Typography
-                                            sx={{
-                                                fontWeight: "bold",
-                                                marginBottom: 2,
-                                            }}
-                                        >
-                                            <span className="font-thin">
-                                                Biển số xe:{" "}
-                                            </span>
-                                            {booking.licensePlate}
-                                        </Typography>
-                                        <Typography
-                                            sx={{
-                                                fontWeight: "bold",
-                                                marginBottom: 2,
-                                            }}
-                                        >
+                                        <Grid item xs={5}>
                                             <Typography
-                                                sx={{
-                                                    fontWeight: "bold",
-                                                    marginBottom: 2,
-                                                }}
+                                                fontWeight={600}
+                                                mb={0.5}
                                             >
-                                                <span className="font-thin">
-                                                    Số ghế:
-                                                </span>{" "}
-                                                {booking.seatInfos}
+                                                Điểm đón
                                             </Typography>
-                                        </Typography>
-                                        <Typography sx={{ fontWeight: "bold" }}>
-                                            <span className="font-thin">
-                                                Thời gian đón dự kiến:{" "}
-                                            </span>
-                                            {booking.departureDate}
-                                        </Typography>
-                                    </Box>
-                                    <Divider orientation="vertical" flexItem />
-                                    <Box flex={1}>
-                                        <Typography
+                                            <Typography
+                                                fontSize="0.95rem"
+                                                lineHeight={1.5}
+                                            >
+                                                {booking.pickupLocation}
+                                            </Typography>
+                                        </Grid>
+
+                                        <Grid
+                                            item
+                                            xs={2}
+                                            container
+                                            justifyContent="center"
+                                        >
+                                            <svg
+                                                width="40"
+                                                height="40"
+                                                viewBox="0 -2.03 20.051 20.051"
+                                                xmlns="http://www.w3.org/2000/svg"
+                                            >
+                                                <g
+                                                    id="bus"
+                                                    transform="translate(-2 -4)"
+                                                >
+                                                    <path
+                                                        fill="#2ca9bc"
+                                                        d="M21,11H3v5a1,1,0,0,0,1,1H5a2,2,0,0,1,4,0h6a2,2,0,0,1,4,0h1a1,1,0,0,0,1-1V11Z"
+                                                    />
+                                                    <path
+                                                        fill="none"
+                                                        stroke="#000"
+                                                        strokeWidth="2"
+                                                        d="M4.91,17H4a1,1,0,0,1-1-1V6A1,1,0,0,1,4,5H18.28a1,1,0,0,1,.95.68L21,10.85l.05.31V16a1,1,0,0,1-1,1h-.91"
+                                                    />
+                                                    <path
+                                                        fill="none"
+                                                        stroke="#000"
+                                                        strokeWidth="2"
+                                                        d="M3,11H21m-6,6H9.08M9,11h6V5H9Zm0,6a2,2,0,1,1-2-2A2,2,0,0,1,9,17Zm10,0a2,2,0,1,1-2-2A2,2,0,0,1,19,17Z"
+                                                    />
+                                                    <path
+                                                        d="M-3,21 H50"
+                                                        stroke="black"
+                                                        strokeDasharray="2,1"
+                                                    />
+                                                </g>
+                                            </svg>
+                                        </Grid>
+
+                                        <Grid item xs={5} textAlign="right">
+                                            <Typography
+                                                fontWeight={600}
+                                                mb={0.5}
+                                            >
+                                                Điểm trả
+                                            </Typography>
+                                            <Typography
+                                                fontSize="0.95rem"
+                                                lineHeight={1.5}
+                                            >
+                                                {booking.dropoffLocation}
+                                            </Typography>
+                                        </Grid>
+                                    </Grid>
+
+                                    <Divider sx={{ my: 3 }} />
+
+                                    {/* ==== Thông tin xe & liên lạc ==== */}
+                                    <Grid container spacing={4}>
+                                        {/* Thông tin xe */}
+                                        <Grid item md={5.5}>
+                                            <Typography
+                                                variant="subtitle1"
+                                                fontWeight={600}
+                                                color="primary"
+                                                mb={2}
+                                                textAlign="center"
+                                            >
+                                                Thông tin xe
+                                            </Typography>
+                                            <Box sx={{ pl: 2 }}>
+                                                <Typography
+                                                    fontWeight="bold"
+                                                    mb={1}
+                                                >
+                                                    <span className="font-thin">
+                                                        Biển số xe:{" "}
+                                                    </span>{" "}
+                                                    {booking.licensePlate}
+                                                </Typography>
+                                                <Typography
+                                                    fontWeight="bold"
+                                                    mb={1}
+                                                >
+                                                    <span className="font-thin">
+                                                        Số ghế:{" "}
+                                                    </span>{" "}
+                                                    {booking.seatInfos}
+                                                </Typography>
+                                                <Typography
+                                                    fontWeight="bold"
+                                                    mb={1}
+                                                >
+                                                    <span className="font-thin">
+                                                        Thời gian đón dự kiến:{" "}
+                                                    </span>{" "}
+                                                    {
+                                                        formatPickupDateTime(
+                                                            booking.pickupTime
+                                                        ).time
+                                                    }
+                                                </Typography>
+                                            </Box>
+                                        </Grid>
+                                        <Grid
+                                            item
+                                            md={1}
                                             sx={{
-                                                fontWeight: "bold",
-                                                marginBottom: 2,
+                                                display: "flex",
+                                                justifyContent: "center",
                                             }}
                                         >
-                                            <span className="font-thin">
-                                                Tên Liên Lạc:
-                                            </span>{" "}
-                                            {booking.contactName}
-                                        </Typography>
-                                        <Typography
-                                            sx={{
-                                                fontWeight: "bold",
-                                                marginBottom: 2,
-                                            }}
-                                        >
-                                            <span className="font-thin">
-                                                Email:
-                                            </span>{" "}
-                                            {booking.contactEmail}
-                                        </Typography>
-                                        <Typography sx={{ fontWeight: "bold" }}>
-                                            <span className="font-thin">
-                                                Giá:
-                                            </span>{" "}
-                                            {formatPrice(
-                                                booking.originalPrice,
-                                                booking.discountedPrice
-                                            )}{" "}
-                                            VND
-                                            {booking.discountedPrice &&
-                                                booking.discountedPrice !==
-                                                    booking.originalPrice && (
-                                                    <Typography
-                                                        component="span"
-                                                        sx={{
-                                                            textDecoration:
-                                                                "line-through",
-                                                            color: "text.secondary",
-                                                            ml: 1,
-                                                            fontSize: "0.9em",
-                                                        }}
-                                                    >
-                                                        (
-                                                        {formatPrice(
-                                                            booking.originalPrice,
-                                                            null
-                                                        )}{" "}
-                                                        VND)
-                                                    </Typography>
-                                                )}
-                                        </Typography>
-                                    </Box>
+                                            <Divider
+                                                orientation="vertical"
+                                                flexItem
+                                                sx={{
+                                                    height: "100%",
+                                                    borderRightWidth: 2,
+                                                    borderColor:
+                                                        "rgba(0, 0, 0, 0.1)",
+                                                }}
+                                            />
+                                        </Grid>
+                                        {/* Thông tin liên hệ */}
+                                        <Grid item md={5.5}>
+                                            <Typography
+                                                variant="subtitle1"
+                                                fontWeight={600}
+                                                color="primary"
+                                                mb={2}
+                                                textAlign="center"
+                                            >
+                                                Thông tin liên hệ
+                                            </Typography>
+                                            <Box sx={{ pl: 2 }}>
+                                                <Typography
+                                                    fontWeight="bold"
+                                                    mb={1}
+                                                >
+                                                    <span className="font-thin">
+                                                        Tên liên lạc:{" "}
+                                                    </span>{" "}
+                                                    {booking.contactName}
+                                                </Typography>
+                                                <Typography
+                                                    fontWeight="bold"
+                                                    mb={1}
+                                                >
+                                                    <span className="font-thin">
+                                                        Email:{" "}
+                                                    </span>{" "}
+                                                    {booking.contactEmail}
+                                                </Typography>
+                                                <Typography fontWeight="bold">
+                                                    <span className="font-thin">
+                                                        Giá:{" "}
+                                                    </span>
+                                                    {formatPrice(
+                                                        booking.originalPrice,
+                                                        booking.discountedPrice
+                                                    )}{" "}
+                                                    VND
+                                                    {booking.discountedPrice &&
+                                                        booking.discountedPrice !==
+                                                            booking.originalPrice && (
+                                                            <Typography
+                                                                component="span"
+                                                                sx={{
+                                                                    textDecoration:
+                                                                        "line-through",
+                                                                    color: "text.secondary",
+                                                                    ml: 1,
+                                                                    fontSize:
+                                                                        "0.9em",
+                                                                }}
+                                                            >
+                                                                (
+                                                                {formatPrice(
+                                                                    booking.originalPrice,
+                                                                    null
+                                                                )}{" "}
+                                                                VND)
+                                                            </Typography>
+                                                        )}
+                                                </Typography>
+                                            </Box>
+                                        </Grid>
+                                    </Grid>
                                 </Box>
+
                                 {(booking.refundStatus ||
                                     booking.refundAmount ||
                                     booking.refundReason ||

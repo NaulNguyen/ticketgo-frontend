@@ -24,6 +24,17 @@ import dayjs from "dayjs";
 import Details from "../../components/Customer/Details";
 import { toast } from "react-toastify";
 
+interface Seat {
+    ticketCode: string;
+    seatNumber: string;
+    isAvailable: boolean;
+}
+
+interface FloorData {
+    floor_1: Seat[][] | undefined;
+    floor_2: Seat[][] | undefined;
+}
+
 interface SearchResult {
     data: {
         scheduleId: string;
@@ -116,28 +127,73 @@ const SearchingPage = () => {
         navigate(`${location.pathname}?${searchParams.toString()}`);
     };
 
+    const countAvailableSeats = (seatsData: FloorData): number => {
+        let count = 0;
+
+        // Count floor 1
+        if (seatsData.floor_1) {
+            count += seatsData.floor_1
+                .flat()
+                .filter((seat) => seat.isAvailable).length;
+        }
+
+        // Count floor 2
+        if (seatsData.floor_2) {
+            count += seatsData.floor_2
+                .flat()
+                .filter((seat) => seat.isAvailable).length;
+        }
+
+        return count;
+    };
+
     useEffect(() => {
         const fetchSearchResults = async () => {
             setSearchLoading(true);
             const searchParams = new URLSearchParams(location.search);
-            const params = {
-                departureLocation: searchParams.get("departureLocation") || "",
-                arrivalLocation: searchParams.get("arrivalLocation") || "",
-                departureDate: searchParams.get("departureDate") || "",
-                returnDate: searchParams.get("returnDate") || "",
-                sortBy: searchParams.get("sortBy") || sortBy,
-                sortDirection:
-                    searchParams.get("sortDirection") || sortDirection,
-                pageNumber: currentPage,
-                pageSize: 5,
-            };
             try {
                 const response = await axios.post(
                     "https://ticketgo.site/api/v1/routes/search",
-                    params
+                    {
+                        departureLocation:
+                            searchParams.get("departureLocation") || "",
+                        arrivalLocation:
+                            searchParams.get("arrivalLocation") || "",
+                        departureDate: searchParams.get("departureDate") || "",
+                        returnDate: searchParams.get("returnDate") || "",
+                        sortBy: searchParams.get("sortBy") || sortBy,
+                        sortDirection:
+                            searchParams.get("sortDirection") || sortDirection,
+                        pageNumber: currentPage,
+                        pageSize: 5,
+                    }
                 );
-                setSearchResults(response.data);
-                console.log(response.data);
+
+                // Fetch seat data for each route
+                const routesWithSeats = await Promise.all(
+                    response.data.data.map(async (route: any) => {
+                        const seatsResponse = await axios.get(
+                            `https://ticketgo.site/api/v1/seats?scheduleId=${route.scheduleId}`
+                        );
+                        console.log("Seats response:", seatsResponse.data);
+                        if (seatsResponse.data.status === 200) {
+                            const availableSeats = countAvailableSeats(
+                                seatsResponse.data.data
+                            );
+                            console.log(
+                                "Available seats for route",
+                                availableSeats
+                            );
+                            return { ...route, availableSeats };
+                        }
+                        return route;
+                    })
+                );
+
+                setSearchResults({
+                    ...response.data,
+                    data: routesWithSeats,
+                });
             } catch (error) {
                 console.error("Error fetching search results:", error);
                 toast.error("Có lỗi xảy ra khi tìm kiếm chuyến xe");
@@ -145,8 +201,55 @@ const SearchingPage = () => {
                 setSearchLoading(false);
             }
         };
+
         fetchSearchResults();
     }, [location, currentPage, sortBy, sortDirection]);
+
+    useEffect(() => {
+        if (!searchResults.data.length) return;
+
+        const updateSeats = async () => {
+            try {
+                const updatedRoutes = await Promise.all(
+                    searchResults.data.map(async (route) => {
+                        const seatsResponse = await axios.get(
+                            `https://ticketgo.site/api/v1/seats?scheduleId=${route.scheduleId}`
+                        );
+                        if (seatsResponse.data.status === 200) {
+                            const availableSeats = countAvailableSeats(
+                                seatsResponse.data.data
+                            );
+                            if (availableSeats !== route.availableSeats) {
+                                return { ...route, availableSeats };
+                            }
+                        }
+                        return route;
+                    })
+                );
+
+                // Only update state if there are changes
+                const hasChanges = updatedRoutes.some(
+                    (route, index) =>
+                        route.availableSeats !==
+                        searchResults.data[index].availableSeats
+                );
+
+                if (hasChanges) {
+                    setSearchResults((prev) => ({
+                        ...prev,
+                        data: updatedRoutes,
+                    }));
+                }
+            } catch (error) {
+                console.error("Error updating seats:", error);
+            }
+        };
+
+        const pollInterval = setInterval(updateSeats, 3000);
+
+        // Cleanup on unmount or when routes change
+        return () => clearInterval(pollInterval);
+    }, [searchResults.data]);
 
     return (
         <div

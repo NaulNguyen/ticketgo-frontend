@@ -21,6 +21,10 @@ import { useDispatch } from "react-redux";
 import { booking } from "../../actions/user.action";
 import { axiosWithJWT } from "../../config/axiosConfig";
 import UserService from "../../service/UserService";
+import LocationOnIcon from "@mui/icons-material/LocationOn";
+import AddressPopup from "../../popup/AddressPopup";
+import { calculateDistance } from "../../utils/calculateDistance";
+import MapPopup from "../../popup/MapPopup";
 
 interface Seat {
     ticketCode: string;
@@ -54,6 +58,17 @@ interface BookingStepResponse {
     vnPayUrl: string | null;
 }
 
+interface Location {
+    address: string;
+    lat: number;
+    lon: number;
+}
+
+interface Coordinates {
+    lat: number;
+    lon: number;
+}
+
 const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
     const [seatsData, setSeatsData] = useState<FloorData | null>(null);
     const [selectedSeats, setSelectedSeats] = useState<Seat[]>([]);
@@ -64,6 +79,26 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
     const [selectedDropoff, setSelectedDropoff] = useState<number | null>(null);
     const [isBookingSaved, setIsBookingSaved] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [pickupAddress, setPickupAddress] = useState<Location | null>(null);
+    const [dropoffAddress, setDropoffAddress] = useState<Location | null>(null);
+    const [isPickupAddressModalOpen, setIsPickupAddressModalOpen] =
+        useState(false);
+    const [isDropoffAddressModalOpen, setIsDropoffAddressModalOpen] =
+        useState(false);
+
+    const [isMapOpen, setIsMapOpen] = useState(false);
+    const [selectedLocation, setSelectedLocation] = useState<{
+        name: string;
+        lat: number;
+        lon: number;
+    } | null>(null);
+
+    const [stopCoordinates, setStopCoordinates] = useState<
+        Map<number, Coordinates>
+    >(new Map());
+    const [userCoordinates, setUserCoordinates] = useState<Coordinates | null>(
+        null
+    );
 
     const steps = ["Chỗ mong muốn", "Điểm đón trả"];
     const priceFormatted = new Intl.NumberFormat("en-US").format(price);
@@ -196,6 +231,20 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
         return selectedSeats.length * price;
     };
 
+    const parseLocation = (location: string) => {
+        const match = location.match(/(.*?)\s*\((.*?)\)/);
+        if (match) {
+            return {
+                mainLocation: match[1].trim(),
+                detailLocation: match[2].trim(),
+            };
+        }
+        return {
+            mainLocation: location,
+            detailLocation: "",
+        };
+    };
+
     useEffect(() => {
         if (activeStep === 2) {
             navigate(`/booking-confirm?scheduleId=${scheduleId}`);
@@ -223,17 +272,50 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
 
     useEffect(() => {
         if (activeStep === 1) {
-            const fetchRouteStops = async () => {
+            const fetchStopsWithCoordinates = async () => {
                 try {
                     const response = await axios.get(
                         `https://ticketgo.site/api/v1/route-stops?scheduleId=${scheduleId}`
                     );
                     setRouteStops(response.data.data);
+
+                    // Create a Map to store unique addresses
+                    const uniqueAddresses = new Map<string, number[]>();
+
+                    // Group stopIds by detail location
+                    [
+                        ...response.data.data.pickup,
+                        ...response.data.data.dropoff,
+                    ].forEach((stop) => {
+                        const { detailLocation } = parseLocation(stop.location);
+                        if (!uniqueAddresses.has(detailLocation)) {
+                            uniqueAddresses.set(detailLocation, [stop.stopId]);
+                        } else {
+                            uniqueAddresses
+                                .get(detailLocation)
+                                ?.push(stop.stopId);
+                        }
+                    });
+
+                    // Fetch coordinates only once for each unique address
+                    const coordinates = new Map<number, Coordinates>();
+                    for (const [
+                        address,
+                        stopIds,
+                    ] of uniqueAddresses.entries()) {
+                        const coords = await fetchStopCoordinates(address);
+                        if (coords) {
+                            stopIds.forEach((stopId: any) => {
+                                coordinates.set(stopId, coords);
+                            });
+                        }
+                    }
+                    setStopCoordinates(coordinates);
                 } catch (error) {
                     console.error("Failed to fetch route stops", error);
                 }
             };
-            fetchRouteStops();
+            fetchStopsWithCoordinates();
         }
     }, [scheduleId, activeStep]);
 
@@ -275,6 +357,49 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
             return;
         }
         setSelectedSeat(seat); // Set the clicked seat
+    };
+
+    const truncateAddress = (address: string, maxLength: number = 30) => {
+        if (!address) return "";
+        if (address.length <= maxLength) return address;
+        return `${address.substring(0, maxLength)}...`;
+    };
+
+    const handleMapClick = (stop: RouteStop) => {
+        const coords = stopCoordinates.get(stop.stopId);
+        if (coords) {
+            setSelectedLocation({
+                name: parseLocation(stop.location).mainLocation,
+                lat: coords.lat,
+                lon: coords.lon,
+            });
+            setIsMapOpen(true);
+        }
+    };
+
+    const fetchStopCoordinates = async (
+        address: string
+    ): Promise<Coordinates | null> => {
+        try {
+            const { mainLocation, detailLocation } = parseLocation(address);
+            const encodedAddress = encodeURIComponent(address);
+            const response = await fetch(
+                `https://nominatim.openstreetmap.org/search?q=${encodedAddress}&format=json&limit=1`
+            );
+            const data = await response.json();
+
+            if (data && data.length > 0) {
+                return {
+                    lat: parseFloat(data[0].lat),
+                    lon: parseFloat(data[0].lon),
+                };
+            }
+            console.warn("No results found for address:", address);
+            return null;
+        } catch (error) {
+            console.error("Error fetching coordinates:", error);
+            return null;
+        }
     };
 
     const renderSeats = (seats: Seat[][]) =>
@@ -518,14 +643,65 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
                             gap={2}
                         >
                             <Box>
-                                <Typography
-                                    variant="subtitle1"
-                                    sx={{ mb: 2 }}
-                                    fontSize={18}
-                                    fontWeight={700}
+                                <Box
+                                    display={"flex"}
+                                    sx={{ justifyContent: "space-between" }}
                                 >
-                                    Điểm đón
-                                </Typography>
+                                    <Typography
+                                        variant="subtitle1"
+                                        sx={{ mb: 2 }}
+                                        fontSize={18}
+                                        fontWeight={700}
+                                    >
+                                        Điểm đón
+                                    </Typography>
+                                    <Box>
+                                        <Typography sx={{ fontSize: "14px" }}>
+                                            Điểm đón nào gần bạn nhất?
+                                        </Typography>
+                                        <Typography
+                                            sx={{
+                                                fontSize: "14px",
+                                                color: "#1976d2",
+                                                fontWeight: 600,
+                                                textDecoration: "underline",
+                                                cursor: "pointer",
+                                            }}
+                                            onClick={() =>
+                                                setIsPickupAddressModalOpen(
+                                                    true
+                                                )
+                                            }
+                                        >
+                                            {pickupAddress
+                                                ? truncateAddress(
+                                                      pickupAddress.address
+                                                  )
+                                                : "Nhập địa chỉ điểm đón"}
+                                        </Typography>
+
+                                        <AddressPopup
+                                            open={isPickupAddressModalOpen}
+                                            onClose={() =>
+                                                setIsPickupAddressModalOpen(
+                                                    false
+                                                )
+                                            }
+                                            onSelectAddress={(
+                                                location: Location
+                                            ) => {
+                                                setPickupAddress(location);
+                                                setUserCoordinates({
+                                                    lat: location.lat,
+                                                    lon: location.lon,
+                                                });
+                                                setIsPickupAddressModalOpen(
+                                                    false
+                                                );
+                                            }}
+                                        />
+                                    </Box>
+                                </Box>
                                 <Box
                                     sx={{
                                         maxHeight: "450px",
@@ -541,16 +717,63 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
                                             minute: "2-digit",
                                             hour12: false,
                                         });
+                                        const { mainLocation, detailLocation } =
+                                            parseLocation(stop.location);
+
                                         return (
                                             <Box
                                                 key={index}
                                                 display="flex"
-                                                alignItems="center"
-                                                sx={{ paddingTop: "13px" }}
+                                                alignItems="flex-start"
+                                                sx={{
+                                                    paddingTop: "13px",
+                                                    position: "relative",
+                                                    border:
+                                                        selectedPickup ===
+                                                        stop.stopId
+                                                            ? "1px solid rgba(25,118,210,0.3)"
+                                                            : "1px solid transparent",
+                                                    "&::before":
+                                                        selectedPickup ===
+                                                        stop.stopId
+                                                            ? {
+                                                                  content: '""',
+                                                                  position:
+                                                                      "absolute",
+                                                                  left: 0,
+                                                                  top: 0,
+                                                                  bottom: 0,
+                                                                  width: "4px",
+                                                                  backgroundColor:
+                                                                      "#1976d2",
+                                                                  borderTopLeftRadius:
+                                                                      "8px",
+                                                                  borderBottomLeftRadius:
+                                                                      "8px",
+                                                              }
+                                                            : {},
+                                                    background:
+                                                        selectedPickup ===
+                                                        stop.stopId
+                                                            ? "linear-gradient(90deg, rgba(25,118,210,0.12) 0%, rgba(25,118,210,0.06) 50%, rgba(255,255,255,0) 100%)"
+                                                            : "transparent",
+                                                    transition: "all 0.3s ease",
+                                                    padding: "12px 16px",
+                                                    borderRadius: "8px",
+                                                    margin: "4px 0",
+                                                    "&:hover": {
+                                                        border: "1px solid rgba(25,118,210,0.2)",
+                                                        background:
+                                                            "linear-gradient(90deg, rgba(25,118,210,0.08) 0%, rgba(25,118,210,0.03) 50%, rgba(255,255,255,0) 100%)",
+                                                    },
+                                                }}
                                             >
-                                                {/* Radio Button */}
                                                 <Radio
-                                                    sx={{ marginRight: 2 }}
+                                                    sx={{
+                                                        "&.Mui-checked": {
+                                                            color: "#1976d2",
+                                                        },
+                                                    }}
                                                     value={stop.stopId}
                                                     name={`pickup-stop-${index}`}
                                                     checked={
@@ -561,33 +784,100 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
                                                         handlePickupChange
                                                     }
                                                 />
-                                                <Typography
-                                                    display="flex"
-                                                    alignItems="center"
-                                                >
-                                                    <span
-                                                        style={{
+                                                <Box>
+                                                    <Typography
+                                                        display="flex"
+                                                        alignItems="center"
+                                                        sx={{ mb: 0.5 }}
+                                                    >
+                                                        <span
+                                                            style={{
+                                                                fontWeight:
+                                                                    "bold",
+                                                                marginRight:
+                                                                    "8px",
+                                                                marginTop:
+                                                                    "9px",
+                                                            }}
+                                                        >
+                                                            {arrivalTime}
+                                                        </span>
+                                                    </Typography>
+                                                    <Typography
+                                                        sx={{
+                                                            fontSize: "16px",
                                                             fontWeight: "bold",
-                                                            marginRight: "8px",
                                                         }}
                                                     >
-                                                        {arrivalTime}
-                                                    </span>
-                                                    <span
-                                                        style={{
-                                                            marginRight: "8px",
+                                                        {mainLocation}
+                                                    </Typography>
+                                                    {detailLocation && (
+                                                        <>
+                                                            <Typography
+                                                                sx={{
+                                                                    fontSize:
+                                                                        "0.85rem",
+                                                                    color: "text.secondary",
+                                                                }}
+                                                            >
+                                                                {detailLocation}
+                                                            </Typography>
+                                                        </>
+                                                    )}
+                                                </Box>
+                                                <Box
+                                                    sx={{
+                                                        padding:
+                                                            "24px 10px 24px 10px",
+                                                    }}
+                                                >
+                                                    <LocationOnIcon
+                                                        sx={{
+                                                            textAlign: "center",
+                                                            color: "#1976d2",
+                                                            marginLeft: "10px",
                                                         }}
-                                                    >
-                                                        •
-                                                    </span>
-                                                    <span
-                                                        style={{
-                                                            width: "190px",
+                                                    />
+                                                    <Typography
+                                                        sx={{
+                                                            fontSize: "14px",
+                                                            width: "80px",
+                                                            color: "#1976d2",
+                                                            fontWeight: 600,
+                                                            textDecoration:
+                                                                "underline",
+                                                            cursor: "pointer",
                                                         }}
+                                                        onClick={() =>
+                                                            handleMapClick(stop)
+                                                        }
                                                     >
-                                                        {stop.location}
-                                                    </span>
-                                                </Typography>
+                                                        {userCoordinates &&
+                                                        stopCoordinates.has(
+                                                            stop.stopId
+                                                        ) ? (
+                                                            <>
+                                                                {calculateDistance(
+                                                                    pickupAddress?.lat ||
+                                                                        0,
+                                                                    pickupAddress?.lon ||
+                                                                        0,
+                                                                    stopCoordinates.get(
+                                                                        stop.stopId
+                                                                    )!.lat,
+                                                                    stopCoordinates.get(
+                                                                        stop.stopId
+                                                                    )!.lon
+                                                                ).toFixed(
+                                                                    1
+                                                                )}{" "}
+                                                                km
+                                                            </>
+                                                        ) : (
+                                                            "Bản đồ"
+                                                        )}
+                                                    </Typography>
+                                                </Box>
                                             </Box>
                                         );
                                     })}
@@ -595,19 +885,69 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
                             </Box>
                             <Divider orientation="vertical" flexItem />
                             <Box>
-                                <Typography
-                                    variant="subtitle1"
-                                    sx={{ mb: 2 }}
-                                    fontSize={18}
-                                    fontWeight={700}
+                                <Box
+                                    display={"flex"}
+                                    sx={{ justifyContent: "space-between" }}
                                 >
-                                    Điểm trả
-                                </Typography>
+                                    <Typography
+                                        variant="subtitle1"
+                                        sx={{ mb: 2 }}
+                                        fontSize={18}
+                                        fontWeight={700}
+                                    >
+                                        Điểm trả
+                                    </Typography>
+                                    <Box>
+                                        <Typography sx={{ fontSize: "14px" }}>
+                                            Điểm trả nào gần bạn nhất?
+                                        </Typography>
+                                        <Typography
+                                            sx={{
+                                                fontSize: "14px",
+                                                color: "#1976d2",
+                                                fontWeight: 600,
+                                                textDecoration: "underline",
+                                                cursor: "pointer",
+                                            }}
+                                            onClick={() =>
+                                                setIsDropoffAddressModalOpen(
+                                                    true
+                                                )
+                                            }
+                                        >
+                                            {dropoffAddress
+                                                ? truncateAddress(
+                                                      dropoffAddress.address
+                                                  )
+                                                : "Nhập địa chỉ điểm trả"}
+                                        </Typography>
+
+                                        <AddressPopup
+                                            open={isDropoffAddressModalOpen}
+                                            onClose={() =>
+                                                setIsDropoffAddressModalOpen(
+                                                    false
+                                                )
+                                            }
+                                            onSelectAddress={(
+                                                location: Location
+                                            ) => {
+                                                setDropoffAddress(location);
+                                                setUserCoordinates({
+                                                    lat: location.lat,
+                                                    lon: location.lon,
+                                                });
+                                                setIsDropoffAddressModalOpen(
+                                                    false
+                                                );
+                                            }}
+                                        />
+                                    </Box>
+                                </Box>
                                 <Box
                                     sx={{
                                         maxHeight: "450px",
                                         overflowY: "auto",
-                                        paddingRight: "10px",
                                     }}
                                 >
                                     {routeStops.dropoff.map((stop, index) => {
@@ -618,16 +958,63 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
                                             minute: "2-digit",
                                             hour12: false,
                                         });
+                                        const { mainLocation, detailLocation } =
+                                            parseLocation(stop.location);
                                         return (
                                             <Box
                                                 key={index}
                                                 display="flex"
-                                                alignItems="center"
-                                                sx={{ paddingTop: "13px" }}
+                                                alignItems="flex-start"
+                                                sx={{
+                                                    paddingTop: "13px",
+                                                    position: "relative",
+                                                    border:
+                                                        selectedDropoff ===
+                                                        stop.stopId
+                                                            ? "1px solid rgba(25,118,210,0.3)"
+                                                            : "1px solid transparent",
+                                                    "&::before":
+                                                        selectedDropoff ===
+                                                        stop.stopId
+                                                            ? {
+                                                                  content: '""',
+                                                                  position:
+                                                                      "absolute",
+                                                                  left: 0,
+                                                                  top: 0,
+                                                                  bottom: 0,
+                                                                  width: "4px",
+                                                                  backgroundColor:
+                                                                      "#1976d2",
+                                                                  borderTopLeftRadius:
+                                                                      "8px",
+                                                                  borderBottomLeftRadius:
+                                                                      "8px",
+                                                              }
+                                                            : {},
+                                                    background:
+                                                        selectedDropoff ===
+                                                        stop.stopId
+                                                            ? "linear-gradient(90deg, rgba(25,118,210,0.12) 0%, rgba(25,118,210,0.06) 50%, rgba(255,255,255,0) 100%)"
+                                                            : "transparent",
+                                                    transition: "all 0.3s ease",
+                                                    padding: "12px 16px",
+                                                    borderRadius: "8px",
+                                                    margin: "4px 0",
+                                                    "&:hover": {
+                                                        border: "1px solid rgba(25,118,210,0.2)",
+                                                        background:
+                                                            "linear-gradient(90deg, rgba(25,118,210,0.08) 0%, rgba(25,118,210,0.03) 50%, rgba(255,255,255,0) 100%)",
+                                                    },
+                                                }}
                                             >
                                                 {/* Radio Button */}
                                                 <Radio
-                                                    sx={{ marginRight: 2 }}
+                                                    sx={{
+                                                        "&.Mui-checked": {
+                                                            color: "#1976d2",
+                                                        },
+                                                    }}
                                                     value={stop.stopId}
                                                     name={`dropoff-stop-${index}`}
                                                     checked={
@@ -638,33 +1025,100 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
                                                         handleDropoffChange
                                                     }
                                                 />
-                                                <Typography
-                                                    display="flex"
-                                                    alignItems="center"
-                                                >
-                                                    <span
-                                                        style={{
+                                                <Box>
+                                                    <Typography
+                                                        display="flex"
+                                                        alignItems="center"
+                                                        sx={{ mb: 0.5 }}
+                                                    >
+                                                        <span
+                                                            style={{
+                                                                fontWeight:
+                                                                    "bold",
+                                                                marginRight:
+                                                                    "8px",
+                                                                marginTop:
+                                                                    "9px",
+                                                            }}
+                                                        >
+                                                            {arrivalTime}
+                                                        </span>
+                                                    </Typography>
+                                                    <Typography
+                                                        sx={{
+                                                            fontSize: "16px",
                                                             fontWeight: "bold",
-                                                            marginRight: "8px",
                                                         }}
                                                     >
-                                                        {arrivalTime}
-                                                    </span>
-                                                    <span
-                                                        style={{
-                                                            marginRight: "8px",
+                                                        {mainLocation}
+                                                    </Typography>
+                                                    {detailLocation && (
+                                                        <>
+                                                            <Typography
+                                                                sx={{
+                                                                    fontSize:
+                                                                        "0.85rem",
+                                                                    color: "text.secondary",
+                                                                }}
+                                                            >
+                                                                {detailLocation}
+                                                            </Typography>
+                                                        </>
+                                                    )}
+                                                </Box>
+                                                <Box
+                                                    sx={{
+                                                        padding:
+                                                            "24px 10px 24px 10px",
+                                                    }}
+                                                >
+                                                    <LocationOnIcon
+                                                        sx={{
+                                                            textAlign: "center",
+                                                            color: "#1976d2",
+                                                            marginLeft: "10px",
                                                         }}
-                                                    >
-                                                        •
-                                                    </span>
-                                                    <span
-                                                        style={{
-                                                            width: "190px",
+                                                    />
+                                                    <Typography
+                                                        sx={{
+                                                            fontSize: "14px",
+                                                            width: "80px",
+                                                            color: "#1976d2",
+                                                            fontWeight: 600,
+                                                            textDecoration:
+                                                                "underline",
+                                                            cursor: "pointer",
                                                         }}
+                                                        onClick={() =>
+                                                            handleMapClick(stop)
+                                                        }
                                                     >
-                                                        {stop.location}
-                                                    </span>
-                                                </Typography>
+                                                        {userCoordinates &&
+                                                        stopCoordinates.has(
+                                                            stop.stopId
+                                                        ) ? (
+                                                            <>
+                                                                {calculateDistance(
+                                                                    dropoffAddress?.lat ||
+                                                                        0,
+                                                                    dropoffAddress?.lon ||
+                                                                        0,
+                                                                    stopCoordinates.get(
+                                                                        stop.stopId
+                                                                    )!.lat,
+                                                                    stopCoordinates.get(
+                                                                        stop.stopId
+                                                                    )!.lon
+                                                                ).toFixed(
+                                                                    1
+                                                                )}{" "}
+                                                                km
+                                                            </>
+                                                        ) : (
+                                                            "Bản đồ"
+                                                        )}
+                                                    </Typography>
+                                                </Box>
                                             </Box>
                                         );
                                     })}
@@ -819,6 +1273,16 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
                     </Box>
                 </Box>
             </Modal>
+            {selectedLocation && (
+                <MapPopup
+                    open={isMapOpen}
+                    onClose={() => {
+                        setIsMapOpen(false);
+                        setSelectedLocation(null);
+                    }}
+                    location={selectedLocation}
+                />
+            )}
         </Box>
     );
 };

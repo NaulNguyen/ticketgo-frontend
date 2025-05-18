@@ -6,6 +6,7 @@ import {
     Typography,
     TextField,
     Button,
+    CircularProgress,
 } from "@mui/material";
 import ChatIcon from "@mui/icons-material/Chat";
 import CloseIcon from "@mui/icons-material/Close";
@@ -32,11 +33,14 @@ const BoxChat = () => {
     const { getUserInfor } = useAppAccessor();
     const stompClient = useRef<Client | null>(null);
     const chatBoxRef = useRef<HTMLDivElement>(null);
+    const [isInitialFetch, setIsInitialFetch] = useState(true);
+    const [isLoading, setIsLoading] = useState(false);
 
     // Check if user is logged in and not a BUS_COMPANY
     const userInfo = getUserInfor();
     const shouldShowChat =
         userInfo && userInfo.user.role !== "ROLE_BUS_COMPANY";
+
     useEffect(() => {
         if (!userInfo) {
             setMessages([]);
@@ -67,9 +71,6 @@ const BoxChat = () => {
                 try {
                     const newMessage = JSON.parse(message.body);
                     setMessages((prev) => [...prev, newMessage]);
-                    chatBoxRef.current &&
-                        (chatBoxRef.current.scrollTop =
-                            chatBoxRef.current.scrollHeight);
                 } catch (err) {
                     console.error("Error parsing message:", err);
                 }
@@ -93,24 +94,51 @@ const BoxChat = () => {
         if (isOpen) {
             const fetchMessages = async () => {
                 const userInfo = getUserInfor();
-                if (!userInfo) return;
+                if (!userInfo || !isOpen || !isInitialFetch) return;
+
+                setIsLoading(true);
 
                 try {
                     const response = await axiosWithJWT.get(
                         `/api/v1/messages?senderId=${userInfo.user.userId}&receiverId=1`
                     );
+
+                    // Set messages without triggering scroll
                     setMessages(response.data.data.messages);
-                    if (chatBoxRef.current) {
-                        chatBoxRef.current.scrollTop =
-                            chatBoxRef.current.scrollHeight;
-                    }
+
+                    // Use requestAnimationFrame to ensure DOM is updated
+                    requestAnimationFrame(() => {
+                        if (chatBoxRef.current) {
+                            chatBoxRef.current.scrollTop =
+                                chatBoxRef.current.scrollHeight;
+                        }
+                    });
+
+                    setIsInitialFetch(false);
                 } catch (error) {
                     console.error("Error fetching messages:", error);
+                } finally {
+                    setIsLoading(false);
                 }
             };
             fetchMessages();
         }
-    }, [isOpen, getUserInfor]);
+    }, [isOpen, isInitialFetch]);
+
+    useEffect(() => {
+        if (isOpen && chatBoxRef.current && messages.length > 0) {
+            requestAnimationFrame(() => {
+                chatBoxRef.current!.scrollTop =
+                    chatBoxRef.current!.scrollHeight;
+            });
+        }
+    }, [isOpen, messages.length]);
+
+    useEffect(() => {
+        if (!isOpen) {
+            setIsInitialFetch(true);
+        }
+    }, [isOpen]);
 
     const handleSend = async () => {
         if (!message.trim()) return;
@@ -181,8 +209,22 @@ const BoxChat = () => {
                             display: "flex",
                             flexDirection: "column",
                             gap: 1,
+                            position: "relative",
+                            scrollBehavior: "instant",
                         }}
                     >
+                        {isLoading && (
+                            <Box
+                                sx={{
+                                    position: "absolute",
+                                    top: "50%",
+                                    left: "50%",
+                                    transform: "translate(-50%, -50%)",
+                                }}
+                            >
+                                <CircularProgress size={24} />
+                            </Box>
+                        )}
                         {messages.map((msg) => (
                             <Box
                                 key={msg.messageId}
