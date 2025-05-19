@@ -8,13 +8,12 @@ import CancelBookingDialog from "../../popup/CancleBookingDialog";
 import { axiosWithJWT } from "../../config/axiosConfig";
 import { useSnackbar } from "notistack";
 import { formatPrice } from "../../utils/formatPrice";
-import { transform } from "typescript";
+import { center } from "@cloudinary/url-gen/qualifiers/textAlignment";
 
 const BookingHistory = () => {
     const [bookingHistoryData, setBookingHistoryData] = useState<
         BookingHistoryItem[]
     >([]);
-    console.log(bookingHistoryData);
     const [selectedBooking, setSelectedBooking] =
         useState<BookingHistoryItem | null>(null);
     const [openCancelDialog, setOpenCancelDialog] = useState(false);
@@ -28,6 +27,13 @@ const BookingHistory = () => {
     const formatPickupDateTime = (pickupTime: string) => {
         const [time, date] = pickupTime.split(" ");
         return { time, date };
+    };
+
+    const parseRouteName = (
+        routeName: string
+    ): { origin: string; destination: string } => {
+        const [origin, destination] = routeName.split(" - ");
+        return { origin, destination };
     };
 
     const handleConfirmCancel = async (
@@ -66,7 +72,6 @@ const BookingHistory = () => {
     const fetchBookingHistory = async () => {
         try {
             const response = await UserService.bookingHistory();
-            console.log(response.data.data);
             setBookingHistoryData(response.data.data);
         } catch (err) {
             console.log(
@@ -136,8 +141,8 @@ const BookingHistory = () => {
                                 },
                             }}
                         >
-                            {/* Header */}
                             <Box sx={{ width: "100%" }}>
+                                {/* Header */}
                                 <Box
                                     sx={{
                                         backgroundColor: "#1976d2",
@@ -147,43 +152,48 @@ const BookingHistory = () => {
                                         padding: "16px 24px",
                                         borderBottom:
                                             "1px solid rgba(255,255,255,0.1)",
-                                        display: "flex",
+                                        display: "grid",
+                                        gridTemplateColumns: "1fr auto 1fr", // Create 3 equal columns
                                         alignItems: "center",
-                                        justifyContent: "space-between",
                                     }}
                                 >
-                                    {/* Cancel Button */}
-                                    {booking.status === "Đã xác nhận" &&
-                                        !isAfterDepartureDate(
-                                            booking.departureDate
-                                        ) && (
-                                            <Button
-                                                variant="contained"
-                                                color="error"
-                                                size="small"
-                                                onClick={() =>
-                                                    handleCancelClick(booking)
-                                                }
-                                            >
-                                                <DeleteIcon
-                                                    sx={{
-                                                        fontSize: "1rem",
-                                                        mr: 0.5,
-                                                    }}
-                                                />
-                                                <Typography
-                                                    sx={{
-                                                        fontSize: "0.9rem",
-                                                        textTransform: "none",
-                                                        fontWeight: 600,
-                                                    }}
+                                    {/* Left section - Cancel Button */}
+                                    <Box>
+                                        {booking.status === "Đã xác nhận" &&
+                                            !isAfterDepartureDate(
+                                                booking.departureDate
+                                            ) && (
+                                                <Button
+                                                    variant="contained"
+                                                    color="error"
+                                                    size="small"
+                                                    onClick={() =>
+                                                        handleCancelClick(
+                                                            booking
+                                                        )
+                                                    }
                                                 >
-                                                    Hủy vé
-                                                </Typography>
-                                            </Button>
-                                        )}
+                                                    <DeleteIcon
+                                                        sx={{
+                                                            fontSize: "1rem",
+                                                            mr: 0.5,
+                                                        }}
+                                                    />
+                                                    <Typography
+                                                        sx={{
+                                                            fontSize: "0.9rem",
+                                                            textTransform:
+                                                                "none",
+                                                            fontWeight: 600,
+                                                        }}
+                                                    >
+                                                        Hủy vé
+                                                    </Typography>
+                                                </Button>
+                                            )}
+                                    </Box>
 
-                                    {/* Booking Info */}
+                                    {/* Center section - Booking Info */}
                                     <Box
                                         sx={{
                                             display: "flex",
@@ -246,48 +256,57 @@ const BookingHistory = () => {
                                         </Box>
                                     </Box>
 
-                                    {/* Status Badge */}
+                                    {/* Right section - Status Badge */}
                                     <Box
                                         sx={{
-                                            fontWeight: "bold",
-                                            backgroundColor:
-                                                booking.status === "Đã xác nhận"
-                                                    ? "#00C853"
-                                                    : booking.status ===
-                                                      "Đã hoàn thành"
-                                                    ? "#FFD700"
-                                                    : booking.status ===
-                                                      "Đã hủy"
-                                                    ? "#FF1744"
-                                                    : booking.status ===
-                                                      "Đã hoàn tiền"
-                                                    ? "#FF9100"
-                                                    : "transparent",
-                                            color:
-                                                booking.status ===
-                                                "Đã hoàn thành"
-                                                    ? "#000"
-                                                    : "#fff",
-                                            padding: "4px 12px",
-                                            borderRadius: "4px",
-                                            whiteSpace: "nowrap",
+                                            display: "flex",
+                                            justifyContent: "flex-end",
                                         }}
                                     >
-                                        <Typography
+                                        <Box
                                             sx={{
+                                                fontWeight: "bold",
+                                                backgroundColor:
+                                                    booking.status ===
+                                                    "Đã xác nhận"
+                                                        ? "#00C853"
+                                                        : booking.status ===
+                                                          "Đã hoàn thành"
+                                                        ? "#FFD700"
+                                                        : booking.status ===
+                                                          "Đã hủy"
+                                                        ? "#FF1744"
+                                                        : booking.status ===
+                                                          "Đã hoàn tiền"
+                                                        ? "#FF9100"
+                                                        : "transparent",
                                                 color:
                                                     booking.status ===
                                                     "Đã hoàn thành"
                                                         ? "#000"
                                                         : "#fff",
-                                                fontWeight: 600,
-                                                fontSize: "0.9rem",
+                                                padding: "4px 12px",
+                                                borderRadius: "4px",
+                                                whiteSpace: "nowrap",
                                             }}
                                         >
-                                            {booking.status}
-                                        </Typography>
+                                            <Typography
+                                                sx={{
+                                                    color:
+                                                        booking.status ===
+                                                        "Đã hoàn thành"
+                                                            ? "#000"
+                                                            : "#fff",
+                                                    fontWeight: 600,
+                                                    fontSize: "0.9rem",
+                                                }}
+                                            >
+                                                {booking.status}
+                                            </Typography>
+                                        </Box>
                                     </Box>
                                 </Box>
+                                {/* Body */}
                                 <Box sx={{ pt: 2 }}>
                                     <Box
                                         sx={{
@@ -327,16 +346,17 @@ const BookingHistory = () => {
                                     >
                                         <Grid item xs={5}>
                                             <Typography
-                                                fontWeight={600}
-                                                mb={0.5}
-                                            >
-                                                Điểm đón
-                                            </Typography>
-                                            <Typography
-                                                fontSize="0.95rem"
+                                                fontSize="1.5rem"
                                                 lineHeight={1.5}
+                                                fontWeight={600}
+                                                textAlign={"center"}
+                                                ml={5}
                                             >
-                                                {booking.pickupLocation}
+                                                {
+                                                    parseRouteName(
+                                                        booking.routeName
+                                                    ).origin
+                                                }
                                             </Typography>
                                         </Grid>
 
@@ -383,16 +403,17 @@ const BookingHistory = () => {
 
                                         <Grid item xs={5} textAlign="right">
                                             <Typography
-                                                fontWeight={600}
-                                                mb={0.5}
-                                            >
-                                                Điểm trả
-                                            </Typography>
-                                            <Typography
-                                                fontSize="0.95rem"
+                                                fontSize="1.5rem"
                                                 lineHeight={1.5}
+                                                fontWeight={600}
+                                                textAlign={"center"}
+                                                mr={5}
                                             >
-                                                {booking.dropoffLocation}
+                                                {
+                                                    parseRouteName(
+                                                        booking.routeName
+                                                    ).destination
+                                                }
                                             </Typography>
                                         </Grid>
                                     </Grid>
@@ -443,6 +464,24 @@ const BookingHistory = () => {
                                                             booking.pickupTime
                                                         ).time
                                                     }
+                                                </Typography>
+                                                <Typography
+                                                    fontWeight="bold"
+                                                    mb={1}
+                                                >
+                                                    <span className="font-thin">
+                                                        Điểm đón:{" "}
+                                                    </span>{" "}
+                                                    {booking.pickupLocation}
+                                                </Typography>
+                                                <Typography
+                                                    fontWeight="bold"
+                                                    mb={1}
+                                                >
+                                                    <span className="font-thin">
+                                                        Điểm trả:{" "}
+                                                    </span>{" "}
+                                                    {booking.dropoffLocation}
                                                 </Typography>
                                             </Box>
                                         </Grid>

@@ -94,6 +94,25 @@ const BusRouteManagement = () => {
         }
     };
 
+    const fetchRoutes = async (params = currentSearchParams) => {
+        setSearchLoading(true);
+        try {
+            const response = await axios.post<SearchResult>(
+                "https://ticketgo.site/api/v1/routes/search",
+                {
+                    ...params,
+                    pageNumber: currentPage,
+                }
+            );
+            setSearchResults(response.data);
+        } catch (error) {
+            console.error("Error fetching routes:", error);
+            toast.error("Có lỗi xảy ra khi tải danh sách tuyến xe");
+        } finally {
+            setSearchLoading(false);
+        }
+    };
+
     useEffect(() => {
         const fetchInitialData = async () => {
             setSearchLoading(true);
@@ -118,7 +137,10 @@ const BusRouteManagement = () => {
     }, [currentPage, currentSearchParams]);
 
     const handleOpenCreatePopup = () => setIsCreatePopupOpen(true);
-    const handleCloseCreatePopup = () => setIsCreatePopupOpen(false);
+    const handleCloseCreatePopup = () => {
+        setIsCreatePopupOpen(false);
+        fetchRoutes(); // Refresh the list when popup closes
+    };
 
     return (
         <Box sx={{ p: 3 }}>
@@ -160,10 +182,7 @@ const BusRouteManagement = () => {
                 <CreateBusRoute
                     open={isCreatePopupOpen}
                     onClose={handleCloseCreatePopup}
-                    onSuccess={() => {
-                        // Refresh bus routes list
-                        handleCloseCreatePopup();
-                    }}
+                    onSuccess={fetchRoutes} // Pass the fetch function here
                 />
             </Box>
             <Box sx={{ mb: 3 }}>

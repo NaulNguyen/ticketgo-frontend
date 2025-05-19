@@ -46,8 +46,6 @@ const EditVoucherPopup: React.FC<EditVoucherPopupProps> = ({
         validationSchema: EditVoucherValidationSchema,
         onSubmit: async (values) => {
             try {
-                console.log(values);
-                console.log(voucherId);
                 const response = await axiosWithJWT.post(
                     `https://ticketgo.site/api/v1/promotions/${voucherId}`,
                     {
@@ -77,7 +75,6 @@ const EditVoucherPopup: React.FC<EditVoucherPopupProps> = ({
                     const response = await axiosWithJWT.get(
                         `https://ticketgo.site/api/v1/promotions/${voucherId}`
                     );
-                    console.log(response);
                     const data = response.data.data;
                     formik.setValues({
                         description: data.description,

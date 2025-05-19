@@ -25,7 +25,6 @@ const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({ onClose }) => {
                 Cookies.set("accessToken", accessToken);
                 Cookies.set("refreshToken", refreshToken);
                 const userInfoResponse = await UserService.fetchUserInfor();
-                console.log("User info response:", userInfoResponse.data);
                 dispatch(asyncUserInfor(userInfoResponse));
                 toast.success("Đăng nhập với Google thành công");
                 onClose();

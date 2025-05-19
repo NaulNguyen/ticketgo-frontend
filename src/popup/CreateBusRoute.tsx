@@ -128,8 +128,22 @@ const CreateBusRoute: React.FC<CreateBusRouteProps> = ({
             departureTime: null,
             arrivalTime: null,
             price: "",
-            pickupStops: [{ location: "", stopOrder: 1, arrivalTime: null }],
-            dropoffStops: [{ location: "", stopOrder: 1, arrivalTime: null }],
+            pickupStops: [
+                {
+                    location: "",
+                    address: "",
+                    stopOrder: 1,
+                    arrivalTime: null,
+                },
+            ],
+            dropoffStops: [
+                {
+                    location: "",
+                    address: "",
+                    stopOrder: 1,
+                    arrivalTime: null,
+                },
+            ],
         },
         validationSchema: Yup.object({
             routeId: Yup.string().required("Vui lòng chọn chuyến xe"),
@@ -142,19 +156,34 @@ const CreateBusRoute: React.FC<CreateBusRouteProps> = ({
                 .min(1000, "Giá vé phải lớn hơn 1,000 VNĐ"),
             pickupStops: Yup.array().of(
                 Yup.object().shape({
-                    location: Yup.string().required("Vui lòng nhập địa điểm"),
+                    location: Yup.string().required("Vui lòng nhập tên điểm"),
+                    address: Yup.string(),
                     arrivalTime: Yup.mixed().required("Vui lòng chọn giờ đón"),
                 })
             ),
             dropoffStops: Yup.array().of(
                 Yup.object().shape({
-                    location: Yup.string().required("Vui lòng nhập địa điểm"),
+                    location: Yup.string().required("Vui lòng nhập tên điểm"),
+                    address: Yup.string(),
                     arrivalTime: Yup.mixed().required("Vui lòng chọn giờ trả"),
                 })
             ),
         }),
         onSubmit: async (values) => {
             try {
+                const formatStops = (stops: any[]) => {
+                    return stops.map((stop) => ({
+                        location: stop.address
+                            ? `${stop.location.trim()} (${stop.address.trim()})`
+                            : stop.location.trim(),
+                        stopOrder: stop.stopOrder,
+                        arrivalTime: getDatetimeWithDepartureDate(
+                            stop.arrivalTime,
+                            values.departureTime
+                        ).format("YYYY-MM-DDTHH:mm:ss"),
+                    }));
+                };
+
                 const requestData: ScheduleRequest = {
                     routeId: Number(values.routeId),
                     busId: Number(values.busId),
@@ -166,22 +195,8 @@ const CreateBusRoute: React.FC<CreateBusRouteProps> = ({
                         "YYYY-MM-DDTHH:mm:ss"
                     ),
                     price: Number(values.price),
-                    pickupStops: values.pickupStops.map((stop) => ({
-                        location: stop.location,
-                        stopOrder: stop.stopOrder,
-                        arrivalTime: getDatetimeWithDepartureDate(
-                            stop.arrivalTime,
-                            values.departureTime
-                        ).format("YYYY-MM-DDTHH:mm:ss"),
-                    })),
-                    dropoffStops: values.dropoffStops.map((stop) => ({
-                        location: stop.location,
-                        stopOrder: stop.stopOrder,
-                        arrivalTime: getDatetimeWithDepartureDate(
-                            stop.arrivalTime,
-                            values.departureTime
-                        ).format("YYYY-MM-DDTHH:mm:ss"),
-                    })),
+                    pickupStops: formatStops(values.pickupStops),
+                    dropoffStops: formatStops(values.dropoffStops),
                 };
 
                 const response = await axiosWithJWT.post(
@@ -244,6 +259,7 @@ const CreateBusRoute: React.FC<CreateBusRouteProps> = ({
         const newStops = [...formik.values.pickupStops];
         newStops.push({
             location: "",
+            address: "",
             stopOrder: newStops.length + 1,
             arrivalTime: null,
         });
@@ -254,6 +270,7 @@ const CreateBusRoute: React.FC<CreateBusRouteProps> = ({
         const newStops = [...formik.values.dropoffStops];
         newStops.push({
             location: "",
+            address: "",
             stopOrder: newStops.length + 1,
             arrivalTime: null,
         });
@@ -288,7 +305,7 @@ const CreateBusRoute: React.FC<CreateBusRouteProps> = ({
         <Dialog
             open={open}
             onClose={handleClose}
-            maxWidth="lg"
+            maxWidth="xl"
             fullWidth
             PaperProps={{
                 sx: {
@@ -798,9 +815,11 @@ const CreateBusRoute: React.FC<CreateBusRouteProps> = ({
                                         sx={{
                                             display: "grid",
                                             gridTemplateColumns:
-                                                "0.5fr 1.5fr 0.75fr 40px",
+                                                "0.5fr 1.2fr 1.5fr 0.75fr 20px",
                                             gap: 2,
                                             mb: 2,
+                                            alignItems: "center",
+                                            px: 1,
                                         }}
                                     >
                                         <Typography
@@ -814,7 +833,13 @@ const CreateBusRoute: React.FC<CreateBusRouteProps> = ({
                                             variant="subtitle2"
                                             color="text.secondary"
                                         >
-                                            Địa điểm
+                                            Tên điểm đón/trả
+                                        </Typography>
+                                        <Typography
+                                            variant="subtitle2"
+                                            color="text.secondary"
+                                        >
+                                            Địa chỉ
                                         </Typography>
                                         <Typography
                                             variant="subtitle2"
@@ -831,7 +856,7 @@ const CreateBusRoute: React.FC<CreateBusRouteProps> = ({
                                                 sx={{
                                                     display: "grid",
                                                     gridTemplateColumns:
-                                                        "0.5fr 1.5fr 0.75fr 40px",
+                                                        "0.5fr 1.2fr 1.5fr 0.75fr 20px",
                                                     gap: 2,
                                                     alignItems: "center",
                                                 }}
@@ -856,7 +881,7 @@ const CreateBusRoute: React.FC<CreateBusRouteProps> = ({
                                                 </Typography>
                                                 <TextField
                                                     size="small"
-                                                    placeholder="Nhập địa điểm"
+                                                    placeholder="Nhập tên điểm"
                                                     value={stop.location}
                                                     onChange={(e) => {
                                                         const newStops = [
@@ -866,6 +891,25 @@ const CreateBusRoute: React.FC<CreateBusRouteProps> = ({
                                                         newStops[
                                                             index
                                                         ].location =
+                                                            e.target.value;
+                                                        formik.setFieldValue(
+                                                            "pickupStops",
+                                                            newStops
+                                                        );
+                                                    }}
+                                                />
+                                                <TextField
+                                                    size="small"
+                                                    placeholder="Nhập địa chỉ chi tiết"
+                                                    value={stop.address || ""}
+                                                    onChange={(e) => {
+                                                        const newStops = [
+                                                            ...formik.values
+                                                                .pickupStops,
+                                                        ];
+                                                        newStops[
+                                                            index
+                                                        ].address =
                                                             e.target.value;
                                                         formik.setFieldValue(
                                                             "pickupStops",
@@ -981,9 +1025,10 @@ const CreateBusRoute: React.FC<CreateBusRouteProps> = ({
                                         sx={{
                                             display: "grid",
                                             gridTemplateColumns:
-                                                "0.5fr 1.5fr 0.75fr 40px", // Updated
+                                                "0.5fr 1.2fr 1.5fr 0.75fr 20px",
                                             gap: 2,
                                             mb: 2,
+                                            alignItems: "center",
                                             px: 1,
                                         }}
                                     >
@@ -998,7 +1043,13 @@ const CreateBusRoute: React.FC<CreateBusRouteProps> = ({
                                             variant="subtitle2"
                                             color="text.secondary"
                                         >
-                                            Địa điểm
+                                            Tên điểm đón/trả
+                                        </Typography>
+                                        <Typography
+                                            variant="subtitle2"
+                                            color="text.secondary"
+                                        >
+                                            Địa chỉ
                                         </Typography>
                                         <Typography
                                             variant="subtitle2"
@@ -1015,7 +1066,7 @@ const CreateBusRoute: React.FC<CreateBusRouteProps> = ({
                                                 sx={{
                                                     display: "grid",
                                                     gridTemplateColumns:
-                                                        "0.5fr 1.5fr 0.75fr 40px",
+                                                        "0.5fr 1.2fr 1.5fr 0.75fr 20px",
                                                     gap: 2,
                                                     alignItems: "center",
                                                 }}
@@ -1041,7 +1092,7 @@ const CreateBusRoute: React.FC<CreateBusRouteProps> = ({
 
                                                 <TextField
                                                     size="small"
-                                                    placeholder="Nhập địa điểm"
+                                                    placeholder="Nhập tên điểm"
                                                     value={stop.location}
                                                     onChange={(e) => {
                                                         const newStops = [
@@ -1051,6 +1102,25 @@ const CreateBusRoute: React.FC<CreateBusRouteProps> = ({
                                                         newStops[
                                                             index
                                                         ].location =
+                                                            e.target.value;
+                                                        formik.setFieldValue(
+                                                            "dropoffStops",
+                                                            newStops
+                                                        );
+                                                    }}
+                                                />
+                                                <TextField
+                                                    size="small"
+                                                    placeholder="Nhập địa chỉ chi tiết"
+                                                    value={stop.address || ""}
+                                                    onChange={(e) => {
+                                                        const newStops = [
+                                                            ...formik.values
+                                                                .dropoffStops,
+                                                        ];
+                                                        newStops[
+                                                            index
+                                                        ].address =
                                                             e.target.value;
                                                         formik.setFieldValue(
                                                             "dropoffStops",
@@ -1114,6 +1184,8 @@ const CreateBusRoute: React.FC<CreateBusRouteProps> = ({
                                                             backgroundColor:
                                                                 "error.lighter",
                                                         },
+                                                        width: 40,
+                                                        height: 40,
                                                     }}
                                                 >
                                                     <DeleteIcon fontSize="small" />

@@ -9,6 +9,7 @@ import {
     Paper,
     Avatar,
     Button,
+    Tooltip,
 } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import TranslateIcon from "@mui/icons-material/Translate";
@@ -91,6 +92,35 @@ const Details: React.FC<DetailsProps> = ({ scheduleId }) => {
 
     const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
         setTabIndex(newValue);
+    };
+
+    const groupCustomers = (customers: Customer[]) => {
+        const grouped = customers.reduce(
+            (acc: { [key: string]: Customer[] }, customer) => {
+                if (customer.customerName) {
+                    if (!acc[customer.customerName]) {
+                        acc[customer.customerName] = [];
+                    }
+                    acc[customer.customerName].push(customer);
+                }
+                return acc;
+            },
+            {}
+        );
+
+        return Object.entries(grouped).map(([name, customers]) => ({
+            customerName: name,
+            customerPhone: customers[0].customerPhone,
+            pickupLocation: customers[0].pickupLocation,
+            dropoffLocation: customers[0].dropoffLocation,
+            seatNumbers: customers.map((c) => c.seatNumber).join(", "),
+        }));
+    };
+
+    const truncateText = (text: string, maxLength: number = 30) => {
+        if (!text) return "";
+        if (text.length <= maxLength) return text;
+        return `${text.substring(0, maxLength)}...`;
     };
 
     useEffect(() => {
@@ -588,9 +618,7 @@ const Details: React.FC<DetailsProps> = ({ scheduleId }) => {
                                 sx={{
                                     textTransform: "none",
                                     bgcolor: "#1976d2",
-                                    "&:hover": {
-                                        bgcolor: "#1565c0",
-                                    },
+                                    "&:hover": { bgcolor: "#1565c0" },
                                 }}
                             >
                                 Tải xuống PDF
@@ -605,76 +633,132 @@ const Details: React.FC<DetailsProps> = ({ scheduleId }) => {
                                 border: "1px solid #e0e0e0",
                             }}
                         >
-                            {customers.map((customer, index) => (
+                            {/* Header */}
+                            <Box
+                                sx={{
+                                    display: "grid",
+                                    gridTemplateColumns:
+                                        "1.4fr 1fr 1.8fr 1.8fr 1fr",
+                                    gap: 2,
+                                    p: 2,
+                                    borderBottom: "2px solid #e0e0e0",
+                                    bgcolor: "#f5f5f5",
+                                }}
+                            >
+                                <Typography fontWeight={600}>
+                                    Họ và tên
+                                </Typography>
+                                <Typography fontWeight={600}>
+                                    Số điện thoại
+                                </Typography>
+                                <Typography fontWeight={600}>
+                                    Điểm đón
+                                </Typography>
+                                <Typography fontWeight={600}>
+                                    Điểm trả
+                                </Typography>
+                                <Typography fontWeight={600}>Số ghế</Typography>
+                            </Box>
+
+                            {/* Booked seats */}
+                            {groupCustomers(
+                                customers.filter((c) => c.customerName)
+                            ).map((customer, index) => (
                                 <Box
                                     key={index}
                                     sx={{
+                                        display: "grid",
+                                        gridTemplateColumns:
+                                            "1.5fr 1fr 2fr 2fr 1fr",
+                                        alignItems: "center",
+                                        gap: 2,
                                         p: 2,
                                         borderBottom:
                                             index === customers.length - 1
                                                 ? "none"
                                                 : "1px solid #e0e0e0",
                                         "&:hover": {
-                                            bgcolor: "rgba(0, 0, 0, 0.02)",
+                                            bgcolor: "rgba(0, 0, 0, 0.03)",
                                         },
+                                        transition:
+                                            "background-color 0.2s ease-in-out",
                                     }}
                                 >
-                                    <Box
+                                    {/* Tên khách hàng */}
+                                    <Typography
                                         sx={{
-                                            display: "flex",
-                                            alignItems: "center",
-                                            gap: 2,
-                                            mb: 1,
+                                            fontWeight: 500,
+                                            color: "text.primary",
+                                            whiteSpace: "nowrap",
+                                            overflow: "hidden",
+                                            textOverflow: "ellipsis",
                                         }}
                                     >
-                                        <Typography
-                                            variant="subtitle1"
-                                            fontWeight={600}
-                                        >
-                                            {customer.customerName}
-                                        </Typography>
+                                        {customer.customerName}
+                                    </Typography>
+
+                                    {/* Số điện thoại */}
+                                    <Typography
+                                        sx={{
+                                            color: "text.secondary",
+                                            fontSize: "0.95rem",
+                                        }}
+                                    >
+                                        {customer.customerPhone}
+                                    </Typography>
+
+                                    {/* Điểm đón */}
+                                    <Tooltip
+                                        title={customer.pickupLocation}
+                                        arrow
+                                        placement="top"
+                                    >
                                         <Typography
                                             sx={{
-                                                bgcolor: "primary.main",
-                                                color: "white",
-                                                px: 1,
-                                                py: 0.5,
-                                                borderRadius: 1,
-                                                fontSize: "0.875rem",
+                                                overflow: "hidden",
+                                                whiteSpace: "nowrap",
+                                                textOverflow: "ellipsis",
+                                                color: "text.secondary",
                                             }}
                                         >
-                                            Ghế {customer.seatNumber}
+                                            {truncateText(
+                                                customer.pickupLocation,
+                                                25
+                                            )}
                                         </Typography>
-                                    </Box>
-                                    <Box
-                                        sx={{
-                                            display: "flex",
-                                            flexDirection: "column",
-                                            gap: 0.5,
-                                        }}
+                                    </Tooltip>
+
+                                    {/* Điểm trả */}
+                                    <Tooltip
+                                        title={customer.dropoffLocation}
+                                        arrow
+                                        placement="top"
                                     >
                                         <Typography
-                                            variant="body2"
-                                            color="text.secondary"
+                                            sx={{
+                                                overflow: "hidden",
+                                                whiteSpace: "nowrap",
+                                                textOverflow: "ellipsis",
+                                                color: "text.secondary",
+                                            }}
                                         >
-                                            <strong>Số điện thoại:</strong>{" "}
-                                            {customer.customerPhone}
+                                            {truncateText(
+                                                customer.dropoffLocation,
+                                                25
+                                            )}
                                         </Typography>
-                                        <Typography
-                                            variant="body2"
-                                            color="text.secondary"
-                                        >
-                                            <strong>Điểm đón:</strong>{" "}
-                                            {customer.pickupLocation}
-                                        </Typography>
-                                        <Typography
-                                            variant="body2"
-                                            color="text.secondary"
-                                        >
-                                            <strong>Điểm trả:</strong>{" "}
-                                            {customer.dropoffLocation}
-                                        </Typography>
-                                    </Box>
+                                    </Tooltip>
+
+                                    {/* Ghế */}
+                                    <Typography
+                                        sx={{
+                                            color: "primary.main",
+                                            fontWeight: 600,
+                                            fontSize: "0.95rem",
+                                        }}
+                                    >
+                                        {customer.seatNumbers}
+                                    </Typography>
                                 </Box>
                             ))}
                         </Paper>

@@ -16,6 +16,27 @@ const initFont = (doc: jsPDF) => {
     doc.setFont("NotoSans");
 };
 
+const groupCustomers = (customers: Customer[]) => {
+    const grouped = customers.reduce((acc: { [key: string]: Customer[] }, customer) => {
+        if (customer.customerName) {
+            const key = `${customer.customerName}-${customer.customerPhone}`;
+            if (!acc[key]) {
+                acc[key] = [];
+            }
+            acc[key].push(customer);
+        }
+        return acc;
+    }, {});
+
+    return Object.values(grouped).map(customers => ({
+        customerName: customers[0].customerName,
+        customerPhone: customers[0].customerPhone,
+        seatNumbers: customers.map(c => c.seatNumber).join(", "),
+        pickupLocation: customers[0].pickupLocation,
+        dropoffLocation: customers[0].dropoffLocation,
+    }));
+};
+
 export const generateCustomerListPDF = (
     customers: Customer[],
     scheduleId: string
@@ -49,10 +70,12 @@ export const generateCustomerListPDF = (
         "Điểm trả",
     ];
 
-    const tableRows = customers.map((customer) => [
+    const groupedCustomers = groupCustomers(customers.filter(c => c.customerName));
+
+    const tableRows = groupedCustomers.map((customer) => [
         customer.customerName,
         customer.customerPhone,
-        customer.seatNumber.toString(),
+        customer.seatNumbers,
         customer.pickupLocation,
         customer.dropoffLocation,
     ]);
@@ -77,9 +100,9 @@ export const generateCustomerListPDF = (
         columnStyles: {
             0: { cellWidth: 60 }, // Họ và tên
             1: { cellWidth: 35, halign: "center" }, // Số điện thoại
-            2: { cellWidth: 20, halign: "center" }, // Số ghế
-            3: { cellWidth: 85 }, // Điểm đón
-            4: { cellWidth: 85 }, // Điểm trả
+            2: { cellWidth: 25, halign: "center" }, // Số ghế (slightly wider for multiple seats)
+            3: { cellWidth: 82 }, // Điểm đón (adjusted width)
+            4: { cellWidth: 82 },
         },
         didDrawPage: (data) => {
             doc.setFontSize(8);

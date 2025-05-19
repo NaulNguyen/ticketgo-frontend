@@ -175,7 +175,6 @@ const SearchingPage = () => {
                         const seatsResponse = await axios.get(
                             `https://ticketgo.site/api/v1/seats?scheduleId=${route.scheduleId}`
                         );
-                        console.log("Seats response:", seatsResponse.data);
                         if (seatsResponse.data.status === 200) {
                             const availableSeats = countAvailableSeats(
                                 seatsResponse.data.data
