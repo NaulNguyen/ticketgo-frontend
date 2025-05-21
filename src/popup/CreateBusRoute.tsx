@@ -34,6 +34,10 @@ import LocationOnIcon from "@mui/icons-material/LocationOn";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import DeleteIcon from "@mui/icons-material/Delete";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
+import CreateEditRoute from "./CreateEditRoute";
+import EditIcon from "@mui/icons-material/Edit";
+import AddIcon from "@mui/icons-material/Add";
+import ScheduleDialog from "./ScheduleDialog";
 
 interface CreateBusRouteProps {
     open: boolean;
@@ -93,6 +97,28 @@ interface ScheduleRequest {
     dropoffStops: Stop[];
 }
 
+interface ScheduleByDay {
+    scheduleId: number;
+    routeName: string;
+    departureTime: string;
+    arrivalTime: string;
+}
+
+interface ScheduleResponse {
+    busId?: number;
+    driverId?: number;
+    month: string;
+    schedulesByDay: {
+        [key: string]: ScheduleByDay[];
+    };
+}
+
+interface ScheduleDialogState {
+    open: boolean;
+    type: "bus" | "driver";
+    data: ScheduleResponse | null;
+}
+
 const CreateBusRoute: React.FC<CreateBusRouteProps> = ({
     open,
     onClose,
@@ -101,6 +127,13 @@ const CreateBusRoute: React.FC<CreateBusRouteProps> = ({
     const [buses, setBuses] = useState<Bus[]>([]);
     const [drivers, setDrivers] = useState<Driver[]>([]);
     const [routes, setRoutes] = useState<Route[]>([]);
+    const [isRouteDialogOpen, setIsRouteDialogOpen] = useState(false);
+    const [selectedRoute, setSelectedRoute] = useState<Route | null>(null);
+    const [scheduleDialog, setScheduleDialog] = useState<ScheduleDialogState>({
+        open: false,
+        type: "bus",
+        data: null,
+    });
 
     const handleClose = () => {
         formik.resetForm();
@@ -118,6 +151,30 @@ const CreateBusRoute: React.FC<CreateBusRouteProps> = ({
             .minute(time.minute())
             .second(0)
             .millisecond(0);
+    };
+
+    const handleMonthChange = async (month: string) => {
+        const type = scheduleDialog.type;
+        const id =
+            type === "bus" ? formik.values.busId : formik.values.driverId;
+
+        if (!id) return;
+
+        try {
+            const response = await axiosWithJWT.get<ScheduleResponse>(
+                `/api/v1/schedules/${type}/${id}?month=${month}`
+            );
+
+            setScheduleDialog((prev) => ({
+                ...prev,
+                data: response.data,
+            }));
+        } catch (error) {
+            console.error(`Error fetching ${type} schedule:`, error);
+            toast.error(
+                `Không thể tải lịch ${type === "bus" ? "xe" : "tài xế"}`
+            );
+        }
     };
 
     const formik = useFormik({
@@ -301,6 +358,32 @@ const CreateBusRoute: React.FC<CreateBusRouteProps> = ({
         }
     };
 
+    const fetchSchedules = async (type: "bus" | "driver", id: number) => {
+        if (!formik.values.departureTime) {
+            toast.error("Vui lòng chọn thời gian khởi hành trước");
+            return;
+        }
+
+        const month = dayjs(formik.values.departureTime).format("YYYY-MM");
+
+        try {
+            const response = await axiosWithJWT.get<ScheduleResponse>(
+                `/api/v1/schedules/${type}/${id}?month=${month}`
+            );
+
+            setScheduleDialog({
+                open: true,
+                type,
+                data: response.data,
+            });
+        } catch (error) {
+            console.error(`Error fetching ${type} schedule:`, error);
+            toast.error(
+                `Không thể tải lịch ${type === "bus" ? "xe" : "tài xế"}`
+            );
+        }
+    };
+
     return (
         <Dialog
             open={open}
@@ -351,68 +434,189 @@ const CreateBusRoute: React.FC<CreateBusRouteProps> = ({
                                     gap: 3,
                                 }}
                             >
-                                <FormControl fullWidth>
-                                    <InputLabel>Chọn chuyến</InputLabel>
-                                    <Select
-                                        name="routeId"
-                                        value={formik.values.routeId}
-                                        onChange={formik.handleChange}
-                                        error={
-                                            formik.touched.routeId &&
-                                            Boolean(formik.errors.routeId)
-                                        }
-                                        label="Chọn chuyến"
-                                        MenuProps={{
-                                            PaperProps: {
-                                                sx: { maxHeight: 450 },
-                                            },
-                                        }}
-                                    >
-                                        {routes.map((route) => (
-                                            <MenuItem
-                                                key={route.routeId}
-                                                value={route.routeId}
-                                                sx={{ py: 1.5 }}
-                                            >
-                                                <Box
+                                <Box sx={{ width: "100%" }}>
+                                    <FormControl fullWidth>
+                                        <InputLabel>Chọn chuyến</InputLabel>
+                                        <Select
+                                            name="routeId"
+                                            value={formik.values.routeId}
+                                            onChange={formik.handleChange}
+                                            error={
+                                                formik.touched.routeId &&
+                                                Boolean(formik.errors.routeId)
+                                            }
+                                            label="Chọn chuyến"
+                                            MenuProps={{
+                                                PaperProps: {
+                                                    sx: { maxHeight: 450 },
+                                                },
+                                            }}
+                                        >
+                                            {routes.map((route) => (
+                                                <MenuItem
+                                                    key={route.routeId}
+                                                    value={route.routeId}
                                                     sx={{
-                                                        display: "flex",
-                                                        alignItems: "center",
-                                                        gap: 2,
-                                                        width: "100%",
+                                                        py: 2,
+                                                        "&:hover": {
+                                                            bgcolor:
+                                                                "action.hover",
+                                                        },
                                                     }}
                                                 >
-                                                    <img
-                                                        src={route.routeImage}
-                                                        alt={route.routeName}
-                                                        style={{
-                                                            width: 80,
-                                                            height: 60,
-                                                            borderRadius: 8,
-                                                            objectFit: "cover",
+                                                    <Box
+                                                        sx={{
+                                                            display: "flex",
+                                                            alignItems:
+                                                                "center",
+                                                            gap: 2,
+                                                            width: "100%",
                                                         }}
-                                                    />
-                                                    <Box sx={{ flex: 1 }}>
-                                                        <Typography
-                                                            variant="subtitle1"
+                                                    >
+                                                        <Box
                                                             sx={{
-                                                                fontWeight: 600,
+                                                                width: 80,
+                                                                height: 60,
+                                                                borderRadius: 2,
+                                                                overflow:
+                                                                    "hidden",
+                                                                flexShrink: 0,
+                                                                border: "1px solid",
+                                                                borderColor:
+                                                                    "divider",
                                                             }}
                                                         >
-                                                            {route.routeName}
-                                                        </Typography>
+                                                            <img
+                                                                src={
+                                                                    route.routeImage
+                                                                }
+                                                                alt={
+                                                                    route.routeName
+                                                                }
+                                                                style={{
+                                                                    width: "100%",
+                                                                    height: "100%",
+                                                                    objectFit:
+                                                                        "cover",
+                                                                }}
+                                                            />
+                                                        </Box>
+                                                        <Box sx={{ flex: 1 }}>
+                                                            <Typography
+                                                                variant="subtitle1"
+                                                                sx={{
+                                                                    fontWeight: 600,
+                                                                    mb: 0.5,
+                                                                }}
+                                                            >
+                                                                {
+                                                                    route.routeName
+                                                                }
+                                                            </Typography>
+                                                        </Box>
                                                     </Box>
-                                                </Box>
-                                            </MenuItem>
-                                        ))}
-                                    </Select>
-                                    {formik.touched.routeId &&
-                                        formik.errors.routeId && (
-                                            <FormHelperText error>
-                                                {formik.errors.routeId}
-                                            </FormHelperText>
+                                                </MenuItem>
+                                            ))}
+                                        </Select>
+                                        {formik.touched.routeId &&
+                                            formik.errors.routeId && (
+                                                <FormHelperText error>
+                                                    {formik.errors.routeId}
+                                                </FormHelperText>
+                                            )}
+                                    </FormControl>
+
+                                    <Box
+                                        sx={{
+                                            display: "flex",
+                                            gap: 2,
+                                            mt: 2,
+                                            justifyContent: "flex-end",
+                                        }}
+                                    >
+                                        <Button
+                                            startIcon={<AddIcon />}
+                                            onClick={() => {
+                                                setSelectedRoute(null);
+                                                setIsRouteDialogOpen(true);
+                                            }}
+                                            variant="outlined"
+                                            size="small"
+                                            sx={{
+                                                textTransform: "none",
+                                                borderRadius: 1,
+                                            }}
+                                        >
+                                            Thêm tuyến mới
+                                        </Button>
+
+                                        {formik.values.routeId && (
+                                            <Button
+                                                startIcon={<EditIcon />}
+                                                onClick={() => {
+                                                    const selectedRoute =
+                                                        routes.find(
+                                                            (r) =>
+                                                                r.routeId ===
+                                                                Number(
+                                                                    formik
+                                                                        .values
+                                                                        .routeId
+                                                                )
+                                                        );
+                                                    setSelectedRoute(
+                                                        selectedRoute || null
+                                                    );
+                                                    setIsRouteDialogOpen(true);
+                                                }}
+                                                variant="outlined"
+                                                color="primary"
+                                                size="small"
+                                                sx={{
+                                                    textTransform: "none",
+                                                    borderRadius: 1,
+                                                }}
+                                            >
+                                                Sửa ảnh tuyến
+                                            </Button>
                                         )}
-                                </FormControl>
+                                    </Box>
+
+                                    <CreateEditRoute
+                                        open={isRouteDialogOpen}
+                                        onClose={() => {
+                                            setIsRouteDialogOpen(false);
+                                            setSelectedRoute(null);
+                                        }}
+                                        onSuccess={async () => {
+                                            try {
+                                                const response =
+                                                    await axiosWithJWT.get<
+                                                        ApiResponse<Route>
+                                                    >("/api/v1/routes");
+                                                if (
+                                                    response.data.status === 200
+                                                ) {
+                                                    setRoutes(
+                                                        response.data.data
+                                                    );
+                                                    toast.success(
+                                                        "Cập nhật danh sách tuyến thành công"
+                                                    );
+                                                }
+                                            } catch (error) {
+                                                console.error(
+                                                    "Error fetching routes:",
+                                                    error
+                                                );
+                                                toast.error(
+                                                    "Không thể tải danh sách tuyến. Vui lòng thử lại sau."
+                                                );
+                                            }
+                                        }}
+                                        route={selectedRoute}
+                                    />
+                                </Box>
 
                                 <FormControl fullWidth>
                                     <InputLabel>Chọn xe</InputLabel>
@@ -503,6 +707,37 @@ const CreateBusRoute: React.FC<CreateBusRouteProps> = ({
                                             </FormHelperText>
                                         )}
                                 </FormControl>
+                                <Box
+                                    sx={{
+                                        display: "flex",
+                                        justifyContent: "flex-end",
+                                        gap: 2,
+                                    }}
+                                >
+                                    {formik.values.busId &&
+                                        formik.values.departureTime && (
+                                            <Button
+                                                variant="outlined"
+                                                onClick={() =>
+                                                    fetchSchedules(
+                                                        "bus",
+                                                        Number(
+                                                            formik.values.busId
+                                                        )
+                                                    )
+                                                }
+                                                startIcon={
+                                                    <CalendarTodayIcon />
+                                                }
+                                                size="small"
+                                                sx={{
+                                                    textTransform: "none",
+                                                }}
+                                            >
+                                                Xem lịch xe
+                                            </Button>
+                                        )}
+                                </Box>
 
                                 <FormControl fullWidth>
                                     <InputLabel>Chọn tài xế</InputLabel>
@@ -599,6 +834,38 @@ const CreateBusRoute: React.FC<CreateBusRouteProps> = ({
                                             </FormHelperText>
                                         )}
                                 </FormControl>
+                                <Box
+                                    sx={{
+                                        display: "flex",
+                                        justifyContent: "flex-end",
+                                        gap: 2,
+                                    }}
+                                >
+                                    {formik.values.driverId &&
+                                        formik.values.departureTime && (
+                                            <Button
+                                                variant="outlined"
+                                                onClick={() =>
+                                                    fetchSchedules(
+                                                        "driver",
+                                                        Number(
+                                                            formik.values
+                                                                .driverId
+                                                        )
+                                                    )
+                                                }
+                                                startIcon={
+                                                    <CalendarTodayIcon />
+                                                }
+                                                size="small"
+                                                sx={{
+                                                    textTransform: "none",
+                                                }}
+                                            >
+                                                Xem lịch tài xế
+                                            </Button>
+                                        )}
+                                </Box>
 
                                 <Box
                                     sx={{
@@ -1198,6 +1465,21 @@ const CreateBusRoute: React.FC<CreateBusRouteProps> = ({
                         </Grid>
                     </Grid>
                 </DialogContent>
+
+                <ScheduleDialog
+                    open={scheduleDialog.open}
+                    onClose={() =>
+                        setScheduleDialog((prev) => ({ ...prev, open: false }))
+                    }
+                    type={scheduleDialog.type}
+                    scheduleData={scheduleDialog.data}
+                    selectedDate={
+                        formik.values.departureTime
+                            ? dayjs(formik.values.departureTime).toDate()
+                            : dayjs().toDate()
+                    }
+                    onMonthChange={handleMonthChange}
+                />
 
                 <DialogActions sx={{ p: 2.5, gap: 1 }}>
                     <Button

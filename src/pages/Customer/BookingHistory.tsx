@@ -8,12 +8,12 @@ import CancelBookingDialog from "../../popup/CancleBookingDialog";
 import { axiosWithJWT } from "../../config/axiosConfig";
 import { useSnackbar } from "notistack";
 import { formatPrice } from "../../utils/formatPrice";
-import { center } from "@cloudinary/url-gen/qualifiers/textAlignment";
 
 const BookingHistory = () => {
     const [bookingHistoryData, setBookingHistoryData] = useState<
         BookingHistoryItem[]
     >([]);
+    console.log(bookingHistoryData);
     const [selectedBooking, setSelectedBooking] =
         useState<BookingHistoryItem | null>(null);
     const [openCancelDialog, setOpenCancelDialog] = useState(false);
@@ -421,9 +421,16 @@ const BookingHistory = () => {
                                     <Divider sx={{ my: 3 }} />
 
                                     {/* ==== Thông tin xe & liên lạc ==== */}
-                                    <Grid container spacing={4}>
+                                    <Grid container spacing={1}>
                                         {/* Thông tin xe */}
-                                        <Grid item md={5.5}>
+                                        <Grid
+                                            item
+                                            md={
+                                                booking.status !== "Đã hủy"
+                                                    ? 5
+                                                    : 6
+                                            }
+                                        >
                                             <Typography
                                                 variant="subtitle1"
                                                 fontWeight={600}
@@ -487,7 +494,7 @@ const BookingHistory = () => {
                                         </Grid>
                                         <Grid
                                             item
-                                            md={1}
+                                            md={0.5}
                                             sx={{
                                                 display: "flex",
                                                 justifyContent: "center",
@@ -505,7 +512,14 @@ const BookingHistory = () => {
                                             />
                                         </Grid>
                                         {/* Thông tin liên hệ */}
-                                        <Grid item md={5.5}>
+                                        <Grid
+                                            item
+                                            md={
+                                                booking.status !== "Đã hủy"
+                                                    ? 3
+                                                    : 5.5
+                                            }
+                                        >
                                             <Typography
                                                 variant="subtitle1"
                                                 fontWeight={600}
@@ -568,6 +582,65 @@ const BookingHistory = () => {
                                                 </Typography>
                                             </Box>
                                         </Grid>
+                                        {/* Thông tin tài xế */}
+                                        {booking.status !== "Đã hủy" && (
+                                            <>
+                                                <Grid
+                                                    item
+                                                    md={0.5}
+                                                    sx={{
+                                                        display: "flex",
+                                                        justifyContent:
+                                                            "center",
+                                                    }}
+                                                >
+                                                    <Divider
+                                                        orientation="vertical"
+                                                        flexItem
+                                                        sx={{
+                                                            height: "100%",
+                                                            borderRightWidth: 2,
+                                                            borderColor:
+                                                                "rgba(0, 0, 0, 0.1)",
+                                                        }}
+                                                    />
+                                                </Grid>
+                                                <Grid item md={3}>
+                                                    <Typography
+                                                        variant="subtitle1"
+                                                        fontWeight={600}
+                                                        color="primary"
+                                                        mb={2}
+                                                        textAlign="center"
+                                                    >
+                                                        Thông tin tài xế
+                                                    </Typography>
+                                                    <Box sx={{ pl: 2 }}>
+                                                        <Typography
+                                                            fontWeight="bold"
+                                                            mb={1}
+                                                        >
+                                                            <span className="font-thin">
+                                                                Tên tài xế:{" "}
+                                                            </span>{" "}
+                                                            {booking.driverName}
+                                                        </Typography>
+                                                        <Typography
+                                                            fontWeight="bold"
+                                                            mb={1}
+                                                        >
+                                                            <span className="font-thin">
+                                                                Số điện thoại
+                                                                tài xế:{" "}
+                                                            </span>{" "}
+                                                            {
+                                                                booking.driverPhone
+                                                            }
+                                                        </Typography>
+                                                    </Box>
+                                                </Grid>
+                                            </>
+                                        )}
                                     </Grid>
                                 </Box>
 

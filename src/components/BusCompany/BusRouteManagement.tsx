@@ -18,6 +18,7 @@ import CreateBusRoute from "../../popup/CreateBusRoute";
 import axios from "axios";
 import { toast } from "react-toastify";
 import Search from "../Customer/Search";
+import { StatusUpdate } from "../../utils/StatusUpdate";
 
 interface BusRoute {
     scheduleId: string;
@@ -34,6 +35,7 @@ interface BusRoute {
     price: number;
     availableSeats: number;
     travelDuration: string;
+    scheduleStatus: string;
 }
 
 interface SearchResult {
@@ -260,21 +262,32 @@ const BusRouteManagement = () => {
                                             {result.busType}
                                         </Typography>
                                     </div>
-                                    <Typography
-                                        className="font-bold text-xl"
-                                        style={{
-                                            color: "rgb(36, 116, 229)",
-                                            fontWeight: 700,
-                                            fontSize: "20px",
-                                            marginBottom: "30px",
-                                        }}
-                                    >
-                                        {new Intl.NumberFormat("vi-VN", {
-                                            style: "currency",
-                                            currency: "VND",
-                                        }).format(result.price)}
-                                    </Typography>
+                                    <div className="flex flex-col items-end">
+                                        <StatusUpdate
+                                            currentStatus={
+                                                result.scheduleStatus
+                                            }
+                                            scheduleId={result.scheduleId}
+                                            onStatusUpdate={() =>
+                                                fetchRoutes(currentSearchParams)
+                                            }
+                                        />
+                                        <Typography
+                                            className="font-bold text-xl"
+                                            style={{
+                                                color: "rgb(36, 116, 229)",
+                                                fontWeight: 700,
+                                                fontSize: "20px",
+                                            }}
+                                        >
+                                            {new Intl.NumberFormat("vi-VN", {
+                                                style: "currency",
+                                                currency: "VND",
+                                            }).format(result.price)}
+                                        </Typography>
+                                    </div>
                                 </Box>
+
                                 <Box
                                     display="flex"
                                     justifyContent="space-between"
@@ -289,7 +302,7 @@ const BusRouteManagement = () => {
                                             <Typography className="text-xl font-bold">
                                                 {dayjs(
                                                     result.departureTime
-                                                ).format("HH:mm")}
+                                                ).format("HH:mm DD/MM/YYYY")}
                                                 <span className="mx-1 font-normal text-base">
                                                     • {result.departureLocation}
                                                 </span>
@@ -300,7 +313,7 @@ const BusRouteManagement = () => {
                                             <Typography className="text-xl font-bold text-gray-500">
                                                 {dayjs(
                                                     result.arrivalTime
-                                                ).format("HH:mm")}
+                                                ).format("HH:mm DD/MM/YYYY")}
                                                 <span className="mx-1 font-normal text-base">
                                                     • {result.arrivalLocation}
                                                 </span>

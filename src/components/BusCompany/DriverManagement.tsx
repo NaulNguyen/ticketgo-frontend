@@ -29,6 +29,9 @@ import AddIcon from "@mui/icons-material/Add";
 import CreateDriverPopup from "../../popup/CreateDriverPopup";
 import EditDriverPopup from "../../popup/EditDriverPopup";
 import WarningIcon from "@mui/icons-material/Warning";
+import EventIcon from "@mui/icons-material/Event";
+import dayjs from "dayjs";
+import ScheduleDialog from "../../popup/ScheduleDialog";
 
 interface Driver {
     driverId: number;
@@ -52,6 +55,21 @@ interface DriverResponse {
     pagination: Pagination;
 }
 
+interface ScheduleByDay {
+    scheduleId: number;
+    routeName: string;
+    departureTime: string;
+    arrivalTime: string;
+}
+
+interface ScheduleResponse {
+    driverId?: number;
+    month: string;
+    schedulesByDay: {
+        [key: string]: ScheduleByDay[];
+    };
+}
+
 const DriverManagement = () => {
     const [drivers, setDrivers] = useState<Driver[]>([]);
     const [loading, setLoading] = useState(true);
@@ -65,6 +83,18 @@ const DriverManagement = () => {
     );
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [driverToDelete, setDriverToDelete] = useState<Driver | null>(null);
+
+    const [scheduleDialog, setScheduleDialog] = useState<{
+        open: boolean;
+        driverId: number | null;
+        data: ScheduleResponse | null;
+        selectedDate: Date;
+    }>({
+        open: false,
+        driverId: null,
+        data: null,
+        selectedDate: dayjs().toDate(),
+    });
 
     const fetchDrivers = async () => {
         setLoading(true);
@@ -82,6 +112,44 @@ const DriverManagement = () => {
             toast.error("Không thể tải danh sách tài xế");
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleViewSchedule = async (driverId: number) => {
+        try {
+            const currentMonth = dayjs().format("YYYY-MM");
+            const response = await axiosWithJWT.get<ScheduleResponse>(
+                `/api/v1/schedules/driver/${driverId}?month=${currentMonth}`
+            );
+
+            setScheduleDialog({
+                open: true,
+                driverId,
+                data: response.data,
+                selectedDate: dayjs().toDate(),
+            });
+        } catch (error) {
+            console.error("Error fetching driver schedule:", error);
+            toast.error("Không thể tải lịch tài xế");
+        }
+    };
+
+    const handleMonthChange = async (month: string) => {
+        if (!scheduleDialog.driverId) return;
+
+        try {
+            const response = await axiosWithJWT.get<ScheduleResponse>(
+                `/api/v1/schedules/driver/${scheduleDialog.driverId}?month=${month}`
+            );
+
+            setScheduleDialog((prev) => ({
+                ...prev,
+                data: response.data,
+                selectedDate: dayjs(month).toDate(),
+            }));
+        } catch (error) {
+            console.error("Error fetching driver schedule:", error);
+            toast.error("Không thể tải lịch tài xế");
         }
     };
 
@@ -313,6 +381,25 @@ const DriverManagement = () => {
                                                     gap: 1,
                                                 }}
                                             >
+                                                <Tooltip title="Xem lịch">
+                                                    <IconButton
+                                                        onClick={() =>
+                                                            handleViewSchedule(
+                                                                driver.driverId
+                                                            )
+                                                        }
+                                                        sx={{
+                                                            color: "#1976d2",
+                                                            "&:hover": {
+                                                                backgroundColor:
+                                                                    "#1976d2",
+                                                                color: "white",
+                                                            },
+                                                        }}
+                                                    >
+                                                        <EventIcon />
+                                                    </IconButton>
+                                                </Tooltip>
                                                 <Tooltip title="Chỉnh sửa">
                                                     <IconButton
                                                         onClick={() =>
@@ -466,6 +553,21 @@ const DriverManagement = () => {
                     </Button>
                 </DialogActions>
             </Dialog>
+            <ScheduleDialog
+                open={scheduleDialog.open}
+                onClose={() =>
+                    setScheduleDialog({
+                        open: false,
+                        driverId: null,
+                        data: null,
+                        selectedDate: dayjs().toDate(),
+                    })
+                }
+                type="driver"
+                scheduleData={scheduleDialog.data}
+                selectedDate={scheduleDialog.selectedDate}
+                onMonthChange={handleMonthChange}
+            />
         </Container>
     );
 };

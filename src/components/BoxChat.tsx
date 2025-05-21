@@ -67,14 +67,28 @@ const BoxChat = () => {
 
         client.onConnect = () => {
             console.log("✅ Connected to STOMP");
-            client.subscribe(`/topic/chat-${info.user.userId}`, (message) => {
-                try {
-                    const newMessage = JSON.parse(message.body);
-                    setMessages((prev) => [...prev, newMessage]);
-                } catch (err) {
-                    console.error("Error parsing message:", err);
+            client.subscribe(
+                `/topic/chat-${info.user.userId}`,
+                async (message) => {
+                    try {
+                        const newMessage = JSON.parse(message.body);
+
+                        // Fetch complete message history after receiving new message
+                        const updatedMessages = await fetchMessageHistory(info);
+                        setMessages(updatedMessages);
+
+                        // Scroll to bottom after updating messages
+                        requestAnimationFrame(() => {
+                            if (chatBoxRef.current) {
+                                chatBoxRef.current.scrollTop =
+                                    chatBoxRef.current.scrollHeight;
+                            }
+                        });
+                    } catch (err) {
+                        console.error("Error handling message:", err);
+                    }
                 }
-            });
+            );
         };
 
         client.onStompError = (frame) => {
@@ -89,24 +103,34 @@ const BoxChat = () => {
         };
     }, [shouldShowChat]);
 
+    const fetchMessageHistory = async (userInfo: any) => {
+        try {
+            const response = await axiosWithJWT.get(`/api/v1/messages`, {
+                params: {
+                    senderId: userInfo.user.userId,
+                    receiverId: 1,
+                },
+            });
+
+            return response.data.data.messages;
+        } catch (error) {
+            console.error("Error fetching messages:", error);
+            return [];
+        }
+    };
+
     // Fetch message history when chat is opened
     useEffect(() => {
         if (isOpen) {
-            const fetchMessages = async () => {
+            const fetchInitialMessages = async () => {
                 const userInfo = getUserInfor();
                 if (!userInfo || !isOpen || !isInitialFetch) return;
 
                 setIsLoading(true);
-
                 try {
-                    const response = await axiosWithJWT.get(
-                        `/api/v1/messages?senderId=${userInfo.user.userId}&receiverId=1`
-                    );
+                    const messages = await fetchMessageHistory(userInfo);
+                    setMessages(messages);
 
-                    // Set messages without triggering scroll
-                    setMessages(response.data.data.messages);
-
-                    // Use requestAnimationFrame to ensure DOM is updated
                     requestAnimationFrame(() => {
                         if (chatBoxRef.current) {
                             chatBoxRef.current.scrollTop =
@@ -116,12 +140,12 @@ const BoxChat = () => {
 
                     setIsInitialFetch(false);
                 } catch (error) {
-                    console.error("Error fetching messages:", error);
+                    console.error("Error fetching initial messages:", error);
                 } finally {
                     setIsLoading(false);
                 }
             };
-            fetchMessages();
+            fetchInitialMessages();
         }
     }, [isOpen, isInitialFetch]);
 
@@ -152,6 +176,9 @@ const BoxChat = () => {
                 receiverId: 1, // Admin ID
                 content: message.trim(),
             });
+            const updatedMessages = await fetchMessageHistory(userInfo);
+            setMessages(updatedMessages);
+
             setMessage("");
         } catch (error) {
             console.error("Error sending message:", error);

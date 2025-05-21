@@ -84,4 +84,6 @@ export interface BookingHistoryItem {
   refundStatus: string | null;
   refundReason: string | null;
   refundDate: string | null;
+  driverName: string | null;
+  driverPhone: string | null;
 }

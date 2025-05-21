@@ -33,6 +33,24 @@ import EditBusPopup from "../../popup/EditBusPopup";
 import { toast } from "react-toastify";
 import WarningIcon from "@mui/icons-material/Warning";
 import CloseIcon from "@mui/icons-material/Close";
+import { axiosWithJWT } from "../../config/axiosConfig";
+import ScheduleDialog from "../../popup/ScheduleDialog";
+import dayjs from "dayjs";
+
+interface ScheduleByDay {
+    scheduleId: number;
+    routeName: string;
+    departureTime: string;
+    arrivalTime: string;
+}
+
+interface ScheduleResponse {
+    busId?: number;
+    month: string;
+    schedulesByDay: {
+        [key: string]: ScheduleByDay[];
+    };
+}
 
 const BusManagement = () => {
     const [buses, setBuses] = useState<Bus[]>([]);
@@ -45,6 +63,18 @@ const BusManagement = () => {
     const [selectedBusId, setSelectedBusId] = useState<string | null>(null);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [busToDelete, setBusToDelete] = useState<Bus | null>(null);
+
+    const [scheduleDialog, setScheduleDialog] = useState<{
+        open: boolean;
+        busId: string | null;
+        data: ScheduleResponse | null;
+        selectedDate: Date;
+    }>({
+        open: false,
+        busId: null,
+        data: null,
+        selectedDate: dayjs().toDate(),
+    });
 
     const handleOpenCreatePopup = () => setIsCreatePopupOpen(true);
     const handleCloseCreatePopup = () => setIsCreatePopupOpen(false);
@@ -67,6 +97,48 @@ const BusManagement = () => {
     const handleCloseDeleteDialog = () => {
         setBusToDelete(null);
         setIsDeleteDialogOpen(false);
+    };
+
+    const handleMonthChange = async (month: string) => {
+        if (!scheduleDialog.busId) return;
+
+        try {
+            const response = await axiosWithJWT.get<ScheduleResponse>(
+                `/api/v1/schedules/bus/${scheduleDialog.busId}?month=${month}`
+            );
+
+            setScheduleDialog((prev) => ({
+                ...prev,
+                data: response.data,
+                selectedDate: dayjs(month).toDate(), // Cập nhật selectedDate khi thay đổi tháng
+            }));
+        } catch (error) {
+            console.error("Error fetching bus schedule:", error);
+            toast.error("Không thể tải lịch xe");
+        }
+    };
+
+    const handleViewSchedule = async (busId: string) => {
+        try {
+            const currentMonth = dayjs().format("YYYY-MM");
+            const response = await axiosWithJWT.get<ScheduleResponse>(
+                `/api/v1/schedules/bus/${busId}?month=${currentMonth}`
+            );
+
+            if (response.data) {
+                setScheduleDialog({
+                    open: true,
+                    busId,
+                    data: response.data,
+                    selectedDate: dayjs().toDate(), // Set initial date
+                });
+            }
+        } catch (error: any) {
+            console.error("Error fetching bus schedule:", error);
+            toast.error(
+                error.response?.data?.message || "Không thể tải lịch xe"
+            );
+        }
     };
 
     const fetchBuses = async () => {
@@ -233,6 +305,28 @@ const BusManagement = () => {
                                             <Box
                                                 sx={{ display: "flex", gap: 1 }}
                                             >
+                                                <Tooltip title="Xem lịch xe">
+                                                    <IconButton
+                                                        sx={{
+                                                            color: "#1976d2",
+                                                            border: "1px solid #1976d2",
+                                                            borderRadius: "8px",
+                                                            p: 1,
+                                                            "&:hover": {
+                                                                backgroundColor:
+                                                                    "#1976d2",
+                                                                color: "white",
+                                                            },
+                                                        }}
+                                                        onClick={() =>
+                                                            handleViewSchedule(
+                                                                bus.busId
+                                                            )
+                                                        }
+                                                    >
+                                                        <EventIcon />
+                                                    </IconButton>
+                                                </Tooltip>
                                                 <Tooltip title="Chỉnh sửa thông tin xe">
                                                     <IconButton
                                                         sx={{
@@ -429,6 +523,21 @@ const BusManagement = () => {
                     }}
                 />
             </Box>
+            <ScheduleDialog
+                open={scheduleDialog.open}
+                onClose={() =>
+                    setScheduleDialog({
+                        open: false,
+                        busId: null,
+                        data: null,
+                        selectedDate: dayjs().toDate(),
+                    })
+                }
+                type="bus"
+                scheduleData={scheduleDialog.data}
+                selectedDate={scheduleDialog.selectedDate}
+                onMonthChange={handleMonthChange}
+            />
             <EditBusPopup
                 open={isEditPopupOpen}
                 onClose={handleCloseEditPopup}
