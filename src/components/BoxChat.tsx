@@ -35,6 +35,7 @@ const BoxChat = () => {
     const chatBoxRef = useRef<HTMLDivElement>(null);
     const [isInitialFetch, setIsInitialFetch] = useState(true);
     const [isLoading, setIsLoading] = useState(false);
+    const [isConnected, setIsConnected] = useState(false);
 
     // Check if user is logged in and not a BUS_COMPANY
     const userInfo = getUserInfor();
@@ -67,23 +68,19 @@ const BoxChat = () => {
 
         client.onConnect = () => {
             console.log("✅ Connected to STOMP");
+            setIsConnected(true);
             client.subscribe(
                 `/topic/chat-${info.user.userId}`,
                 async (message) => {
                     try {
                         const newMessage = JSON.parse(message.body);
-
-                        // Fetch complete message history after receiving new message
                         const updatedMessages = await fetchMessageHistory(info);
                         setMessages(updatedMessages);
 
-                        // Scroll to bottom after updating messages
-                        requestAnimationFrame(() => {
-                            if (chatBoxRef.current) {
-                                chatBoxRef.current.scrollTop =
-                                    chatBoxRef.current.scrollHeight;
-                            }
-                        });
+                        if (chatBoxRef.current) {
+                            chatBoxRef.current.scrollTop =
+                                chatBoxRef.current.scrollHeight;
+                        }
                     } catch (err) {
                         console.error("Error handling message:", err);
                     }
@@ -93,31 +90,62 @@ const BoxChat = () => {
 
         client.onStompError = (frame) => {
             console.error("❌ STOMP error:", frame);
+            setIsConnected(false);
         };
 
         client.activate();
         stompClient.current = client;
 
         return () => {
+            setIsConnected(false);
             client.deactivate();
         };
     }, [shouldShowChat]);
 
     const fetchMessageHistory = async (userInfo: any) => {
         try {
+            setIsLoading(true);
             const response = await axiosWithJWT.get(`/api/v1/messages`, {
                 params: {
                     senderId: userInfo.user.userId,
                     receiverId: 1,
                 },
             });
-
             return response.data.data.messages;
         } catch (error) {
             console.error("Error fetching messages:", error);
             return [];
+        } finally {
+            setIsLoading(false);
         }
     };
+
+    useEffect(() => {
+        const userInfo = getUserInfor();
+        if (!userInfo || !isOpen) return;
+
+        // Initial fetch
+        const fetchAndUpdateMessages = async () => {
+            try {
+                const messages = await fetchMessageHistory(userInfo);
+                setMessages(messages);
+
+                if (chatBoxRef.current) {
+                    chatBoxRef.current.scrollTop =
+                        chatBoxRef.current.scrollHeight;
+                }
+            } catch (error) {
+                console.error("Error fetching messages:", error);
+            }
+        };
+
+        fetchAndUpdateMessages();
+
+        const intervalId = setInterval(fetchAndUpdateMessages, 3000);
+        return () => {
+            clearInterval(intervalId);
+        };
+    }, [isOpen, isConnected]);
 
     // Fetch message history when chat is opened
     useEffect(() => {
@@ -146,6 +174,8 @@ const BoxChat = () => {
                 }
             };
             fetchInitialMessages();
+            const intervalId = setInterval(fetchInitialMessages, 2000);
+            return () => clearInterval(intervalId);
         }
     }, [isOpen, isInitialFetch]);
 
@@ -186,9 +216,14 @@ const BoxChat = () => {
     };
 
     const formatMessageTime = (dateString: string) => {
-        return format(new Date(dateString), "HH:mm, dd/MM/yyyy", {
-            locale: vi,
-        });
+        try {
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) return "Thời gian không hợp lệ";
+            return format(date, "HH:mm, dd/MM/yyyy", { locale: vi });
+        } catch (error) {
+            console.error("Error formatting date:", error);
+            return "Thời gian không hợp lệ";
+        }
     };
 
     return (

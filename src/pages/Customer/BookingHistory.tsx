@@ -330,7 +330,7 @@ const BookingHistory = () => {
                                             Ngày khởi hành:{" "}
                                             {
                                                 formatPickupDateTime(
-                                                    booking.pickupTime
+                                                    booking.departureDate
                                                 ).date
                                             }
                                         </Typography>

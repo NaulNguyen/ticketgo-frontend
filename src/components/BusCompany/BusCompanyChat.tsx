@@ -30,6 +30,7 @@ interface Message {
     receiverId: number;
     content: string;
     sentAt: string;
+    isRead: boolean;
 }
 
 interface MessageResponse {
@@ -46,6 +47,8 @@ interface ChatUser {
     avatar?: string;
     lastMessage?: string;
     lastMessageTime?: string;
+    isRead: boolean;
+    readAt: string | null;
 }
 
 const BusCompanyChat = () => {
@@ -57,15 +60,85 @@ const BusCompanyChat = () => {
     const chatBoxRef = useRef<HTMLDivElement>(null);
     const [users, setUsers] = useState<ChatUser[]>([]);
 
+    const selectedUserRef = useRef<ChatUser | null>(null);
+
+    useEffect(() => {
+        selectedUserRef.current = selectedUser;
+    }, [selectedUser]);
+
     const memoizedGetUserInfo = useCallback(getUserInfor, []);
     const currentUserId = useMemo(
         () => memoizedGetUserInfo()?.user?.userId,
         [memoizedGetUserInfo]
     );
 
-    const handleUserSelect = useCallback((user: ChatUser) => {
-        setSelectedUser(user);
-    }, []);
+    const handleUserSelect = useCallback(
+        async (user: ChatUser) => {
+            setSelectedUser(user);
+
+            if (!user.isRead) {
+                try {
+                    // 1. Lấy danh sách tất cả message từ người dùng này
+                    const messagesResponse =
+                        await axiosWithJWT.get<MessageResponse>(
+                            `/api/v1/messages`,
+                            {
+                                params: {
+                                    receiverId: currentUserId,
+                                    senderId: user.userId,
+                                },
+                            }
+                        );
+
+                    if (messagesResponse.data.status === 200) {
+                        const allMessages = messagesResponse.data.data.messages;
+
+                        // 2. Chỉ lấy những message chưa đọc
+                        const unreadMessages = allMessages.filter(
+                            (msg) => msg.isRead === false
+                        );
+
+                        if (unreadMessages.length > 0) {
+                            // 3. Gửi PUT để đánh dấu đã đọc
+                            await Promise.all(
+                                unreadMessages.map((message) =>
+                                    axiosWithJWT.put(
+                                        `/api/v1/messages/mark-as-read/${message.messageId}`
+                                    )
+                                )
+                            );
+                        }
+
+                        // 4. Cập nhật danh sách user
+                        setUsers((prevUsers) =>
+                            prevUsers.map((u) =>
+                                u.userId === user.userId
+                                    ? {
+                                          ...u,
+                                          isRead: true,
+                                          readAt: new Date().toISOString(),
+                                      }
+                                    : u
+                            )
+                        );
+                    }
+                } catch (error) {
+                    console.error("Error marking messages as read:", error);
+                }
+            }
+        },
+        [currentUserId]
+    );
+
+    const markMessageAsRead = async (messageId: number) => {
+        try {
+            await axiosWithJWT.put(
+                `/api/v1/messages/mark-as-read/${messageId}`
+            );
+        } catch (error) {
+            console.error("Error marking message as read:", error);
+        }
+    };
 
     // Connect to WebSocket
     useEffect(() => {
@@ -84,52 +157,100 @@ const BusCompanyChat = () => {
             // Subscribe to user's topic
             client.subscribe(
                 `/topic/chat-${userInfo.user.userId}`,
-                (message) => {
+                async (message) => {
                     try {
                         const newMessage = JSON.parse(message.body);
+                        console.log("New message received:", newMessage);
+                        const isFromCurrentChat =
+                            selectedUserRef.current?.userId ===
+                                newMessage.senderId ||
+                            selectedUserRef.current?.userId ===
+                                newMessage.receiverId;
 
-                        // Update messages if belongs to current chat
-                        setMessages((prev) => {
-                            if (
-                                prev.some(
-                                    (msg) =>
-                                        msg.messageId === newMessage.messageId
-                                )
-                            ) {
-                                return prev;
-                            }
-                            if (
-                                selectedUser &&
-                                (newMessage.senderId === selectedUser.userId ||
-                                    newMessage.receiverId ===
-                                        selectedUser.userId)
-                            ) {
-                                return [...prev, newMessage];
-                            }
-                            return prev;
-                        });
-
-                        // Update users list with latest message
-                        setUsers((prev) =>
-                            prev.map((user) => {
-                                if (
-                                    user.userId === newMessage.senderId ||
-                                    user.userId === newMessage.receiverId
-                                ) {
-                                    return {
-                                        ...user,
-                                        lastMessage: newMessage.content,
-                                        lastMessageTime: newMessage.sentAt,
-                                    };
-                                }
-                                return user;
-                            })
+                        const isRelatedToCurrentChat =
+                            newMessage.senderId === userInfo.user.userId ||
+                            newMessage.receiverId === userInfo.user.userId;
+                        console.log(
+                            "isFromCurrentChat:",
+                            isFromCurrentChat,
+                            "isRelatedToCurrentChat:",
+                            isRelatedToCurrentChat
                         );
 
-                        // Auto scroll to bottom
-                        if (chatBoxRef.current) {
-                            chatBoxRef.current.scrollTop =
-                                chatBoxRef.current.scrollHeight;
+                        if (isFromCurrentChat && isRelatedToCurrentChat) {
+                            const response =
+                                await axiosWithJWT.get<MessageResponse>(
+                                    `/api/v1/messages`,
+                                    {
+                                        params: {
+                                            receiverId: userInfo.user.userId,
+                                            senderId: newMessage.senderId,
+                                        },
+                                    }
+                                );
+
+                            console.log("Response:", response);
+
+                            if (response.data.status === 200) {
+                                const unreadMessages =
+                                    response.data.data.messages.filter(
+                                        (msg) => !msg.isRead
+                                    );
+
+                                await Promise.all(
+                                    unreadMessages.map((msg) =>
+                                        markMessageAsRead(msg.messageId)
+                                    )
+                                );
+
+                                setMessages((prev) => {
+                                    const newMsgs = [...prev];
+                                    unreadMessages.forEach((unread) => {
+                                        const index = newMsgs.findIndex(
+                                            (msg) =>
+                                                msg.messageId ===
+                                                unread.messageId
+                                        );
+                                        if (index !== -1) {
+                                            newMsgs[index] = {
+                                                ...newMsgs[index],
+                                                isRead: true,
+                                            };
+                                        }
+                                    });
+
+                                    if (
+                                        !newMsgs.some(
+                                            (msg) =>
+                                                msg.messageId ===
+                                                newMessage.messageId
+                                        )
+                                    ) {
+                                        newMsgs.push({
+                                            ...newMessage,
+                                            isRead: true,
+                                        });
+                                    }
+
+                                    return newMsgs;
+                                });
+
+                                setUsers((prev) =>
+                                    prev.map((user) =>
+                                        user.userId === newMessage.senderId
+                                            ? {
+                                                  ...user,
+                                                  lastMessage:
+                                                      newMessage.content,
+                                                  lastMessageTime:
+                                                      newMessage.sentAt,
+                                                  isRead: true,
+                                                  readAt: new Date().toISOString(),
+                                              }
+                                            : user
+                                    )
+                                );
+                            }
                         }
                     } catch (err) {
                         console.error("Error handling message:", err);
@@ -177,53 +298,63 @@ const BusCompanyChat = () => {
 
     const handleSend = useCallback(async () => {
         const messageContent = newMessage.trim();
-
         if (!messageContent || !selectedUser) return;
 
         const userInfo = getUserInfor();
         if (!userInfo) return;
 
         try {
-            const response = await axiosWithJWT.post("/api/v1/messages/send", {
-                senderId: userInfo.user.userId,
+            // Gửi tin nhắn
+            await axiosWithJWT.post("/api/v1/messages/send", {
+                senderId: 1,
                 receiverId: selectedUser.userId,
                 content: messageContent,
             });
+
             setNewMessage("");
 
-            if (response.data.status === 200) {
-                const newMsg: Message = {
-                    messageId: Date.now(),
-                    senderId: userInfo.user.userId,
-                    receiverId: selectedUser.userId,
-                    content: messageContent,
-                    sentAt: new Date().toISOString(),
-                };
+            // Lấy danh sách tin nhắn chưa đọc và đánh dấu đã đọc
+            const messagesResponse = await axiosWithJWT.get<MessageResponse>(
+                `/api/v1/messages`,
+                {
+                    params: {
+                        receiverId: userInfo.user.userId,
+                        senderId: selectedUser.userId,
+                    },
+                }
+            );
 
-                setMessages((prev) => [...prev, newMsg]);
+            if (messagesResponse.data.status === 200) {
+                const unreadMessages =
+                    messagesResponse.data.data.messages.filter(
+                        (msg) => !msg.isRead // Đảm bảo chỉ lấy tin chưa đọc
+                    );
+                console.log("Unread messages:", unreadMessages);
 
-                setUsers((prev) =>
-                    prev.map((user) => {
-                        if (user.userId === selectedUser.userId) {
-                            return {
-                                ...user,
-                                lastMessage: messageContent,
-                                lastMessageTime: new Date().toISOString(),
-                            };
-                        }
-                        return user;
-                    })
+                // Gọi API đánh dấu đã đọc
+                await Promise.all(
+                    unreadMessages.map((msg) =>
+                        markMessageAsRead(msg.messageId)
+                    )
                 );
 
-                if (chatBoxRef.current) {
-                    chatBoxRef.current.scrollTop =
-                        chatBoxRef.current.scrollHeight;
-                }
+                // Update users list to reflect read status
+                setUsers((prev) =>
+                    prev.map((u) =>
+                        u.userId === selectedUser.userId
+                            ? {
+                                  ...u,
+                                  isRead: true,
+                                  readAt: new Date().toISOString(),
+                              }
+                            : u
+                    )
+                );
             }
         } catch (error) {
             console.error("Error sending message:", error);
         }
-    }, [newMessage, selectedUser, getUserInfor]);
+    }, [newMessage, selectedUser, getUserInfor, markMessageAsRead]);
 
     useEffect(() => {
         const fetchMessages = async () => {
@@ -278,7 +409,7 @@ const BusCompanyChat = () => {
             <Paper
                 elevation={3}
                 sx={{
-                    width: 340,
+                    width: 390,
                     overflow: "hidden",
                     display: "flex",
                     flexDirection: "column",

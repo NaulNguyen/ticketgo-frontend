@@ -117,6 +117,8 @@ interface ScheduleDialogState {
     open: boolean;
     type: "bus" | "driver";
     data: ScheduleResponse | null;
+    selectedDate: Date;
+    currentMonth: string;
 }
 
 const CreateBusRoute: React.FC<CreateBusRouteProps> = ({
@@ -133,6 +135,8 @@ const CreateBusRoute: React.FC<CreateBusRouteProps> = ({
         open: false,
         type: "bus",
         data: null,
+        selectedDate: dayjs().toDate(),
+        currentMonth: dayjs().format("YYYY-MM"),
     });
 
     const handleClose = () => {
@@ -151,30 +155,6 @@ const CreateBusRoute: React.FC<CreateBusRouteProps> = ({
             .minute(time.minute())
             .second(0)
             .millisecond(0);
-    };
-
-    const handleMonthChange = async (month: string) => {
-        const type = scheduleDialog.type;
-        const id =
-            type === "bus" ? formik.values.busId : formik.values.driverId;
-
-        if (!id) return;
-
-        try {
-            const response = await axiosWithJWT.get<ScheduleResponse>(
-                `/api/v1/schedules/${type}/${id}?month=${month}`
-            );
-
-            setScheduleDialog((prev) => ({
-                ...prev,
-                data: response.data,
-            }));
-        } catch (error) {
-            console.error(`Error fetching ${type} schedule:`, error);
-            toast.error(
-                `Không thể tải lịch ${type === "bus" ? "xe" : "tài xế"}`
-            );
-        }
     };
 
     const formik = useFormik({
@@ -358,13 +338,41 @@ const CreateBusRoute: React.FC<CreateBusRouteProps> = ({
         }
     };
 
-    const fetchSchedules = async (type: "bus" | "driver", id: number) => {
-        if (!formik.values.departureTime) {
-            toast.error("Vui lòng chọn thời gian khởi hành trước");
+    const handleMonthChange = async (month: string) => {
+        const type = scheduleDialog.type;
+        const id =
+            type === "bus"
+                ? scheduleDialog.data?.busId
+                : scheduleDialog.data?.driverId;
+        if (!id) {
             return;
         }
 
-        const month = dayjs(formik.values.departureTime).format("YYYY-MM");
+        try {
+            const response = await axiosWithJWT.get<ScheduleResponse>(
+                `/api/v1/schedules/${type}/${id}?month=${month}`
+            );
+
+            setScheduleDialog((prev) => ({
+                ...prev,
+                data: response.data,
+                selectedDate: dayjs(month + "-01").toDate(),
+                currentMonth: month,
+            }));
+        } catch (error) {
+            console.error(`Error fetching ${type} schedule:`, error);
+            toast.error(
+                `Không thể tải lịch ${type === "bus" ? "xe" : "tài xế"}`
+            );
+        }
+    };
+
+    const fetchSchedules = async (
+        type: "bus" | "driver",
+        id: number,
+        selectedMonth?: string
+    ) => {
+        const month = selectedMonth || dayjs().format("YYYY-MM");
 
         try {
             const response = await axiosWithJWT.get<ScheduleResponse>(
@@ -375,6 +383,8 @@ const CreateBusRoute: React.FC<CreateBusRouteProps> = ({
                 open: true,
                 type,
                 data: response.data,
+                selectedDate: dayjs(month + "-01").toDate(),
+                currentMonth: month,
             });
         } catch (error) {
             console.error(`Error fetching ${type} schedule:`, error);
@@ -697,6 +707,27 @@ const CreateBusRoute: React.FC<CreateBusRouteProps> = ({
                                                         </Box>
                                                     </Box>
                                                 </Box>
+                                                {!formik.values.busId && (
+                                                    <IconButton
+                                                        size="small"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            fetchSchedules(
+                                                                "bus",
+                                                                bus.busId
+                                                            );
+                                                        }}
+                                                        sx={{
+                                                            color: "primary.main",
+                                                            "&:hover": {
+                                                                backgroundColor:
+                                                                    "primary.lighter",
+                                                            },
+                                                        }}
+                                                    >
+                                                        <CalendarTodayIcon fontSize="small" />
+                                                    </IconButton>
+                                                )}
                                             </MenuItem>
                                         ))}
                                     </Select>
@@ -707,7 +738,7 @@ const CreateBusRoute: React.FC<CreateBusRouteProps> = ({
                                             </FormHelperText>
                                         )}
                                 </FormControl>
-                                <Box
+                                {/* <Box
                                     sx={{
                                         display: "flex",
                                         justifyContent: "flex-end",
@@ -737,7 +768,7 @@ const CreateBusRoute: React.FC<CreateBusRouteProps> = ({
                                                 Xem lịch xe
                                             </Button>
                                         )}
-                                </Box>
+                                </Box> */}
 
                                 <FormControl fullWidth>
                                     <InputLabel>Chọn tài xế</InputLabel>
@@ -824,6 +855,27 @@ const CreateBusRoute: React.FC<CreateBusRouteProps> = ({
                                                         </Box>
                                                     </Box>
                                                 </Box>
+                                                {!formik.values.driverId && (
+                                                    <IconButton
+                                                        size="small"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            fetchSchedules(
+                                                                "driver",
+                                                                driver.driverId
+                                                            );
+                                                        }}
+                                                        sx={{
+                                                            color: "primary.main",
+                                                            "&:hover": {
+                                                                backgroundColor:
+                                                                    "primary.lighter",
+                                                            },
+                                                        }}
+                                                    >
+                                                        <CalendarTodayIcon fontSize="small" />
+                                                    </IconButton>
+                                                )}
                                             </MenuItem>
                                         ))}
                                     </Select>
@@ -834,7 +886,7 @@ const CreateBusRoute: React.FC<CreateBusRouteProps> = ({
                                             </FormHelperText>
                                         )}
                                 </FormControl>
-                                <Box
+                                {/* <Box
                                     sx={{
                                         display: "flex",
                                         justifyContent: "flex-end",
@@ -865,7 +917,7 @@ const CreateBusRoute: React.FC<CreateBusRouteProps> = ({
                                                 Xem lịch tài xế
                                             </Button>
                                         )}
-                                </Box>
+                                </Box> */}
 
                                 <Box
                                     sx={{
@@ -1469,15 +1521,17 @@ const CreateBusRoute: React.FC<CreateBusRouteProps> = ({
                 <ScheduleDialog
                     open={scheduleDialog.open}
                     onClose={() =>
-                        setScheduleDialog((prev) => ({ ...prev, open: false }))
+                        setScheduleDialog((prev) => ({
+                            ...prev,
+                            open: false,
+                            selectedDate: dayjs(
+                                scheduleDialog.currentMonth
+                            ).toDate(), // Use stored month
+                        }))
                     }
                     type={scheduleDialog.type}
                     scheduleData={scheduleDialog.data}
-                    selectedDate={
-                        formik.values.departureTime
-                            ? dayjs(formik.values.departureTime).toDate()
-                            : dayjs().toDate()
-                    }
+                    selectedDate={dayjs(scheduleDialog.currentMonth).toDate()} // Use stored month
                     onMonthChange={handleMonthChange}
                 />
 
