@@ -27,6 +27,8 @@ import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import DriverManagement from "../../components/BusCompany/DriverManagement";
 import ChatIcon from "@mui/icons-material/Chat";
 import BusCompanyChat from "../../components/BusCompany/BusCompanyChat";
+import ConfirmationNumberIcon from "@mui/icons-material/ConfirmationNumber";
+import TicketManagement from "../../components/BusCompany/TicketManagement";
 
 const DashBoard = () => {
     const [selectedIndex, setSelectedIndex] = useState(0);
@@ -42,6 +44,7 @@ const DashBoard = () => {
         { text: "Quản lý tài khoản khách hàng", icon: <AccountCircleIcon /> },
         { text: "Quản lý tài xế", icon: <PeopleIcon /> },
         { text: "Chat với khách hàng", icon: <ChatIcon /> },
+        { text: "Quản lý đặt vé", icon: <ConfirmationNumberIcon /> },
     ];
 
     const handleListItemClick = (index: number) => {
@@ -69,6 +72,8 @@ const DashBoard = () => {
                 return <DriverManagement />;
             case 6:
                 return <BusCompanyChat />;
+            case 7:
+                return <TicketManagement />;
             default:
                 return <StatisticsChart selectedSubIndex={selectedSubIndex} />;
         }

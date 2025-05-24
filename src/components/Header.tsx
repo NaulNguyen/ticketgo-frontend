@@ -216,6 +216,36 @@ const Header = ({ onToggleDrawer }: { onToggleDrawer?: () => void }) => {
                     </span>
                 </div>
             </div>
+
+            {!isDashboardPage && !isPaymentMethod && (
+                <Box
+                    sx={{
+                        display: "flex",
+                        justifyContent: "flex-end",
+                        alignItems: "center",
+                        flex: 1,
+                    }}
+                >
+                    <Button
+                        onClick={() => navigate("/reviews")}
+                        sx={{
+                            color: "white",
+                            textTransform: "none",
+                            fontSize: "1rem",
+                            fontWeight: 500,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1,
+                            "&:hover": {
+                                backgroundColor: "rgba(255, 255, 255, 0.1)",
+                            },
+                        }}
+                    >
+                        Mọi người nói gì về chúng tôi
+                    </Button>
+                </Box>
+            )}
+
             {isPaymentMethod && (
                 <Box display="flex" gap={1}>
                     <Typography
@@ -380,12 +410,6 @@ const Header = ({ onToggleDrawer }: { onToggleDrawer?: () => void }) => {
                                 <LoyaltyIcon fontSize="small" />
                             </ListItemIcon>
                             Lịch sử đặt vé
-                        </MenuItem>
-                        <MenuItem sx={{ paddingX: "20px", paddingY: "10px" }}>
-                            <ListItemIcon>
-                                <CommentIcon fontSize="small" />
-                            </ListItemIcon>
-                            Nhận xét chuyến đi
                         </MenuItem>
                     </Box>
                 )}

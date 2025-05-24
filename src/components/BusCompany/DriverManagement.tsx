@@ -39,6 +39,9 @@ interface Driver {
     licenseNumber: string;
     phoneNumber: string;
     imageUrl: string;
+    placeOfIssue: string;
+    issueDate: string;
+    expiryDate: string;
 }
 
 interface Pagination {
@@ -72,6 +75,7 @@ interface ScheduleResponse {
 
 const DriverManagement = () => {
     const [drivers, setDrivers] = useState<Driver[]>([]);
+    console.log("drivers", drivers);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
     const [pageSize] = useState(10);
@@ -199,6 +203,17 @@ const DriverManagement = () => {
         setIsEditPopupOpen(false);
     };
 
+    const isLicenseExpired = (expiryDate: string) => {
+        return dayjs().isAfter(dayjs(expiryDate));
+    };
+
+    const getLicenseStatusColor = (expiryDate: string) => {
+        const daysUntilExpiry = dayjs(expiryDate).diff(dayjs(), "day");
+        if (daysUntilExpiry < 0) return "error.main";
+        if (daysUntilExpiry < 30) return "warning.main";
+        return "success.main";
+    };
+
     useEffect(() => {
         fetchDrivers();
     }, [page]);
@@ -265,7 +280,7 @@ const DriverManagement = () => {
                                     sx={{
                                         color: "white",
                                         fontWeight: 700,
-                                        width: "40%",
+                                        width: "23%",
                                         fontSize: 16,
                                     }}
                                 >
@@ -275,7 +290,7 @@ const DriverManagement = () => {
                                     sx={{
                                         color: "white",
                                         fontWeight: 700,
-                                        width: "20%",
+                                        width: "12%",
                                         fontSize: 16,
                                     }}
                                 >
@@ -286,6 +301,36 @@ const DriverManagement = () => {
                                         color: "white",
                                         fontWeight: 700,
                                         width: "20%",
+                                        fontSize: 16,
+                                    }}
+                                >
+                                    Nơi cấp
+                                </TableCell>
+                                <TableCell
+                                    sx={{
+                                        color: "white",
+                                        fontWeight: 700,
+                                        width: "12%",
+                                        fontSize: 16,
+                                    }}
+                                >
+                                    Ngày cấp
+                                </TableCell>
+                                <TableCell
+                                    sx={{
+                                        color: "white",
+                                        fontWeight: 700,
+                                        width: "12%",
+                                        fontSize: 16,
+                                    }}
+                                >
+                                    Ngày hết hạn
+                                </TableCell>
+                                <TableCell
+                                    sx={{
+                                        color: "white",
+                                        fontWeight: 700,
+                                        width: "12%",
                                         fontSize: 16,
                                     }}
                                 >
@@ -372,6 +417,55 @@ const DriverManagement = () => {
                                             {driver.licenseNumber}
                                         </TableCell>
                                         <TableCell>
+                                            {driver.placeOfIssue}
+                                        </TableCell>
+                                        <TableCell>
+                                            <Tooltip
+                                                title={
+                                                    isLicenseExpired(
+                                                        driver.expiryDate
+                                                    )
+                                                        ? "Bằng lái đã hết hạn!"
+                                                        : `Còn ${dayjs(
+                                                              driver.expiryDate
+                                                          ).diff(
+                                                              dayjs(),
+                                                              "day"
+                                                          )} ngày hết hạn`
+                                                }
+                                            >
+                                                <Box
+                                                    sx={{
+                                                        display: "flex",
+                                                        flexDirection: "column",
+                                                        gap: 0.5,
+                                                    }}
+                                                >
+                                                    <Typography
+                                                        variant="body2"
+                                                        color="text.secondary"
+                                                    >
+                                                        {dayjs(
+                                                            driver.issueDate
+                                                        ).format("DD/MM/YYYY")}
+                                                    </Typography>
+                                                </Box>
+                                            </Tooltip>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Typography
+                                                variant="body2"
+                                                color={getLicenseStatusColor(
+                                                    driver.expiryDate
+                                                )}
+                                                sx={{ fontWeight: 500 }}
+                                            >
+                                                {dayjs(
+                                                    driver.expiryDate
+                                                ).format("DD/MM/YYYY")}
+                                            </Typography>
+                                        </TableCell>
+                                        <TableCell>
                                             {driver.phoneNumber}
                                         </TableCell>
                                         <TableCell>
@@ -419,14 +513,7 @@ const DriverManagement = () => {
                                                         <EditIcon />
                                                     </IconButton>
                                                 </Tooltip>
-                                                <EditDriverPopup
-                                                    open={isEditPopupOpen}
-                                                    onClose={
-                                                        handleCloseEditPopup
-                                                    }
-                                                    onSuccess={fetchDrivers}
-                                                    driverId={selectedDriverId}
-                                                />
+
                                                 <Tooltip title="Xóa">
                                                     <IconButton
                                                         onClick={() =>
@@ -455,6 +542,12 @@ const DriverManagement = () => {
                     </Table>
                 </TableContainer>
             )}
+            <EditDriverPopup
+                open={isEditPopupOpen}
+                onClose={handleCloseEditPopup}
+                onSuccess={fetchDrivers}
+                driverId={selectedDriverId}
+            />
             <Dialog
                 open={isDeleteDialogOpen}
                 onClose={handleCloseDeleteDialog}

@@ -23,6 +23,10 @@ import { auto } from "@cloudinary/url-gen/actions/resize";
 import { autoGravity } from "@cloudinary/url-gen/qualifiers/gravity";
 import axios from "axios";
 import { styled } from "@mui/material/styles";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import dayjs from "dayjs";
 
 interface EditDriverPopupProps {
     open: boolean;
@@ -36,6 +40,9 @@ interface Driver {
     licenseNumber: string;
     phoneNumber: string;
     imageUrl: string;
+    placeOfIssue: string;
+    issueDate: string;
+    expiryDate: string;
 }
 
 const cld = new Cloudinary({
@@ -51,6 +58,15 @@ const validationSchema = Yup.object({
         .required("Vui lòng nhập số điện thoại")
         .matches(/^[0-9]{10}$/, "Số điện thoại không hợp lệ"),
     imageUrl: Yup.string().required("Vui lòng chọn ảnh đại diện"),
+    placeOfIssue: Yup.string().required("Vui lòng nhập nơi cấp bằng lái"),
+    issueDate: Yup.string().required("Vui lòng chọn ngày cấp bằng lái"),
+    expiryDate: Yup.string()
+        .required("Vui lòng chọn ngày hết hạn bằng lái")
+        .test("expiry", "Ngày hết hạn phải sau ngày cấp", function (value) {
+            const { issueDate } = this.parent;
+            if (!issueDate || !value) return true;
+            return dayjs(value).isAfter(dayjs(issueDate));
+        }),
 });
 
 const VisuallyHiddenInput = styled("input")({
@@ -80,6 +96,9 @@ const EditDriverPopup: React.FC<EditDriverPopupProps> = ({
             licenseNumber: "",
             phoneNumber: "",
             imageUrl: "",
+            placeOfIssue: "",
+            issueDate: "",
+            expiryDate: "",
         },
         validationSchema,
         onSubmit: async (values) => {
@@ -121,6 +140,9 @@ const EditDriverPopup: React.FC<EditDriverPopupProps> = ({
                         licenseNumber: driverData.licenseNumber,
                         phoneNumber: driverData.phoneNumber,
                         imageUrl: driverData.imageUrl,
+                        placeOfIssue: driverData.placeOfIssue,
+                        issueDate: driverData.issueDate,
+                        expiryDate: driverData.expiryDate,
                     });
                     setCloudinaryImage(driverData.imageUrl);
                 } catch (error) {
@@ -224,7 +246,7 @@ const EditDriverPopup: React.FC<EditDriverPopupProps> = ({
         <Dialog
             open={open}
             onClose={onClose}
-            maxWidth="sm"
+            maxWidth="md"
             fullWidth
             PaperProps={{
                 sx: { borderRadius: 2 },
@@ -239,7 +261,7 @@ const EditDriverPopup: React.FC<EditDriverPopupProps> = ({
                 <DialogContent>
                     <Grid container spacing={3}>
                         {/* Left side - Form fields */}
-                        <Grid item xs={7}>
+                        <Grid item xs={6}>
                             <Box
                                 sx={{
                                     display: "flex",
@@ -279,6 +301,92 @@ const EditDriverPopup: React.FC<EditDriverPopupProps> = ({
                                 />
                                 <TextField
                                     fullWidth
+                                    label="Nơi cấp bằng lái"
+                                    name="placeOfIssue"
+                                    value={formik.values.placeOfIssue}
+                                    onChange={formik.handleChange}
+                                    error={
+                                        formik.touched.placeOfIssue &&
+                                        Boolean(formik.errors.placeOfIssue)
+                                    }
+                                    helperText={
+                                        formik.touched.placeOfIssue &&
+                                        formik.errors.placeOfIssue
+                                    }
+                                />
+
+                                <LocalizationProvider
+                                    dateAdapter={AdapterDayjs}
+                                >
+                                    <DatePicker
+                                        label="Ngày cấp"
+                                        value={
+                                            formik.values.issueDate
+                                                ? dayjs(formik.values.issueDate)
+                                                : null
+                                        }
+                                        onChange={(value) => {
+                                            formik.setFieldValue(
+                                                "issueDate",
+                                                value
+                                                    ? value.format("YYYY-MM-DD")
+                                                    : ""
+                                            );
+                                        }}
+                                        slotProps={{
+                                            textField: {
+                                                fullWidth: true,
+                                                error:
+                                                    formik.touched.issueDate &&
+                                                    Boolean(
+                                                        formik.errors.issueDate
+                                                    ),
+                                                helperText:
+                                                    formik.touched.issueDate &&
+                                                    formik.errors.issueDate,
+                                            },
+                                        }}
+                                    />
+
+                                    <DatePicker
+                                        label="Ngày hết hạn"
+                                        value={
+                                            formik.values.expiryDate
+                                                ? dayjs(
+                                                      formik.values.expiryDate
+                                                  )
+                                                : null
+                                        }
+                                        onChange={(value) => {
+                                            formik.setFieldValue(
+                                                "expiryDate",
+                                                value
+                                                    ? value.format("YYYY-MM-DD")
+                                                    : ""
+                                            );
+                                        }}
+                                        minDate={
+                                            formik.values.issueDate
+                                                ? dayjs(formik.values.issueDate)
+                                                : undefined
+                                        }
+                                        slotProps={{
+                                            textField: {
+                                                fullWidth: true,
+                                                error:
+                                                    formik.touched.expiryDate &&
+                                                    Boolean(
+                                                        formik.errors.expiryDate
+                                                    ),
+                                                helperText:
+                                                    formik.touched.expiryDate &&
+                                                    formik.errors.expiryDate,
+                                            },
+                                        }}
+                                    />
+                                </LocalizationProvider>
+                                <TextField
+                                    fullWidth
                                     label="Số điện thoại"
                                     name="phoneNumber"
                                     value={formik.values.phoneNumber}
@@ -296,7 +404,7 @@ const EditDriverPopup: React.FC<EditDriverPopupProps> = ({
                         </Grid>
 
                         {/* Right side - Image upload */}
-                        <Grid item xs={5}>
+                        <Grid item xs={6}>
                             <Box
                                 sx={{
                                     display: "flex",

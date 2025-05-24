@@ -14,6 +14,7 @@ import {
     Profile,
     BookingHistory,
     ThankyouPage,
+    Review,
 } from "../pages";
 import { UserAccountManagement, VoucherManagement } from "../components";
 
@@ -33,6 +34,7 @@ function AppRoutes() {
             <Route path="*" element={<NotFound />} />
             <Route path="user-management" element={<UserAccountManagement />} />
             <Route path="voucher-management" element={<VoucherManagement />} />
+            <Route path="reviews" element={<Review />} />
 
             {/* Customer-specific routes */}
             <Route
