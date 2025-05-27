@@ -23,6 +23,17 @@ import UserService from "../../service/UserService";
 import { EstimatedPrice, TripInfo } from "../../global";
 import { toast } from "react-toastify";
 
+interface RoundTripData {
+    outbound?: {
+        tripInfo: TripInfo;
+        estimatedPrice: EstimatedPrice;
+    };
+    return?: {
+        tripInfo: TripInfo;
+        estimatedPrice: EstimatedPrice;
+    };
+}
+
 const BookingConfirm = () => {
     const navigate = useNavigate();
     const location = useLocation();
@@ -51,8 +62,16 @@ const BookingConfirm = () => {
         dropoffLocation: "",
     });
 
+    const [roundTripData, setRoundTripData] = useState<RoundTripData>({});
+    const outboundId = new URLSearchParams(location.search).get("outboundId");
+    const returnId = new URLSearchParams(location.search).get("returnId");
+    const isRoundTrip = outboundId && returnId;
+
     const handleContinueClick = async () => {
-        if (!scheduleId) {
+        if (
+            (!scheduleId && !isRoundTrip) ||
+            (isRoundTrip && (!outboundId || !returnId))
+        ) {
             toast.error("Không tìm thấy thông tin chuyến đi");
             return;
         }
@@ -63,17 +82,41 @@ const BookingConfirm = () => {
         }
 
         try {
-            await UserService.saveContactInfo({
-                scheduleId,
-                contactName: fullName,
-                contactPhone: phoneNumber,
-                contactEmail: email,
-            });
+            if (isRoundTrip) {
+                // Save contact info for both trips
+                await UserService.saveContactInfo({
+                    scheduleId: outboundId,
+                    contactName: fullName,
+                    contactPhone: phoneNumber,
+                    contactEmail: email,
+                });
 
-            // Then reserve ticket
-            const response = await UserService.ticketReserve(scheduleId);
-            if (response.status === 200) {
-                navigate(`/payment-method?scheduleId=${scheduleId}`);
+                await UserService.saveContactInfo({
+                    scheduleId: returnId,
+                    contactName: fullName,
+                    contactPhone: phoneNumber,
+                    contactEmail: email,
+                });
+
+                // Reserve both tickets with a single call
+                await UserService.ticketReserve(outboundId, returnId);
+                navigate(
+                    `/payment-method?outboundId=${outboundId}&returnId=${returnId}`
+                );
+            } else {
+                // Regular one-way booking
+                await UserService.saveContactInfo({
+                    scheduleId: scheduleId!,
+                    contactName: fullName,
+                    contactPhone: phoneNumber,
+                    contactEmail: email,
+                });
+
+                // Reserve single ticket
+                const response = await UserService.ticketReserve(scheduleId!);
+                if (response.status === 200) {
+                    navigate(`/payment-method?scheduleId=${scheduleId}`);
+                }
             }
         } catch (error: any) {
             console.error("Error reserving seat:", error);
@@ -93,32 +136,39 @@ const BookingConfirm = () => {
 
     useEffect(() => {
         const fetchBookingInfo = async () => {
-            if (!scheduleId) {
-                console.error("No schedule ID found");
-                navigate("/");
-                return;
-            }
-
             try {
-                const response = await UserService.getBookingInfo(scheduleId);
-                const { prices, tripInformation } = response.data.data;
+                if (isRoundTrip) {
+                    // Fetch outbound trip info
+                    const outboundResponse = await UserService.getBookingInfo(
+                        outboundId
+                    );
+                    const outboundData = outboundResponse.data.data;
 
-                setEstimatedPrice({
-                    totalPrice: prices.totalPrice,
-                    unitPrice: prices.unitPrice,
-                    quantity: prices.quantity,
-                    seatNumbers: prices.seatNumbers,
-                });
+                    // Fetch return trip info
+                    const returnResponse = await UserService.getBookingInfo(
+                        returnId
+                    );
+                    const returnData = returnResponse.data.data;
 
-                setTripInfo({
-                    departureTime: tripInformation.departureTime,
-                    licensePlate: tripInformation.licensePlate,
-                    busType: tripInformation.busType,
-                    pickupTime: tripInformation.pickupTime,
-                    pickupLocation: tripInformation.pickupLocation,
-                    dropoffTime: tripInformation.dropoffTime,
-                    dropoffLocation: tripInformation.dropoffLocation,
-                });
+                    setRoundTripData({
+                        outbound: {
+                            tripInfo: outboundData.tripInformation,
+                            estimatedPrice: outboundData.prices,
+                        },
+                        return: {
+                            tripInfo: returnData.tripInformation,
+                            estimatedPrice: returnData.prices,
+                        },
+                    });
+                } else {
+                    // Regular one-way trip
+                    const response = await UserService.getBookingInfo(
+                        scheduleId!
+                    );
+                    const { prices, tripInformation } = response.data.data;
+                    setEstimatedPrice(prices);
+                    setTripInfo(tripInformation);
+                }
             } catch (error) {
                 console.error("Error fetching booking info:", error);
                 toast.error("Có lỗi xảy ra khi tải thông tin đặt vé");
@@ -126,7 +176,7 @@ const BookingConfirm = () => {
         };
 
         fetchBookingInfo();
-    }, [scheduleId, navigate]);
+    }, [scheduleId, outboundId, returnId]);
 
     useEffect(() => {
         if (userInfo) {
@@ -144,16 +194,18 @@ const BookingConfirm = () => {
                 style={{
                     backgroundColor: "rgb(242, 242, 242)",
                     height: "100%",
-                    minWidth: "450px",
                     paddingBottom: "50px",
                 }}
             >
                 <Header />
-                <Container
+                <Box
                     sx={{
                         paddingY: "20px",
                         justifyContent: "center",
                         alignItems: "flex-start",
+                        width: "80%",
+                        margin: "0 auto", // Add this to center the box
+                        maxWidth: "1500px",
                     }}
                 >
                     <Button
@@ -172,7 +224,7 @@ const BookingConfirm = () => {
                     >
                         Quay lại
                     </Button>
-                    <Container
+                    <Box
                         sx={{
                             display: "flex",
                             justifyContent: "center",
@@ -282,12 +334,31 @@ const BookingConfirm = () => {
                             </Box>
                         </Box>
 
-                        <TripSummary
-                            tripInfo={tripInfo}
-                            estimatedPrice={estimatedPrice}
-                        />
-                    </Container>
-                </Container>
+                        {isRoundTrip ? (
+                            <>
+                                <TripSummary
+                                    tripInfo={roundTripData.outbound?.tripInfo!}
+                                    estimatedPrice={
+                                        roundTripData.outbound?.estimatedPrice!
+                                    }
+                                    isOutbound={true}
+                                />
+                                <TripSummary
+                                    tripInfo={roundTripData.return?.tripInfo!}
+                                    estimatedPrice={
+                                        roundTripData.return?.estimatedPrice!
+                                    }
+                                    isReturn={true}
+                                />
+                            </>
+                        ) : (
+                            <TripSummary
+                                tripInfo={tripInfo}
+                                estimatedPrice={estimatedPrice}
+                            />
+                        )}
+                    </Box>
+                </Box>
             </div>
             <Box
                 sx={{

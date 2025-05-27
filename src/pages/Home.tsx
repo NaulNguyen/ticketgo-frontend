@@ -27,6 +27,15 @@ type RouteData = {
 type HomepageData = {
     description: string;
     bannerUrl: string;
+    busCompanyName: string;
+    contactEmail: string;
+    contactPhone: string;
+    address: string;
+    headquarterAddress: string;
+    businessRegistrationAddress: string;
+    businessLicenseNumber: string;
+    licenseIssuer: string;
+    licenseIssueDate: string;
 };
 
 interface Promotion {
@@ -149,7 +158,7 @@ const Home = () => {
     const fetchHomepageData = useCallback(async () => {
         try {
             const response = await axios.get(
-                "https://ticketgo.site/api/v1/homepage"
+                "https://ticketgo.site/api/v1/bus-companies"
             );
             const data = response.data;
             if (data.status === 200) {

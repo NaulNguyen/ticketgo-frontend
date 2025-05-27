@@ -12,6 +12,8 @@ const initialState: UserState = {
         fullName: "",
         phoneNumber: "",
         dateOfBirth: "",
+        membershipLevel: "",
+        points: 0,
     },
     booking: [] as Booking[],
 };

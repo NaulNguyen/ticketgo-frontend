@@ -36,7 +36,23 @@ interface FloorData {
 }
 
 interface SearchResult {
-    data: {
+    departure?: {
+        scheduleId: string;
+        routeName: string;
+        busImage: string;
+        busType: string;
+        busId: string;
+        departureTime: string;
+        departureLocation: string;
+        departureAddress: string;
+        arrivalAddress: string;
+        arrivalTime: string;
+        arrivalLocation: string;
+        price: number;
+        availableSeats: number;
+        travelDuration: string;
+    }[];
+    return?: {
         scheduleId: string;
         routeName: string;
         busImage: string;
@@ -64,10 +80,14 @@ const SearchingPage = () => {
     const location = useLocation();
     const navigate = useNavigate();
 
+    const [isReturn, setIsReturn] = useState(false);
+    const [firstTripData, setFirstTripData] = useState(null);
+
     const [expandedId, setExpandedId] = useState<string | null>(null);
     const [seatSelectId, setSeatSelectId] = useState<string | null>(null);
     const [searchResults, setSearchResults] = useState<SearchResult>({
-        data: [],
+        departure: [],
+        return: [],
         pagination: {
             pageNumber: 0,
             pageSize: 0,
@@ -75,7 +95,7 @@ const SearchingPage = () => {
             totalItems: 0,
         },
     });
-    const [sortBy, setSortBy] = useState("departureDate");
+    const [sortBy, setSortBy] = useState("departureTime");
     const [sortDirection, setSortDirection] = useState("asc");
     const [currentPage, setCurrentPage] = useState(1);
     const [searchLoading, setSearchLoading] = useState(false);
@@ -97,17 +117,17 @@ const SearchingPage = () => {
 
     const handleSortChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const value = event.target.value;
-        let newSortBy = "departureDate";
+        let newSortBy = "departureTime";
         let newSortDirection = "asc";
 
         if (value === "default") {
-            newSortBy = "departureDate";
+            newSortBy = "departureTime";
             newSortDirection = "asc";
         } else if (value === "earliest") {
-            newSortBy = "departureDate";
+            newSortBy = "departureTime";
             newSortDirection = "asc";
         } else if (value === "latest") {
-            newSortBy = "departureDate";
+            newSortBy = "departureTime";
             newSortDirection = "desc";
         } else if (value === "priceAsc") {
             newSortBy = "price";
@@ -147,96 +167,184 @@ const SearchingPage = () => {
         return count;
     };
 
+    const handleFirstTripComplete = (tripData: any) => {
+        console.log("handleFirstTripComplete called with:", tripData);
+        setFirstTripData(tripData);
+        setIsReturn(true);
+    };
+
+    const currentTripList = isReturn
+        ? searchResults.return
+        : searchResults.departure;
+
+    console.log("Current Trip List:", currentTripList);
+    console.log(isReturn);
+
     useEffect(() => {
         const fetchSearchResults = async () => {
             setSearchLoading(true);
             const searchParams = new URLSearchParams(location.search);
+
+            const departureLocation = searchParams.get("departureLocation");
+            const arrivalLocation = searchParams.get("arrivalLocation");
+            const departureDate = searchParams.get("departureDate");
+            const returnDate = searchParams.get("returnDate");
+
+            const isRoundTrip = !!returnDate;
+
             try {
-                const response = await axios.post(
+                // 1. Fetch outbound trip
+                const firstLegResponse = await axios.post(
                     "https://ticketgo.site/api/v1/routes/search",
                     {
-                        departureLocation:
-                            searchParams.get("departureLocation") || "",
-                        arrivalLocation:
-                            searchParams.get("arrivalLocation") || "",
-                        departureDate: searchParams.get("departureDate") || "",
-                        returnDate: searchParams.get("returnDate") || "",
-                        sortBy: searchParams.get("sortBy") || sortBy,
-                        sortDirection:
-                            searchParams.get("sortDirection") || sortDirection,
+                        departureLocation,
+                        arrivalLocation,
+                        departureDate,
+                        sortBy,
+                        sortDirection,
                         pageNumber: currentPage,
                         pageSize: 5,
                     }
                 );
 
-                // Fetch seat data for each route
-                const routesWithSeats = await Promise.all(
-                    response.data.data.map(async (route: any) => {
+                const firstLegRoutes = await Promise.all(
+                    firstLegResponse.data.data.map(async (route: any) => {
                         const seatsResponse = await axios.get(
                             `https://ticketgo.site/api/v1/seats?scheduleId=${route.scheduleId}`
                         );
-                        if (seatsResponse.data.status === 200) {
-                            const availableSeats = countAvailableSeats(
-                                seatsResponse.data.data
-                            );
-                            console.log(
-                                "Available seats for route",
-                                availableSeats
-                            );
-                            return { ...route, availableSeats };
-                        }
-                        return route;
+                        const availableSeats = countAvailableSeats(
+                            seatsResponse.data.data
+                        );
+                        return { ...route, availableSeats };
                     })
                 );
 
-                setSearchResults({
-                    ...response.data,
-                    data: routesWithSeats,
-                });
+                const results: SearchResult = {
+                    departure: firstLegRoutes,
+                    return: [],
+                    pagination: {
+                        pageNumber: firstLegResponse.data.pagination.pageNumber,
+                        pageSize: firstLegResponse.data.pagination.pageSize,
+                        totalPages: firstLegResponse.data.pagination.totalPages,
+                        totalItems: firstLegResponse.data.pagination.totalItems,
+                    },
+                };
+
+                // 2. Fetch return trip if round trip
+                if (isRoundTrip && returnDate) {
+                    const returnLegResponse = await axios.post(
+                        "https://ticketgo.site/api/v1/routes/search",
+                        {
+                            departureLocation: arrivalLocation,
+                            arrivalLocation: departureLocation,
+                            departureDate: returnDate,
+                            sortBy,
+                            sortDirection,
+                            pageNumber: 1,
+                            pageSize: 5,
+                        }
+                    );
+
+                    const returnLegRoutes = await Promise.all(
+                        returnLegResponse.data.data.map(async (route: any) => {
+                            const seatsResponse = await axios.get(
+                                `https://ticketgo.site/api/v1/seats?scheduleId=${route.scheduleId}`
+                            );
+                            const availableSeats = countAvailableSeats(
+                                seatsResponse.data.data
+                            );
+                            return { ...route, availableSeats };
+                        })
+                    );
+
+                    results.return = returnLegRoutes;
+                }
+
+                setSearchResults(results);
             } catch (error) {
                 console.error("Error fetching search results:", error);
                 toast.error("Có lỗi xảy ra khi tìm kiếm chuyến xe");
+                // Set empty results with default pagination on error
+                setSearchResults({
+                    departure: [],
+                    return: [],
+                    pagination: {
+                        pageNumber: 1,
+                        pageSize: 5,
+                        totalPages: 1,
+                        totalItems: 0,
+                    },
+                });
             } finally {
                 setSearchLoading(false);
             }
         };
 
         fetchSearchResults();
-    }, [location, currentPage, sortBy, sortDirection]);
+    }, [location.search, currentPage, sortBy, sortDirection]);
 
     useEffect(() => {
-        if (!searchResults.data.length) return;
+        if (!searchResults.departure?.length && !searchResults.return?.length)
+            return;
 
         const updateSeats = async () => {
             try {
-                const updatedRoutes = await Promise.all(
-                    searchResults.data.map(async (route) => {
-                        const seatsResponse = await axios.get(
-                            `https://ticketgo.site/api/v1/seats?scheduleId=${route.scheduleId}`
-                        );
-                        if (seatsResponse.data.status === 200) {
-                            const availableSeats = countAvailableSeats(
-                                seatsResponse.data.data
-                            );
-                            if (availableSeats !== route.availableSeats) {
-                                return { ...route, availableSeats };
-                            }
-                        }
-                        return route;
-                    })
-                );
+                const updatedDepartureRoutes = searchResults.departure
+                    ? await Promise.all(
+                          searchResults.departure.map(async (route) => {
+                              const seatsResponse = await axios.get(
+                                  `https://ticketgo.site/api/v1/seats?scheduleId=${route.scheduleId}`
+                              );
+                              if (seatsResponse.data.status === 200) {
+                                  const availableSeats = countAvailableSeats(
+                                      seatsResponse.data.data
+                                  );
+                                  if (availableSeats !== route.availableSeats) {
+                                      return { ...route, availableSeats };
+                                  }
+                              }
+                              return route;
+                          })
+                      )
+                    : [];
+
+                const updatedReturnRoutes = searchResults.return
+                    ? await Promise.all(
+                          searchResults.return.map(async (route) => {
+                              const seatsResponse = await axios.get(
+                                  `https://ticketgo.site/api/v1/seats?scheduleId=${route.scheduleId}`
+                              );
+                              if (seatsResponse.data.status === 200) {
+                                  const availableSeats = countAvailableSeats(
+                                      seatsResponse.data.data
+                                  );
+                                  if (availableSeats !== route.availableSeats) {
+                                      return { ...route, availableSeats };
+                                  }
+                              }
+                              return route;
+                          })
+                      )
+                    : [];
 
                 // Only update state if there are changes
-                const hasChanges = updatedRoutes.some(
-                    (route, index) =>
-                        route.availableSeats !==
-                        searchResults.data[index].availableSeats
-                );
+                const hasChanges =
+                    updatedDepartureRoutes.some(
+                        (route, index) =>
+                            route.availableSeats !==
+                            searchResults.departure?.[index].availableSeats
+                    ) ||
+                    updatedReturnRoutes.some(
+                        (route, index) =>
+                            route.availableSeats !==
+                            searchResults.return?.[index].availableSeats
+                    );
 
                 if (hasChanges) {
                     setSearchResults((prev) => ({
-                        ...prev,
-                        data: updatedRoutes,
+                        departure: updatedDepartureRoutes,
+                        return: updatedReturnRoutes,
+                        pagination: prev.pagination,
                     }));
                 }
             } catch (error) {
@@ -248,7 +356,13 @@ const SearchingPage = () => {
 
         // Cleanup on unmount or when routes change
         return () => clearInterval(pollInterval);
-    }, [searchResults.data]);
+    }, [searchResults.departure, searchResults.return]);
+
+    useEffect(() => {
+        if (isReturn) {
+            setCurrentPage(1);
+        }
+    }, [isReturn]);
 
     return (
         <div
@@ -393,8 +507,8 @@ const SearchingPage = () => {
                                     </Box>
                                 </Box>
                             ))
-                        ) : searchResults.data.length > 0 ? (
-                            searchResults.data.map((result) => (
+                        ) : (currentTripList?.length ?? 0) > 0 ? (
+                            currentTripList?.map((result) => (
                                 <Box
                                     key={result.scheduleId}
                                     mb={3}
@@ -606,6 +720,11 @@ const SearchingPage = () => {
                                         <SeatSelect
                                             scheduleId={result.scheduleId}
                                             price={result.price}
+                                            onFirstTripComplete={
+                                                handleFirstTripComplete
+                                            }
+                                            isReturn={isReturn}
+                                            firstTripData={firstTripData}
                                         />
                                     )}
                                 </Box>
@@ -620,14 +739,24 @@ const SearchingPage = () => {
                 </div>
 
                 {/* Pagination */}
-                {searchResults.pagination.totalPages > 1 && (
-                    <Pagination
-                        count={searchResults.pagination.totalPages}
-                        page={currentPage}
-                        onChange={handlePageChange}
-                        color="primary"
-                    />
-                )}
+                {!searchLoading &&
+                    searchResults.departure &&
+                    searchResults.departure.length > 0 &&
+                    searchResults.pagination.totalPages > 1 && (
+                        <Box
+                            display="flex"
+                            justifyContent="center"
+                            mt={4}
+                            mb={4}
+                        >
+                            <Pagination
+                                count={searchResults.pagination.totalPages}
+                                page={currentPage}
+                                onChange={handlePageChange}
+                                color="primary"
+                            />
+                        </Box>
+                    )}
             </Container>
         </div>
     );

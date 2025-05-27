@@ -19,7 +19,6 @@ import useAppAccessor from "../hook/useAppAccessor";
 import Logout from "@mui/icons-material/Logout";
 import PersonIcon from "@mui/icons-material/Person";
 import LoyaltyIcon from "@mui/icons-material/Loyalty";
-import CommentIcon from "@mui/icons-material/Comment";
 import Cookies from "js-cookie";
 import { useDispatch } from "react-redux";
 import { asyncUserInfor, logout } from "../actions/user.action";
@@ -28,6 +27,9 @@ import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import UserService from "../service/UserService";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import MenuIcon from "@mui/icons-material/Menu";
+import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
+import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
+import MembershipRules from "../popup/MembershipRules";
 
 const Header = ({ onToggleDrawer }: { onToggleDrawer?: () => void }) => {
     const [modalState, setModalState] = useState({
@@ -37,6 +39,7 @@ const Header = ({ onToggleDrawer }: { onToggleDrawer?: () => void }) => {
     const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
     const [timeoutModalOpen, setTimeoutModalOpen] = useState(false);
     const [searchParams] = useSearchParams();
+    const [openRules, setOpenRules] = useState(false);
     const scheduleId = searchParams.get("scheduleId");
     const [remainingTime, setRemainingTime] = useState<number | null>(null);
 
@@ -50,6 +53,21 @@ const Header = ({ onToggleDrawer }: { onToggleDrawer?: () => void }) => {
 
     const { getUserInfor } = useAppAccessor();
     const userInfo = getUserInfor();
+
+    const getMembershipLevelName = (level: string) => {
+        switch (level) {
+            case "NEW_PASSENGER":
+                return "Hành Khách Mới";
+            case "LOYAL_TRAVELER":
+                return "Lữ Khách Thân Thiết";
+            case "GOLD_COMPANION":
+                return "Đồng Hành Vàng";
+            case "ELITE_EXPLORER":
+                return "Nhà Du Hành Ưu Tú";
+            default:
+                return "Hành Khách Mới";
+        }
+    };
 
     const handleAvatarClick = (event: React.MouseEvent<HTMLElement>) => {
         setAnchorEl(event.currentTarget);
@@ -115,44 +133,66 @@ const Header = ({ onToggleDrawer }: { onToggleDrawer?: () => void }) => {
 
         const fetchRemainingTime = async () => {
             try {
+                // Get the schedule ID for checking remaining time (use outboundId if round trip)
+                const outboundId = new URLSearchParams(location.search).get(
+                    "outboundId"
+                );
+                const singleTripId = new URLSearchParams(location.search).get(
+                    "scheduleId"
+                );
+                const timeCheckId = outboundId || singleTripId;
+
+                if (!timeCheckId) return;
+
                 // Get booking info to get seat numbers
                 const bookingInfo = await UserService.getBookingInfo(
-                    scheduleId!
+                    timeCheckId
                 );
                 const seatNumber = bookingInfo.data.data.prices.seatNumbers[0];
 
                 // Get remaining time
                 const response = await UserService.getRemainingTime(
-                    scheduleId!,
+                    timeCheckId,
                     seatNumber
                 );
-                setRemainingTime(response.data.data.remainingTime);
-            } catch (error) {
+                const remainingTime = response.data.data.remainingTime;
+
+                if (remainingTime <= 0) {
+                    setTimeoutModalOpen(true);
+                    return;
+                }
+
+                setRemainingTime(remainingTime);
+
+                timer = setInterval(() => {
+                    setRemainingTime((prev) => {
+                        if (prev === null || prev <= 0) {
+                            clearInterval(timer);
+                            setTimeoutModalOpen(true);
+                            return 0;
+                        }
+                        return prev - 1;
+                    });
+                }, 1000);
+            } catch (error: any) {
                 console.error("Error fetching remaining time:", error);
-                setTimeoutModalOpen(true);
+                if (
+                    error.response?.status === 404 ||
+                    error.response?.data?.message?.includes("expired")
+                ) {
+                    setTimeoutModalOpen(true);
+                }
             }
         };
 
-        if (isPaymentMethod && scheduleId) {
+        if (isPaymentMethod) {
             fetchRemainingTime();
-
-            // Start countdown timer
-            timer = setInterval(() => {
-                setRemainingTime((prev) => {
-                    if (prev === null || prev <= 0) {
-                        clearInterval(timer);
-                        setTimeoutModalOpen(true);
-                        return 0;
-                    }
-                    return prev - 1;
-                });
-            }, 1000);
         }
 
         return () => {
             if (timer) clearInterval(timer);
         };
-    }, [isPaymentMethod, scheduleId]);
+    }, [isPaymentMethod, location.search]);
 
     const formatTime = (time: number | null) => {
         if (time === null) return "0:00";
@@ -411,6 +451,45 @@ const Header = ({ onToggleDrawer }: { onToggleDrawer?: () => void }) => {
                             </ListItemIcon>
                             Lịch sử đặt vé
                         </MenuItem>
+                        <MenuItem
+                            sx={{
+                                paddingX: "20px",
+                                paddingY: "10px",
+                                display: "flex",
+                                justifyContent: "space-between",
+                            }}
+                        >
+                            <Box sx={{ display: "flex", alignItems: "center" }}>
+                                <ListItemIcon>
+                                    <EmojiEventsIcon fontSize="small" />
+                                </ListItemIcon>
+                                <Typography>
+                                    {getMembershipLevelName(
+                                        userInfo.user.membershipLevel
+                                    )}
+                                    <Typography
+                                        component="span"
+                                        sx={{
+                                            ml: 1,
+                                            fontSize: "0.85rem",
+                                            color: "text.secondary",
+                                        }}
+                                    >
+                                        ({userInfo.user.points} điểm tích lũy)
+                                    </Typography>
+                                </Typography>
+                            </Box>
+                            <IconButton
+                                size="small"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setOpenRules(true);
+                                }}
+                                sx={{ ml: 1 }}
+                            >
+                                <HelpOutlineIcon fontSize="small" />
+                            </IconButton>
+                        </MenuItem>
                     </Box>
                 )}
                 {userInfo?.user.role === "ROLE_BUS_COMPANY" && (
@@ -487,6 +566,10 @@ const Header = ({ onToggleDrawer }: { onToggleDrawer?: () => void }) => {
                     />
                 </Box>
             </Modal>
+            <MembershipRules
+                open={openRules}
+                onClose={() => setOpenRules(false)}
+            />
         </header>
     );
 };

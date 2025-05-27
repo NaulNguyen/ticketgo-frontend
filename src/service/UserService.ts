@@ -87,19 +87,22 @@ class UserService {
         return response;
     }
 
-    static async ticketReserve(scheduleId: number | string) {
-        try {
-            const response = await axiosWithJWT.post(
-                `${UserService.BASE_URL}/api/v1/seats/reserve`,
-                {
-                    scheduleId: Number(scheduleId)
-                }
-            );
-            return response;
-        } catch (error) {
-            throw error;
-        }
+    static async ticketReserve(scheduleId: number | string, returnScheduleId?: number | string) {
+    try {
+        const requestBody = {
+            scheduleId: Number(scheduleId),
+            ...(returnScheduleId && { returnScheduleId: Number(returnScheduleId) })
+        };
+
+        const response = await axiosWithJWT.post(
+            `${UserService.BASE_URL}/api/v1/seats/reserve`,
+            requestBody
+        );
+        return response;
+    } catch (error) {
+        throw error;
     }
+}
 
     static async cancleTicketReserve(scheduleId: number | string) {
         try {
@@ -195,23 +198,38 @@ class UserService {
         }
     }
 
-    static async vnPay({ fullName, email, phoneNumber, scheduleId, promotionId }: any) {
-        try {
-            const response = await axiosWithJWT.post(
-                `${UserService.BASE_URL}/api/v1/payment/vnpay`,
-                {
-                    contactName: fullName,
-                    contactEmail: email,
-                    contactPhone: phoneNumber,
-                    scheduleId: scheduleId,
-                    promotionId: promotionId
-                }
-            );
-            return response;
-        } catch (error) {
-            throw error;
-        }
+    static async vnPay({ 
+    fullName, 
+    email, 
+    phoneNumber, 
+    scheduleId, 
+    returnScheduleId, 
+    promotionId 
+}: {
+    fullName: string;
+    email: string;
+    phoneNumber: string;
+    scheduleId: string | number;
+    returnScheduleId?: string | number;
+    promotionId?: number;
+}) {
+    try {
+        const response = await axiosWithJWT.post(
+            `${UserService.BASE_URL}/api/v1/payment/vnpay`,
+            {
+                contactName: fullName,
+                contactEmail: email,
+                contactPhone: phoneNumber,
+                scheduleId: Number(scheduleId),
+                ...(returnScheduleId && { returnScheduleId: Number(returnScheduleId) }),
+                ...(promotionId && { promotionId })
+            }
+        );
+        return response;
+    } catch (error) {
+        throw error;
     }
+}
 }
 
 export default UserService;

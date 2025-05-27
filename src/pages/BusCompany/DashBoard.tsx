@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
     Header,
     StatisticsChart,
@@ -26,18 +26,35 @@ import PeopleIcon from "@mui/icons-material/People";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import DriverManagement from "../../components/BusCompany/DriverManagement";
 import ChatIcon from "@mui/icons-material/Chat";
+import BusinessIcon from "@mui/icons-material/Business";
 import BusCompanyChat from "../../components/BusCompany/BusCompanyChat";
 import ConfirmationNumberIcon from "@mui/icons-material/ConfirmationNumber";
 import TicketManagement from "../../components/BusCompany/TicketManagement";
+import BusCompanyManagement from "../../components/BusCompany/BusCompanyManagement";
 
 const DashBoard = () => {
-    const [selectedIndex, setSelectedIndex] = useState(0);
-    const [statsOpen, setStatsOpen] = useState(false);
-    const [selectedSubIndex, setSelectedSubIndex] = useState(0);
+    const [selectedIndex, setSelectedIndex] = useState(() => {
+        const savedIndex = localStorage.getItem("selectedTabIndex");
+        return savedIndex ? parseInt(savedIndex) : 0;
+    });
+    const [statsOpen, setStatsOpen] = useState(() => {
+        return localStorage.getItem("statsOpen") === "true";
+    });
+    const [selectedSubIndex, setSelectedSubIndex] = useState(() => {
+        const savedSubIndex = localStorage.getItem("selectedSubIndex");
+        return savedSubIndex ? parseInt(savedSubIndex) : 0;
+    });
     const [drawerOpen, setDrawerOpen] = useState(true);
+
+    useEffect(() => {
+        localStorage.setItem("selectedTabIndex", selectedIndex.toString());
+        localStorage.setItem("statsOpen", statsOpen.toString());
+        localStorage.setItem("selectedSubIndex", selectedSubIndex.toString());
+    }, [selectedIndex, statsOpen, selectedSubIndex]);
 
     const menuItems = [
         { text: "Báo cáo thống kê", icon: <StackedLineChartIcon /> },
+        { text: "Thông tin nhà xe", icon: <BusinessIcon /> },
         { text: "Quản lý xe", icon: <DirectionsBusIcon /> },
         { text: "Quản lý tuyến xe", icon: <RouteIcon /> },
         { text: "Quản lý khuyến mãi", icon: <LocalOfferIcon /> },
@@ -49,6 +66,10 @@ const DashBoard = () => {
 
     const handleListItemClick = (index: number) => {
         setSelectedIndex(index);
+        // Nếu click vào tab khác, đóng stats menu
+        if (index !== 0) {
+            setStatsOpen(false);
+        }
     };
 
     const handleStatsClick = (subIndex: number) => {
@@ -61,18 +82,20 @@ const DashBoard = () => {
             case 0:
                 return <StatisticsChart selectedSubIndex={selectedSubIndex} />;
             case 1:
-                return <BusManagement />;
+                return <BusCompanyManagement />;
             case 2:
-                return <BusRouteManagement />;
+                return <BusManagement />;
             case 3:
-                return <VoucherManagement />;
+                return <BusRouteManagement />;
             case 4:
-                return <UserAccountManagement />;
+                return <VoucherManagement />;
             case 5:
-                return <DriverManagement />;
+                return <UserAccountManagement />;
             case 6:
-                return <BusCompanyChat />;
+                return <DriverManagement />;
             case 7:
+                return <BusCompanyChat />;
+            case 8:
                 return <TicketManagement />;
             default:
                 return <StatisticsChart selectedSubIndex={selectedSubIndex} />;

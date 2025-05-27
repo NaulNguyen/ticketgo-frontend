@@ -240,23 +240,6 @@ const BusRouteManagement = () => {
                                             <span className="text-blue-700 font-bold">
                                                 {result.routeName}
                                             </span>
-                                            <span
-                                                className="text-white text-sm flex items-center justify-center px-1 rounded-sm"
-                                                style={{
-                                                    backgroundColor:
-                                                        "rgb(36, 116, 229)",
-                                                    height: "fit-content",
-                                                }}
-                                            >
-                                                <StarIcon
-                                                    sx={{
-                                                        fontSize: "14px",
-                                                        mb: "2px",
-                                                        color: "white",
-                                                    }}
-                                                />
-                                                4.7 (90)
-                                            </span>
                                         </Typography>
                                         <Typography className="text-gray-500 text-sm">
                                             {result.busType}

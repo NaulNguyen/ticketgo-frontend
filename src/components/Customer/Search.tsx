@@ -97,8 +97,16 @@ const Search = ({ isDashboard = false, onSearch }: any) => {
         if (departureLocation) setDeparture(departureLocation);
         if (arrivalLocation) setDestination(arrivalLocation);
         if (departureDate) setSelectedDate(new Date(departureDate));
-        if (returnDate) setReturnDate(new Date(returnDate));
+        if (returnDate) {
+            setReturnDate(new Date(returnDate));
+            setTripType("round-trip");
+        }
     }, [location.search]);
+
+    const isReturnDateValid = (date: Date | null) => {
+        if (!date || !selectedDate) return true;
+        return date > selectedDate;
+    };
 
     const handleSwap = () => {
         const temp = departure;
@@ -108,7 +116,6 @@ const Search = ({ isDashboard = false, onSearch }: any) => {
 
     const handleSearch = () => {
         if (!isDashboard) {
-            // Only validate for non-dashboard usage
             if (!departure || !destination || !selectedDate) {
                 toast.warn("Hãy nhập đầy đủ thông tin");
                 return;
@@ -118,6 +125,16 @@ const Search = ({ isDashboard = false, onSearch }: any) => {
                 toast.warn("Nơi xuất phát và nơi đến không được giống nhau");
                 return;
             }
+
+            if (tripType === "round-trip" && !returnDate) {
+                toast.warn("Vui lòng chọn ngày về cho hành trình khứ hồi");
+                return;
+            }
+
+            if (returnDate && selectedDate && returnDate < selectedDate) {
+                toast.warn("Ngày về phải sau ngày đi");
+                return;
+            }
         }
 
         if (isDashboard) {
@@ -125,21 +142,17 @@ const Search = ({ isDashboard = false, onSearch }: any) => {
             return;
         }
 
-        const formattedDate = selectedDate
-            ? format(selectedDate, "yyyy-MM-dd")
-            : "";
-        const params = new URLSearchParams({
-            ...(departure && { departureLocation: departure }),
-            ...(destination && { arrivalLocation: destination }),
-            ...(formattedDate && { departureDate: formattedDate }),
-            sortBy: "departureTime",
-            sortDirection: "asc",
-            pageNumber: "1",
-            pageSize: "5",
-        });
+        const params = new URLSearchParams();
+        if (departure) params.append("departureLocation", departure);
+        if (destination) params.append("arrivalLocation", destination);
+        if (selectedDate)
+            params.append("departureDate", format(selectedDate, "yyyy-MM-dd"));
+        params.append("sortBy", "departureTime");
+        params.append("sortDirection", "asc");
+        params.append("pageNumber", "1");
+        params.append("pageSize", "5");
 
-        // Only add returnDate if it exists
-        if (returnDate && !isDashboard) {
+        if (tripType === "round-trip" && returnDate) {
             params.append("returnDate", format(returnDate, "yyyy-MM-dd"));
         }
 
@@ -372,7 +385,15 @@ const Search = ({ isDashboard = false, onSearch }: any) => {
                                 <DatePicker
                                     label="Ngày về"
                                     value={returnDate}
-                                    onChange={(date) => setReturnDate(date)}
+                                    onChange={(date) => {
+                                        if (date && !isReturnDateValid(date)) {
+                                            toast.warn(
+                                                "Ngày về phải sau ngày đi"
+                                            );
+                                            return;
+                                        }
+                                        setReturnDate(date);
+                                    }}
                                     minDate={selectedDate || undefined}
                                     disablePast
                                     format="EEE, dd/MM/yyyy"

@@ -22,6 +22,9 @@ const PaymentMethod = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const scheduleId = new URLSearchParams(location.search).get("scheduleId");
+    const outboundId = new URLSearchParams(location.search).get("outboundId");
+    const returnId = new URLSearchParams(location.search).get("returnId");
+    const isRoundTrip = outboundId && returnId;
     const [paymentProcessing, setPaymentProcessing] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isNavigating, setIsNavigating] = useState(false);
@@ -49,6 +52,16 @@ const PaymentMethod = () => {
         promotionId: number;
         discountPercentage: number;
     } | null>(null);
+    const [roundTripData, setRoundTripData] = useState<{
+        outbound?: {
+            tripInfo: TripInfo;
+            estimatedPrice: EstimatedPrice;
+        };
+        return?: {
+            tripInfo: TripInfo;
+            estimatedPrice: EstimatedPrice;
+        };
+    }>({});
 
     const handlePromotionSelect = (
         promotion: {
@@ -61,41 +74,67 @@ const PaymentMethod = () => {
 
     useEffect(() => {
         const fetchContactInfo = async () => {
-            if (!scheduleId) return;
+            const contactScheduleId = outboundId || scheduleId;
+            if (!contactScheduleId) {
+                toast.error("Không tìm thấy thông tin đặt vé");
+                return;
+            }
 
             try {
                 const response = await UserService.getSavedContactInfo(
-                    scheduleId
+                    contactScheduleId
                 );
-                setContactInfo({
-                    fullName: response.data.contactName,
-                    phoneNumber: response.data.contactPhone,
-                    email: response.data.contactEmail,
-                });
+                if (response.data) {
+                    setContactInfo({
+                        fullName: response.data.contactName || "",
+                        phoneNumber: response.data.contactPhone || "",
+                        email: response.data.contactEmail || "",
+                    });
+                }
             } catch (error) {
                 console.error("Error fetching contact info:", error);
                 toast.error("Không thể tải thông tin liên hệ");
+                navigate("/");
             }
         };
 
         fetchContactInfo();
-    }, [scheduleId]);
+    }, [outboundId, scheduleId, navigate]);
 
     const handlePaymentClick = async () => {
+        if (
+            !contactInfo.fullName ||
+            !contactInfo.phoneNumber ||
+            !contactInfo.email
+        ) {
+            toast.error("Vui lòng điền đầy đủ thông tin liên hệ");
+            return;
+        }
+
         setIsNavigating(true);
         setPaymentProcessing(true);
+
         try {
-            const response = await UserService.vnPay({
+            const paymentData = {
                 fullName: contactInfo.fullName,
                 email: contactInfo.email,
                 phoneNumber: contactInfo.phoneNumber,
-                scheduleId,
-                promotionId: selectedPromotion?.promotionId,
-            });
-            const paymentUrl = response.data;
-            window.location.href = paymentUrl;
+                scheduleId: isRoundTrip ? outboundId! : scheduleId!,
+                ...(isRoundTrip && { returnScheduleId: returnId }),
+                ...(selectedPromotion && {
+                    promotionId: selectedPromotion.promotionId,
+                }),
+            };
+
+            const response = await UserService.vnPay(paymentData);
+            if (response.data) {
+                window.location.href = response.data;
+            } else {
+                throw new Error("Invalid payment URL");
+            }
         } catch (error) {
-            console.error("Payment failed", error);
+            console.error("Payment failed:", error);
+            toast.error("Có lỗi xảy ra khi thanh toán");
             setIsNavigating(false);
         } finally {
             setPaymentProcessing(false);
@@ -104,32 +143,39 @@ const PaymentMethod = () => {
 
     useEffect(() => {
         const fetchBookingInfo = async () => {
-            if (!scheduleId) {
-                console.error("No schedule ID found");
-                navigate("/");
-                return;
-            }
-
             try {
-                const response = await UserService.getBookingInfo(scheduleId);
-                const { prices, tripInformation } = response.data.data;
+                if (isRoundTrip) {
+                    // Fetch outbound trip info
+                    const outboundResponse = await UserService.getBookingInfo(
+                        outboundId
+                    );
+                    const outboundData = outboundResponse.data.data;
 
-                setEstimatedPrice({
-                    totalPrice: prices.totalPrice,
-                    unitPrice: prices.unitPrice,
-                    quantity: prices.quantity,
-                    seatNumbers: prices.seatNumbers,
-                });
+                    // Fetch return trip info
+                    const returnResponse = await UserService.getBookingInfo(
+                        returnId
+                    );
+                    const returnData = returnResponse.data.data;
 
-                setTripInfo({
-                    departureTime: tripInformation.departureTime,
-                    licensePlate: tripInformation.licensePlate,
-                    busType: tripInformation.busType,
-                    pickupTime: tripInformation.pickupTime,
-                    pickupLocation: tripInformation.pickupLocation,
-                    dropoffTime: tripInformation.dropoffTime,
-                    dropoffLocation: tripInformation.dropoffLocation,
-                });
+                    setRoundTripData({
+                        outbound: {
+                            tripInfo: outboundData.tripInformation,
+                            estimatedPrice: outboundData.prices,
+                        },
+                        return: {
+                            tripInfo: returnData.tripInformation,
+                            estimatedPrice: returnData.prices,
+                        },
+                    });
+                } else if (scheduleId) {
+                    // Regular one-way trip
+                    const response = await UserService.getBookingInfo(
+                        scheduleId
+                    );
+                    const { prices, tripInformation } = response.data.data;
+                    setEstimatedPrice(prices);
+                    setTripInfo(tripInformation);
+                }
             } catch (error) {
                 console.error("Error fetching booking info:", error);
                 toast.error("Có lỗi xảy ra khi tải thông tin đặt vé");
@@ -137,7 +183,7 @@ const PaymentMethod = () => {
         };
 
         fetchBookingInfo();
-    }, [scheduleId, navigate]);
+    }, [isRoundTrip, outboundId, returnId, scheduleId]);
 
     useEffect(() => {
         const handleBeforeUnload = (e: any) => {
@@ -174,13 +220,23 @@ const PaymentMethod = () => {
 
     const handleConfirmExit = async (scheduleId: string | number) => {
         try {
-            await UserService.cancleTicketReserve(scheduleId);
+            if (isRoundTrip && outboundId && returnId) {
+                // Cancel both reservations for round-trip
+                await Promise.all([
+                    UserService.cancleTicketReserve(outboundId),
+                    UserService.cancleTicketReserve(returnId),
+                ]);
+            } else if (scheduleId) {
+                // Cancel single reservation for one-way trip
+                await UserService.cancleTicketReserve(scheduleId);
+            }
             toast.success("Đã hủy chỗ đặt thành công");
         } catch (error) {
             console.error("Error canceling reservation:", error);
+            toast.error("Có lỗi xảy ra khi hủy chỗ đặt");
         } finally {
             setIsModalOpen(false);
-            navigate("/"); // Navigate back to the previous page
+            navigate("/");
         }
     };
 
@@ -202,8 +258,9 @@ const PaymentMethod = () => {
                 <Container
                     sx={{
                         paddingY: "20px",
-                        justifyContent: "center",
-                        alignItems: "flex-start",
+                        display: "flex",
+                        flexDirection: "column",
+                        maxWidth: "1200px !important",
                     }}
                 >
                     <Button
@@ -216,32 +273,29 @@ const PaymentMethod = () => {
                             fontSize: "16px",
                             textTransform: "none",
                             fontWeight: "bold",
+                            alignSelf: "flex-start",
                             "&:hover": { backgroundColor: "transparent" },
                         }}
                         onClick={() => setIsModalOpen(true)}
                     >
                         Quay lại
                     </Button>
-                    <Container
+                    <Box
                         sx={{
                             display: "flex",
+                            gap: 3,
                             justifyContent: "center",
-                            alignItems: "flex-start",
+                            marginTop: 2,
                         }}
                     >
-                        <Box display="flex" flexDirection="column">
+                        <Box sx={{ flex: "0 1 650px" }}>
                             <Box
                                 sx={{
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    gap: 2,
-                                    padding: "20px",
                                     backgroundColor: "white",
                                     borderRadius: "8px",
                                     border: "1px solid #e0e0e0",
-                                    marginTop: "20px",
-                                    width: "700px",
-                                    minHeight: "fit-content",
+                                    padding: 3,
+                                    marginBottom: 2,
                                 }}
                             >
                                 <Typography
@@ -287,16 +341,10 @@ const PaymentMethod = () => {
                             </Box>
                             <Box
                                 sx={{
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    gap: 2,
-                                    padding: "20px",
                                     backgroundColor: "white",
                                     borderRadius: "8px",
                                     border: "1px solid #e0e0e0",
-                                    marginTop: "20px",
-                                    width: "700px",
-                                    minHeight: "fit-content",
+                                    padding: 3,
                                 }}
                             >
                                 <Typography
@@ -359,12 +407,48 @@ const PaymentMethod = () => {
                         </Box>
 
                         {/* Trip Summary and Details Box */}
-                        <TripSummary
-                            tripInfo={tripInfo}
-                            estimatedPrice={estimatedPrice}
-                            onPromotionSelect={handlePromotionSelect}
-                        />
-                    </Container>
+                        <Box sx={{ flex: "0 1 375px" }}>
+                            {isRoundTrip ? (
+                                <>
+                                    <TripSummary
+                                        tripInfo={
+                                            roundTripData.outbound?.tripInfo!
+                                        }
+                                        estimatedPrice={
+                                            roundTripData.outbound
+                                                ?.estimatedPrice!
+                                        }
+                                        onPromotionSelect={
+                                            handlePromotionSelect
+                                        }
+                                        isOutbound={true}
+                                        isPaymentMethod={true}
+                                    />
+                                    <TripSummary
+                                        tripInfo={
+                                            roundTripData.return?.tripInfo!
+                                        }
+                                        estimatedPrice={
+                                            roundTripData.return
+                                                ?.estimatedPrice!
+                                        }
+                                        onPromotionSelect={
+                                            handlePromotionSelect
+                                        }
+                                        isReturn={true}
+                                        isPaymentMethod={true}
+                                    />
+                                </>
+                            ) : (
+                                <TripSummary
+                                    tripInfo={tripInfo}
+                                    estimatedPrice={estimatedPrice}
+                                    onPromotionSelect={handlePromotionSelect}
+                                    isPaymentMethod={true}
+                                />
+                            )}
+                        </Box>
+                    </Box>
                 </Container>
             </div>
             <Box

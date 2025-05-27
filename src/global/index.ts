@@ -19,6 +19,8 @@ export type UserInformation = {
     fullName: string;
     phoneNumber: string;
     dateOfBirth: string;
+    membershipLevel: string;
+    points: number;
 };
 
 export type Booking = {

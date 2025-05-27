@@ -17,13 +17,20 @@ import { EstimatedPrice, TripInfo } from "../../global";
 import { axiosWithJWT } from "../../config/axiosConfig";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import { useLocation } from "react-router-dom";
+import useAppAccessor from "../../hook/useAppAccessor";
 
 interface TripSummaryProps {
     tripInfo: TripInfo;
     estimatedPrice: EstimatedPrice;
     onPromotionSelect?: (
-        promotion: { promotionId: number; discountPercentage: number } | null
+        promotion: {
+            promotionId: number;
+            discountPercentage: number;
+        } | null
     ) => void;
+    isOutbound?: boolean;
+    isReturn?: boolean;
+    isPaymentMethod?: boolean;
 }
 
 interface Promotion {
@@ -36,10 +43,31 @@ interface Promotion {
     status: string;
 }
 
+type MembershipLevel =
+    | "NEW_PASSENGER"
+    | "LOYAL_TRAVELER"
+    | "GOLD_COMPANION"
+    | "ELITE_EXPLORER";
+
 const TripSummary: React.FC<TripSummaryProps> = ({
-    tripInfo,
-    estimatedPrice,
+    tripInfo = {
+        departureTime: "",
+        pickupTime: "",
+        dropoffTime: "",
+        pickupLocation: "",
+        dropoffLocation: "",
+        licensePlate: "",
+        busType: "",
+    },
+    estimatedPrice = {
+        totalPrice: 0,
+        unitPrice: 0,
+        quantity: 0,
+        seatNumbers: [],
+    },
     onPromotionSelect,
+    isOutbound,
+    isReturn,
 }) => {
     const [showPriceDetails, setShowPriceDetails] = useState(false);
     const [promotions, setPromotions] = useState<Promotion[]>([]);
@@ -49,12 +77,28 @@ const TripSummary: React.FC<TripSummaryProps> = ({
     const location = useLocation();
     const isPaymentMethod = location.pathname === "/payment-method";
 
+    const { getUserInfor } = useAppAccessor();
+    const userInfo = getUserInfor();
+
     const handlePriceBoxClick = () => {
         setShowPriceDetails((prev) => !prev);
     };
 
     const calculateDiscount = (price: number, discountPercentage: number) => {
         return Math.round((price * discountPercentage) / 100);
+    };
+
+    const getMembershipDiscount = (level: MembershipLevel): number => {
+        switch (level) {
+            case "LOYAL_TRAVELER":
+                return 5;
+            case "GOLD_COMPANION":
+                return 10;
+            case "ELITE_EXPLORER":
+                return 15;
+            default:
+                return 0;
+        }
     };
 
     const handlePromotionSelect = (promo: Promotion | null) => {
@@ -76,22 +120,34 @@ const TripSummary: React.FC<TripSummaryProps> = ({
         totalPrice: number,
         promotion: Promotion | null
     ) => {
-        if (!promotion) return totalPrice;
-        const discount = Math.round(
-            (totalPrice * promotion.discountPercentage) / 100
-        );
-        return totalPrice - discount;
+        let finalPrice = totalPrice;
+
+        // Apply membership discount if user is logged in
+        if (userInfo?.isAuthenticated) {
+            const membershipDiscount = getMembershipDiscount(
+                userInfo.user.membershipLevel as MembershipLevel
+            );
+            finalPrice -= Math.round((finalPrice * membershipDiscount) / 100);
+        }
+
+        // Apply promotion discount if selected
+        if (promotion) {
+            finalPrice -= Math.round(
+                (finalPrice * promotion.discountPercentage) / 100
+            );
+        }
+
+        return finalPrice;
     };
 
-    const formattedDepartureTime =
-        tripInfo.departureTime &&
-        !isNaN(new Date(tripInfo.departureTime).getTime())
-            ? format(new Date(tripInfo.departureTime), "EEE, dd/MM/yyyy", {
-                  locale: vi,
-              })
-            : "Ngày không hợp lệ";
+    const formattedDepartureTime = tripInfo?.departureTime
+        ? format(new Date(tripInfo.departureTime), "EEE, dd/MM/yyyy", {
+              locale: vi,
+          })
+        : "Ngày không hợp lệ";
 
-    const formatTime = (time: string) => {
+    const formatTime = (time?: string) => {
+        if (!time) return "N/A";
         const date = new Date(time);
         return !isNaN(date.getTime()) ? format(date, "HH:mm") : "N/A";
     };
@@ -102,6 +158,12 @@ const TripSummary: React.FC<TripSummaryProps> = ({
             ? `${text.substring(0, maxLength)}...`
             : text;
     };
+
+    const membershipDiscount = userInfo?.isAuthenticated
+        ? getMembershipDiscount(
+              userInfo.user.membershipLevel as MembershipLevel
+          )
+        : 0;
 
     useEffect(() => {
         const fetchPromotions = async () => {
@@ -127,8 +189,8 @@ const TripSummary: React.FC<TripSummaryProps> = ({
     return (
         <Box
             sx={{
-                width: "375px",
-                padding: 2,
+                width: "400px",
+                padding: isPaymentMethod ? 0 : 2,
                 borderRadius: 2,
                 marginBottom: showPriceDetails ? "50px" : 0,
             }}
@@ -198,11 +260,20 @@ const TripSummary: React.FC<TripSummaryProps> = ({
                             <Typography sx={{ fontSize: "14px" }}>
                                 Giá vé
                             </Typography>
-                            {selectedPromotion && isPaymentMethod && (
+                            {membershipDiscount > 0 && (
                                 <Typography
-                                    sx={{ fontSize: "14px", marginTop: 3 }}
+                                    sx={{
+                                        fontSize: "14px",
+                                        marginTop: 3,
+                                    }}
                                 >
-                                    Giảm giá
+                                    Giảm giá thành viên ({membershipDiscount}%)
+                                </Typography>
+                            )}
+                            {selectedPromotion && isPaymentMethod && (
+                                <Typography sx={{ fontSize: "14px" }}>
+                                    Mã giảm giá (
+                                    {selectedPromotion.discountPercentage}%)
                                 </Typography>
                             )}
                         </Box>
@@ -230,24 +301,49 @@ const TripSummary: React.FC<TripSummaryProps> = ({
                                     "N/A"}
                             </Typography>
 
+                            {membershipDiscount > 0 && (
+                                <>
+                                    <Typography
+                                        sx={{
+                                            fontSize: "14px",
+                                            color: "#00c853",
+                                            fontWeight: "bold",
+                                            marginTop: 1,
+                                        }}
+                                    >
+                                        -
+                                        {new Intl.NumberFormat("vi-VN").format(
+                                            Math.round(
+                                                ((estimatedPrice?.totalPrice ||
+                                                    0) *
+                                                    membershipDiscount) /
+                                                    100
+                                            )
+                                        )}
+                                        đ
+                                    </Typography>
+                                </>
+                            )}
+
                             {selectedPromotion && isPaymentMethod && (
-                                <Typography
-                                    sx={{
-                                        fontSize: "14px",
-                                        color: "#00c853",
-                                        fontWeight: "bold",
-                                        marginTop: 1,
-                                    }}
-                                >
-                                    -
-                                    {new Intl.NumberFormat("vi-VN").format(
-                                        calculateDiscount(
-                                            estimatedPrice?.totalPrice || 0,
-                                            selectedPromotion.discountPercentage
-                                        )
-                                    )}
-                                    đ
-                                </Typography>
+                                <>
+                                    <Typography
+                                        sx={{
+                                            fontSize: "14px",
+                                            color: "#00c853",
+                                            fontWeight: "bold",
+                                        }}
+                                    >
+                                        -
+                                        {new Intl.NumberFormat("vi-VN").format(
+                                            calculateDiscount(
+                                                estimatedPrice?.totalPrice || 0,
+                                                selectedPromotion.discountPercentage
+                                            )
+                                        )}
+                                        đ
+                                    </Typography>
+                                </>
                             )}
                         </Box>
                     </Box>
@@ -394,7 +490,7 @@ const TripSummary: React.FC<TripSummaryProps> = ({
                         marginBottom: 2,
                     }}
                 >
-                    Thông tin chuyến đi
+                    Thông tin {isOutbound ? "chuyến đi" : "chuyến về"}
                 </Typography>
 
                 <Box

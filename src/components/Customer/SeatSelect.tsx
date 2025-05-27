@@ -15,7 +15,7 @@ import { BlockedSeat, EmptySeat, SelectedSeat, Wheel } from "../IconSVG";
 import axios from "axios";
 import useAppAccessor from "../../hook/useAppAccessor";
 import ArrowBackIosIcon from "@mui/icons-material/ArrowBackIos";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useDispatch } from "react-redux";
 import { booking } from "../../actions/user.action";
@@ -40,6 +40,20 @@ interface FloorData {
 interface SeatSelectProps {
     scheduleId: string;
     price: number;
+    isReturn?: boolean;
+    isRoundTrip?: boolean;
+    firstTripData?: {
+        scheduleId: string;
+        ticketCodes: string[];
+        pickupStopId: number;
+        dropoffStopId: number;
+    } | null;
+    onFirstTripComplete?: (tripData: {
+        scheduleId: string;
+        ticketCodes: string[];
+        pickupStopId: number;
+        dropoffStopId: number;
+    }) => void;
 }
 
 interface RouteStopsData {
@@ -69,7 +83,14 @@ interface Coordinates {
     lon: number;
 }
 
-const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
+const SeatSelect: React.FC<SeatSelectProps> = ({
+    scheduleId,
+    price,
+    isReturn,
+    isRoundTrip,
+    firstTripData,
+    onFirstTripComplete,
+}) => {
     const [seatsData, setSeatsData] = useState<FloorData | null>(null);
     const [selectedSeats, setSelectedSeats] = useState<Seat[]>([]);
     const [selectedSeat, setSelectedSeat] = useState<Seat | null>(null);
@@ -85,6 +106,8 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
         useState(false);
     const [isDropoffAddressModalOpen, setIsDropoffAddressModalOpen] =
         useState(false);
+
+    const location = useLocation();
 
     const [isMapOpen, setIsMapOpen] = useState(false);
     const [selectedLocation, setSelectedLocation] = useState<{
@@ -191,15 +214,43 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
                 toast.error("Vui lòng chọn ghế");
                 return;
             }
+
+            const currentTripData = {
+                scheduleId,
+                ticketCodes: selectedSeats.map((seat) => seat.ticketCode),
+                pickupStopId: selectedPickup,
+                dropoffStopId: selectedDropoff,
+            };
+
             try {
-                const requestData = {
-                    ticketCodes: selectedSeats.map((seat) => seat.ticketCode),
-                    pickupStopId: selectedPickup,
-                    dropoffStopId: selectedDropoff,
-                    scheduleId: scheduleId,
-                };
-                await UserService.savePriceAndTripInfo(requestData);
-                setActiveStep((prevActiveStep) => prevActiveStep + 1);
+                const searchParams = new URLSearchParams(location.search);
+                const returnDate = searchParams.get("returnDate");
+                const isRoundTrip = !!returnDate;
+                if (isRoundTrip) {
+                    if (!isReturn) {
+                        // Lưu chuyến đi
+                        await UserService.savePriceAndTripInfo(currentTripData);
+                        onFirstTripComplete?.(currentTripData); // set isReturn = true, chuyển UI sang chiều về
+                        setActiveStep(0); // reset step để chọn chuyến về
+                    } else {
+                        // Lưu chuyến về, rồi điều hướng
+                        if (firstTripData) {
+                            await UserService.savePriceAndTripInfo(
+                                firstTripData
+                            );
+                            await UserService.savePriceAndTripInfo(
+                                currentTripData
+                            );
+                            navigate(
+                                `/booking-confirm?outboundId=${firstTripData.scheduleId}&returnId=${scheduleId}`
+                            );
+                        }
+                    }
+                } else {
+                    // Chuyến một chiều, lưu rồi điều hướng luôn
+                    await UserService.savePriceAndTripInfo(currentTripData);
+                    navigate(`/booking-confirm?scheduleId=${scheduleId}`);
+                }
                 toast.success("Lưu thông tin đặt vé thành công");
             } catch (error: any) {
                 console.error("Error saving booking info:", error);
@@ -209,7 +260,7 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
                 );
             }
         } else {
-            setActiveStep((prevActiveStep) => prevActiveStep + 1);
+            setActiveStep((prev) => prev + 1);
         }
     };
 
@@ -244,12 +295,6 @@ const SeatSelect: React.FC<SeatSelectProps> = ({ scheduleId, price }) => {
             detailLocation: "",
         };
     };
-
-    useEffect(() => {
-        if (activeStep === 2) {
-            navigate(`/booking-confirm?scheduleId=${scheduleId}`);
-        }
-    }, [activeStep, navigate, scheduleId]);
 
     useEffect(() => {
         const fetchSeatsData = async () => {
