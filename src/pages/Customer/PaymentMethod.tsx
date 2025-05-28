@@ -221,13 +221,10 @@ const PaymentMethod = () => {
     const handleConfirmExit = async (scheduleId: string | number) => {
         try {
             if (isRoundTrip && outboundId && returnId) {
-                // Cancel both reservations for round-trip
-                await Promise.all([
-                    UserService.cancleTicketReserve(outboundId),
-                    UserService.cancleTicketReserve(returnId),
-                ]);
+                // For round-trip, pass both IDs
+                await UserService.cancleTicketReserve(outboundId, returnId);
             } else if (scheduleId) {
-                // Cancel single reservation for one-way trip
+                // For one-way trip
                 await UserService.cancleTicketReserve(scheduleId);
             }
             toast.success("Đã hủy chỗ đặt thành công");

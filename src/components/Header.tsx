@@ -217,12 +217,30 @@ const Header = ({ onToggleDrawer }: { onToggleDrawer?: () => void }) => {
         }
     }, [dispatch]);
 
-    const handleCloseTimeoutModal = async (scheduleId: string) => {
+    const handleCloseTimeoutModal = async () => {
         try {
-            await UserService.cancleTicketReserve(scheduleId);
+            const outboundId = new URLSearchParams(location.search).get(
+                "outboundId"
+            );
+            const returnId = new URLSearchParams(location.search).get(
+                "returnId"
+            );
+            const singleTripId = new URLSearchParams(location.search).get(
+                "scheduleId"
+            );
+
+            if (outboundId && returnId) {
+                // Handle round-trip cancellation
+                await UserService.cancleTicketReserve(outboundId, returnId);
+            } else if (singleTripId) {
+                // Handle one-way trip cancellation
+                await UserService.cancleTicketReserve(singleTripId);
+            }
+
             toast.success("Đã hủy chỗ đặt thành công");
         } catch (error) {
             console.error("Error canceling reservation:", error);
+            toast.error("Có lỗi xảy ra khi hủy chỗ đặt");
         } finally {
             setTimeoutModalOpen(false);
             navigate("/");
@@ -344,7 +362,7 @@ const Header = ({ onToggleDrawer }: { onToggleDrawer?: () => void }) => {
                     </Typography>
                     <Button
                         variant="contained"
-                        onClick={() => handleCloseTimeoutModal(scheduleId!)}
+                        onClick={handleCloseTimeoutModal}
                         sx={{
                             backgroundColor: "rgb(13, 46, 89)",
                             color: "white",

@@ -104,16 +104,19 @@ class UserService {
     }
 }
 
-    static async cancleTicketReserve(scheduleId: number | string) {
-        try {
-            const response = await axiosWithJWT.post(
-                `${UserService.BASE_URL}/api/v1/seats/cancel-reserve?scheduleId=${scheduleId}`
-            );
-            return response;
-        } catch (error) {
-            throw error;
+    static async cancleTicketReserve(scheduleId: number | string, returnScheduleId?: number | string) {
+    try {
+        let url = `${UserService.BASE_URL}/api/v1/seats/cancel-reserve?scheduleId=${scheduleId}`;
+        if (returnScheduleId) {
+            url += `&returnScheduleId=${returnScheduleId}`;
         }
+        
+        const response = await axiosWithJWT.post(url);
+        return response;
+    } catch (error) {
+        throw error;
     }
+}
 
     static async bookingHistory() {
         try {
