@@ -149,7 +149,11 @@ const TicketManagement = () => {
             if (response.data.status === 200) {
                 toast.success("Xác nhận hoàn tiền thành công");
                 // Refresh the bookings list
-                fetchBookings(pagination.pageNumber);
+                fetchBookings(
+                    pagination.pageNumber,
+                    filters.status,
+                    filters.dateRange
+                );
             }
         } catch (error) {
             console.error("Error confirming refund:", error);
@@ -162,7 +166,7 @@ const TicketManagement = () => {
     }, []);
 
     const handlePageChange = (_: React.ChangeEvent<unknown>, value: number) => {
-        fetchBookings(value);
+        fetchBookings(value, filters.status, filters.dateRange);
     };
 
     const parseRouteName = (routeName: string) => {
