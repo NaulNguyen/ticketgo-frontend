@@ -10,6 +10,7 @@ import {
     Typography,
     Grid,
     IconButton,
+    MenuItem,
 } from "@mui/material";
 import { useFormik } from "formik";
 import * as Yup from "yup";
@@ -47,6 +48,19 @@ const VisuallyHiddenInput = styled("input")({
     whiteSpace: "nowrap",
     width: 1,
 });
+
+const BUS_TYPES = {
+    LIMOUSINE: {
+        label: "Limousine 22 Phòng",
+        seats: 22,
+        floors: 2,
+    },
+    SLEEPER: {
+        label: "Giường nằm 34 chỗ",
+        seats: 34,
+        floors: 2,
+    },
+} as const;
 
 const validationSchema = Yup.object({
     licensePlate: Yup.string()
@@ -279,11 +293,45 @@ const CreateBusPopup: React.FC<CreateBusPopupProps> = ({
                                     }
                                 />
                                 <TextField
+                                    select
                                     fullWidth
                                     label="Loại xe"
                                     name="busType"
                                     value={formik.values.busType}
-                                    onChange={formik.handleChange}
+                                    onChange={(e) => {
+                                        const selectedType = e.target.value;
+                                        formik.setFieldValue(
+                                            "busType",
+                                            selectedType
+                                        );
+
+                                        // Auto-fill seats and floors based on selection
+                                        if (
+                                            selectedType ===
+                                            BUS_TYPES.LIMOUSINE.label
+                                        ) {
+                                            formik.setFieldValue(
+                                                "totalSeats",
+                                                BUS_TYPES.LIMOUSINE.seats
+                                            );
+                                            formik.setFieldValue(
+                                                "floors",
+                                                BUS_TYPES.LIMOUSINE.floors
+                                            );
+                                        } else if (
+                                            selectedType ===
+                                            BUS_TYPES.SLEEPER.label
+                                        ) {
+                                            formik.setFieldValue(
+                                                "totalSeats",
+                                                BUS_TYPES.SLEEPER.seats
+                                            );
+                                            formik.setFieldValue(
+                                                "floors",
+                                                BUS_TYPES.SLEEPER.floors
+                                            );
+                                        }
+                                    }}
                                     error={
                                         formik.touched.busType &&
                                         Boolean(formik.errors.busType)
@@ -292,7 +340,17 @@ const CreateBusPopup: React.FC<CreateBusPopupProps> = ({
                                         formik.touched.busType &&
                                         formik.errors.busType
                                     }
-                                />
+                                >
+                                    <MenuItem value="">
+                                        <em>Chọn loại xe</em>
+                                    </MenuItem>
+                                    <MenuItem value={BUS_TYPES.LIMOUSINE.label}>
+                                        {BUS_TYPES.LIMOUSINE.label}
+                                    </MenuItem>
+                                    <MenuItem value={BUS_TYPES.SLEEPER.label}>
+                                        {BUS_TYPES.SLEEPER.label}
+                                    </MenuItem>
+                                </TextField>
                                 <Box sx={{ display: "flex", gap: 2 }}>
                                     <TextField
                                         sx={{ flex: 1 }}
@@ -309,6 +367,9 @@ const CreateBusPopup: React.FC<CreateBusPopupProps> = ({
                                             formik.touched.totalSeats &&
                                             formik.errors.totalSeats
                                         }
+                                        InputProps={{
+                                            readOnly: true,
+                                        }}
                                     />
                                     <TextField
                                         sx={{ flex: 1 }}
@@ -325,6 +386,9 @@ const CreateBusPopup: React.FC<CreateBusPopupProps> = ({
                                             formik.touched.floors &&
                                             formik.errors.floors
                                         }
+                                        InputProps={{
+                                            readOnly: true,
+                                        }}
                                     />
                                 </Box>
                                 <TextField
