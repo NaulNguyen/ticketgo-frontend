@@ -36,6 +36,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import { axiosWithJWT } from "../../config/axiosConfig";
 import ScheduleDialog from "../../popup/ScheduleDialog";
 import dayjs from "dayjs";
+import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 
 interface ScheduleByDay {
     scheduleId: number;
@@ -449,15 +450,49 @@ const BusManagement = () => {
                                                             gap: 1,
                                                         }}
                                                     >
-                                                        <EventIcon color="primary" />
-                                                        <Typography variant="body1">
-                                                            <strong>
-                                                                Hạn đăng kiểm:
-                                                            </strong>{" "}
-                                                            {
-                                                                bus.registrationExpiry
+                                                        <EventIcon
+                                                            color={
+                                                                bus.registrationExpiringSoon
+                                                                    ? "warning"
+                                                                    : "primary"
                                                             }
-                                                        </Typography>
+                                                        />
+                                                        <Box sx={{ flex: 1 }}>
+                                                            <Typography
+                                                                variant="body1"
+                                                                color={
+                                                                    bus.registrationExpiringSoon
+                                                                        ? "warning.main"
+                                                                        : "text.primary"
+                                                                }
+                                                            >
+                                                                <strong>
+                                                                    Hạn đăng
+                                                                    kiểm:
+                                                                </strong>{" "}
+                                                                {
+                                                                    bus.registrationExpiry
+                                                                }
+                                                            </Typography>
+                                                            {bus.registrationExpiringSoon && (
+                                                                <Typography
+                                                                    variant="caption"
+                                                                    color="warning.main"
+                                                                    sx={{
+                                                                        display:
+                                                                            "flex",
+                                                                        alignItems:
+                                                                            "center",
+                                                                        gap: 0.5,
+                                                                        mt: 0.5,
+                                                                    }}
+                                                                >
+                                                                    <ErrorOutlineIcon fontSize="small" />
+                                                                    Sắp đến hạn
+                                                                    đăng kiểm
+                                                                </Typography>
+                                                            )}
+                                                        </Box>
                                                     </Box>
                                                     <Box
                                                         sx={{
@@ -467,16 +502,49 @@ const BusManagement = () => {
                                                             gap: 1,
                                                         }}
                                                     >
-                                                        <EventIcon color="error" />
-                                                        <Typography
-                                                            variant="body1"
-                                                            color="error"
-                                                        >
-                                                            <strong>
-                                                                Ngày hết hạn:
-                                                            </strong>{" "}
-                                                            {bus.expirationDate}
-                                                        </Typography>
+                                                        <EventIcon
+                                                            color={
+                                                                bus.usageExpiringSoon
+                                                                    ? "warning"
+                                                                    : "error"
+                                                            }
+                                                        />
+                                                        <Box sx={{ flex: 1 }}>
+                                                            <Typography
+                                                                variant="body1"
+                                                                color={
+                                                                    bus.usageExpiringSoon
+                                                                        ? "warning.main"
+                                                                        : "error"
+                                                                }
+                                                            >
+                                                                <strong>
+                                                                    Ngày hết
+                                                                    hạn:
+                                                                </strong>{" "}
+                                                                {
+                                                                    bus.expirationDate
+                                                                }
+                                                            </Typography>
+                                                            {bus.usageExpiringSoon && (
+                                                                <Typography
+                                                                    variant="caption"
+                                                                    color="warning.main"
+                                                                    sx={{
+                                                                        display:
+                                                                            "flex",
+                                                                        alignItems:
+                                                                            "center",
+                                                                        gap: 0.5,
+                                                                        mt: 0.5,
+                                                                    }}
+                                                                >
+                                                                    <ErrorOutlineIcon fontSize="small" />
+                                                                    Sắp hết hạn
+                                                                    sử dụng
+                                                                </Typography>
+                                                            )}
+                                                        </Box>
                                                     </Box>
                                                 </Box>
                                             </Grid>

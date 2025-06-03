@@ -82,11 +82,14 @@ const EditBusPopup: React.FC<EditBusPopupProps> = ({
                     registrationExpiry: values.registrationExpiry,
                     expirationDate: values.expirationDate,
                 };
+                console.log("Request data:", requestData);
 
                 const response = await axiosWithJWT.post(
                     `https://ticketgo.site/api/v1/buses/${busId}`,
                     requestData
                 );
+
+                console.log("Response data:", response.data);
 
                 if (response.status === 200) {
                     toast.success("Cập nhật xe thành công");
