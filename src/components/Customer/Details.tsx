@@ -10,6 +10,8 @@ import {
     Avatar,
     Button,
     Tooltip,
+    Grid,
+    Chip,
 } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import TranslateIcon from "@mui/icons-material/Translate";
@@ -25,6 +27,10 @@ import PhoneIcon from "@mui/icons-material/Phone";
 import BadgeIcon from "@mui/icons-material/Badge";
 import DownloadIcon from "@mui/icons-material/Download";
 import { generateCustomerListPDF } from "../../utils/generateCustomerListPDF";
+import LocationOnIcon from "@mui/icons-material/LocationOn";
+import EventIcon from "@mui/icons-material/Event";
+import DirectionsBusIcon from "@mui/icons-material/DirectionsBus";
+import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 
 interface RouteStop {
     location: string;
@@ -75,11 +81,28 @@ const amenityIcons: { [key: string]: React.ReactNode } = {
 };
 
 interface DriverInfo {
-    driverId: number;
-    name: string;
-    licenseNumber: string;
-    phoneNumber: string;
-    imageUrl: string;
+    driver: {
+        driverId: number;
+        name: string;
+        licenseNumber: string;
+        phoneNumber: string;
+        imageUrl: string;
+        placeOfIssue: string;
+        issueDate: string;
+        expiryDate: string;
+    };
+    bus: {
+        busId: number;
+        licensePlate: string;
+        busType: string;
+        busImage: string;
+        totalSeats: number;
+        floors: number;
+        registrationExpiry: string;
+        expirationDate: string;
+        registrationExpiringSoon: boolean;
+        usageExpiringSoon: boolean;
+    };
 }
 
 const Details: React.FC<DetailsProps> = ({ scheduleId }) => {
@@ -88,6 +111,7 @@ const Details: React.FC<DetailsProps> = ({ scheduleId }) => {
     const [policies, setPolicies] = useState<Policy[]>([]);
     const [amenities, setAmenities] = useState<Amenity[]>([]);
     const [driverInfo, setDriverInfo] = useState<DriverInfo | null>(null);
+    console.log(driverInfo);
     const [customers, setCustomers] = useState<Customer[]>([]);
 
     const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
@@ -514,11 +538,20 @@ const Details: React.FC<DetailsProps> = ({ scheduleId }) => {
                             sx={{
                                 p: 3,
                                 mt: 2,
+                                mb: 3,
                                 borderRadius: 2,
                                 bgcolor: "#f8fafc",
                                 border: "1px solid #e2e8f0",
                             }}
                         >
+                            <Typography
+                                variant="h6"
+                                gutterBottom
+                                fontWeight="bold"
+                                color="primary"
+                            >
+                                Thông tin tài xế
+                            </Typography>
                             <Box
                                 sx={{
                                     display: "flex",
@@ -528,7 +561,7 @@ const Details: React.FC<DetailsProps> = ({ scheduleId }) => {
                                 }}
                             >
                                 <Avatar
-                                    src={driverInfo.imageUrl}
+                                    src={driverInfo.driver.imageUrl}
                                     sx={{
                                         width: 100,
                                         height: 100,
@@ -541,7 +574,7 @@ const Details: React.FC<DetailsProps> = ({ scheduleId }) => {
                                         fontWeight="bold"
                                         color="primary"
                                     >
-                                        {driverInfo.name}
+                                        {driverInfo.driver.name}
                                     </Typography>
                                 </Box>
                             </Box>
@@ -565,7 +598,7 @@ const Details: React.FC<DetailsProps> = ({ scheduleId }) => {
                                     <PhoneIcon color="primary" />
                                     <Typography>
                                         <strong>Số điện thoại:</strong>{" "}
-                                        {driverInfo.phoneNumber}
+                                        {driverInfo.driver.phoneNumber}
                                     </Typography>
                                 </Box>
 
@@ -579,10 +612,331 @@ const Details: React.FC<DetailsProps> = ({ scheduleId }) => {
                                     <BadgeIcon color="primary" />
                                     <Typography>
                                         <strong>Bằng lái:</strong>{" "}
-                                        {driverInfo.licenseNumber}
+                                        {driverInfo.driver.licenseNumber}
+                                    </Typography>
+                                </Box>
+
+                                <Box
+                                    sx={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 2,
+                                    }}
+                                >
+                                    <LocationOnIcon color="primary" />
+                                    <Typography>
+                                        <strong>Nơi cấp:</strong>{" "}
+                                        {driverInfo.driver.placeOfIssue}
+                                    </Typography>
+                                </Box>
+
+                                <Box
+                                    sx={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 2,
+                                    }}
+                                >
+                                    <EventIcon color="primary" />
+                                    <Typography>
+                                        <strong>Ngày cấp:</strong>{" "}
+                                        {new Date(
+                                            driverInfo.driver.issueDate
+                                        ).toLocaleDateString("vi-VN")}
+                                    </Typography>
+                                </Box>
+
+                                <Box
+                                    sx={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 2,
+                                    }}
+                                >
+                                    <EventIcon color="primary" />
+                                    <Typography>
+                                        <strong>Ngày hết hạn:</strong>{" "}
+                                        {new Date(
+                                            driverInfo.driver.expiryDate
+                                        ).toLocaleDateString("vi-VN")}
                                     </Typography>
                                 </Box>
                             </Box>
+                        </Paper>
+
+                        {/* Bus Info */}
+                        <Paper
+                            elevation={0}
+                            sx={{
+                                p: 3,
+                                borderRadius: 2,
+                                bgcolor: "#f8fafc",
+                                border: "1px solid #e2e8f0",
+                                transition: "all 0.3s ease",
+                                "&:hover": {
+                                    boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+                                    transform: "translateY(-2px)",
+                                },
+                            }}
+                        >
+                            <Typography
+                                variant="h6"
+                                gutterBottom
+                                fontWeight="bold"
+                                color="primary"
+                                sx={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 1,
+                                    mb: 3,
+                                }}
+                            >
+                                <DirectionsBusIcon /> Thông tin xe
+                            </Typography>
+
+                            <Grid container spacing={3}>
+                                {/* Bus Image */}
+                                <Grid item xs={12} md={4}>
+                                    <Box
+                                        sx={{
+                                            position: "relative",
+                                            width: "100%",
+                                            height: 200,
+                                            borderRadius: 2,
+                                            overflow: "hidden",
+                                            boxShadow:
+                                                "0 2px 12px rgba(0,0,0,0.1)",
+                                        }}
+                                    >
+                                        <Box
+                                            component="img"
+                                            src={driverInfo.bus.busImage}
+                                            sx={{
+                                                width: "100%",
+                                                height: "100%",
+                                                objectFit: "cover",
+                                                transition:
+                                                    "transform 0.3s ease",
+                                                "&:hover": {
+                                                    transform: "scale(1.05)",
+                                                },
+                                            }}
+                                        />
+                                    </Box>
+                                </Grid>
+
+                                {/* Bus Details */}
+                                <Grid item xs={12} md={8}>
+                                    <Box
+                                        sx={{
+                                            display: "flex",
+                                            flexDirection: "column",
+                                            gap: 2,
+                                        }}
+                                    >
+                                        {/* Bus Type and License */}
+                                        <Box sx={{ mb: 2 }}>
+                                            <Typography
+                                                variant="h6"
+                                                color="primary"
+                                                sx={{ mb: 1 }}
+                                                fontWeight="bold"
+                                            >
+                                                {driverInfo.bus.busType}
+                                            </Typography>
+                                            <Chip
+                                                label={
+                                                    driverInfo.bus.licensePlate
+                                                }
+                                                color="primary"
+                                                variant="outlined"
+                                                sx={{ fontWeight: "medium" }}
+                                            />
+                                        </Box>
+
+                                        {/* Bus Specifications */}
+                                        <Grid container spacing={2}>
+                                            <Grid item xs={6}>
+                                                <Paper
+                                                    elevation={0}
+                                                    sx={{
+                                                        p: 2,
+                                                        bgcolor:
+                                                            "primary.light",
+                                                        borderRadius: 2,
+                                                        height: "100%",
+                                                    }}
+                                                >
+                                                    <Typography
+                                                        color="primary.contrastText"
+                                                        variant="subtitle2"
+                                                    >
+                                                        Số ghế
+                                                    </Typography>
+                                                    <Typography
+                                                        color="primary.contrastText"
+                                                        variant="h5"
+                                                        fontWeight="bold"
+                                                    >
+                                                        {
+                                                            driverInfo.bus
+                                                                .totalSeats
+                                                        }
+                                                    </Typography>
+                                                </Paper>
+                                            </Grid>
+                                            <Grid item xs={6}>
+                                                <Paper
+                                                    elevation={0}
+                                                    sx={{
+                                                        p: 2,
+                                                        bgcolor:
+                                                            "secondary.light",
+                                                        borderRadius: 2,
+                                                        height: "100%",
+                                                    }}
+                                                >
+                                                    <Typography
+                                                        color="secondary.contrastText"
+                                                        variant="subtitle2"
+                                                    >
+                                                        Số tầng
+                                                    </Typography>
+                                                    <Typography
+                                                        color="secondary.contrastText"
+                                                        variant="h5"
+                                                        fontWeight="bold"
+                                                    >
+                                                        {driverInfo.bus.floors}
+                                                    </Typography>
+                                                </Paper>
+                                            </Grid>
+                                        </Grid>
+
+                                        {/* Expiry Dates */}
+                                        <Box sx={{ mt: 2 }}>
+                                            <Typography
+                                                variant="subtitle2"
+                                                color="text.secondary"
+                                                gutterBottom
+                                            >
+                                                Thông tin đăng kiểm và hạn sử
+                                                dụng
+                                            </Typography>
+                                            <Grid container spacing={2}>
+                                                <Grid item xs={12} sm={6}>
+                                                    <Box
+                                                        sx={{
+                                                            p: 2,
+                                                            border: "1px solid",
+                                                            borderColor:
+                                                                driverInfo.bus
+                                                                    .registrationExpiringSoon
+                                                                    ? "warning.main"
+                                                                    : "divider",
+                                                            borderRadius: 2,
+                                                            bgcolor: driverInfo
+                                                                .bus
+                                                                .registrationExpiringSoon
+                                                                ? "warning.lighter"
+                                                                : "background.paper",
+                                                        }}
+                                                    >
+                                                        <Typography
+                                                            variant="body2"
+                                                            color="text.secondary"
+                                                        >
+                                                            Hạn đăng kiểm
+                                                        </Typography>
+                                                        <Typography
+                                                            variant="body1"
+                                                            fontWeight="medium"
+                                                            color={
+                                                                driverInfo.bus
+                                                                    .registrationExpiringSoon
+                                                                    ? "warning.main"
+                                                                    : "text.primary"
+                                                            }
+                                                            sx={{
+                                                                display: "flex",
+                                                                alignItems:
+                                                                    "center",
+                                                                gap: 1,
+                                                            }}
+                                                        >
+                                                            {
+                                                                driverInfo.bus
+                                                                    .registrationExpiry
+                                                            }
+                                                            {driverInfo.bus
+                                                                .registrationExpiringSoon && (
+                                                                <ErrorOutlineIcon
+                                                                    color="warning"
+                                                                    fontSize="small"
+                                                                />
+                                                            )}
+                                                        </Typography>
+                                                    </Box>
+                                                </Grid>
+                                                <Grid item xs={12} sm={6}>
+                                                    <Box
+                                                        sx={{
+                                                            p: 2,
+                                                            border: "1px solid",
+                                                            borderColor:
+                                                                driverInfo.bus
+                                                                    .usageExpiringSoon
+                                                                    ? "warning.main"
+                                                                    : "divider",
+                                                            borderRadius: 2,
+                                                            bgcolor: driverInfo
+                                                                .bus
+                                                                .usageExpiringSoon
+                                                                ? "warning.lighter"
+                                                                : "background.paper",
+                                                        }}
+                                                    >
+                                                        <Typography
+                                                            variant="body2"
+                                                            color="text.secondary"
+                                                        >
+                                                            Hạn sử dụng
+                                                        </Typography>
+                                                        <Typography
+                                                            variant="body1"
+                                                            fontWeight="medium"
+                                                            color={
+                                                                driverInfo.bus
+                                                                    .usageExpiringSoon
+                                                                    ? "warning.main"
+                                                                    : "text.primary"
+                                                            }
+                                                            sx={{
+                                                                display: "flex",
+                                                                alignItems:
+                                                                    "center",
+                                                                gap: 1,
+                                                            }}
+                                                        >
+                                                            {
+                                                                driverInfo.bus
+                                                                    .expirationDate
+                                                            }
+                                                            {driverInfo.bus
+                                                                .usageExpiringSoon && (
+                                                                <ErrorOutlineIcon
+                                                                    color="warning"
+                                                                    fontSize="small"
+                                                                />
+                                                            )}
+                                                        </Typography>
+                                                    </Box>
+                                                </Grid>
+                                            </Grid>
+                                        </Box>
+                                    </Box>
+                                </Grid>
+                            </Grid>
                         </Paper>
                     </>
                 )}
