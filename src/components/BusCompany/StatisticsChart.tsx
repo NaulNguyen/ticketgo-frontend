@@ -33,6 +33,15 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { vi } from "date-fns/locale";
 import { TrendingUp, TrendingDown } from "@mui/icons-material";
+import { alpha } from "@mui/material/styles";
+import DirectionsBusIcon from "@mui/icons-material/DirectionsBus";
+import PersonIcon from "@mui/icons-material/Person";
+import RouteIcon from "@mui/icons-material/Route";
+import TimelineIcon from "@mui/icons-material/Timeline";
+import ReceiptIcon from "@mui/icons-material/Receipt";
+import CancelIcon from "@mui/icons-material/Cancel";
+import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
+import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 
 interface CustomTooltipProps {
     active?: boolean;
@@ -88,8 +97,18 @@ interface StatisticsData {
     busTypeStatistics: {
         stats: BusTypeStats[];
     };
+    busStatistics: BusPerformance[];
     customerStatistics: CustomerStatistics;
     overallStats: OverallStats;
+}
+
+interface BusPerformance {
+    licensePlate: string;
+    busType: string;
+    totalRevenue: number;
+    totalBookings: number;
+    totalTicketsSold: number;
+    averageOccupancyRate: number;
 }
 
 const StatisticsChart: React.FC<StatisticsChartProps> = ({
@@ -104,6 +123,7 @@ const StatisticsChart: React.FC<StatisticsChartProps> = ({
     const [loading, setLoading] = useState(false);
     const [selectedYear, setSelectedYear] = useState<number>(2025);
     const [statistics, setStatistics] = useState<StatisticsData | null>(null);
+    console.log(statistics);
     const [chartTab, setChartTab] = useState(0);
     const COLORS = [
         "#0088FE",
@@ -244,11 +264,13 @@ const StatisticsChart: React.FC<StatisticsChartProps> = ({
         value,
         trend,
         isUp,
+        icon,
     }: {
         title: string;
         value: string | number;
         trend: string;
         isUp: boolean;
+        icon: React.ReactNode;
     }) => (
         <Paper
             elevation={0}
@@ -258,17 +280,32 @@ const StatisticsChart: React.FC<StatisticsChartProps> = ({
                 border: "1px solid",
                 borderColor: "divider",
                 bgcolor: "background.paper",
-                transition: "transform 0.2s",
+                transition: "all 0.3s ease",
                 "&:hover": {
                     transform: "translateY(-4px)",
-                    boxShadow: 2,
+                    boxShadow: (theme) =>
+                        `0 4px 20px ${alpha(theme.palette.primary.main, 0.15)}`,
                 },
             }}
         >
-            <Typography color="text.secondary" variant="subtitle2" gutterBottom>
-                {title}
-            </Typography>
-            <Typography variant="h4" sx={{ mb: 1 }}>
+            <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                <Box
+                    sx={{
+                        p: 1.5,
+                        borderRadius: 2,
+                        bgcolor: (theme) =>
+                            alpha(theme.palette.primary.main, 0.1),
+                        color: "primary.main",
+                        mr: 2,
+                    }}
+                >
+                    {icon}
+                </Box>
+                <Typography color="text.secondary" variant="subtitle2">
+                    {title}
+                </Typography>
+            </Box>
+            <Typography variant="h4" sx={{ mb: 1, fontWeight: "medium" }}>
                 {value}
             </Typography>
             <Box
@@ -276,6 +313,11 @@ const StatisticsChart: React.FC<StatisticsChartProps> = ({
                     display: "flex",
                     alignItems: "center",
                     color: isUp ? "success.main" : "error.main",
+                    bgcolor: isUp ? "success.lighter" : "error.lighter",
+                    px: 1,
+                    py: 0.5,
+                    borderRadius: 1,
+                    width: "fit-content",
                 }}
             >
                 {isUp ? (
@@ -283,7 +325,10 @@ const StatisticsChart: React.FC<StatisticsChartProps> = ({
                 ) : (
                     <TrendingDown fontSize="small" />
                 )}
-                <Typography variant="body2" sx={{ ml: 0.5 }}>
+                <Typography
+                    variant="caption"
+                    sx={{ ml: 0.5, fontWeight: "medium" }}
+                >
                     {trend}
                 </Typography>
             </Box>
@@ -299,18 +344,21 @@ const StatisticsChart: React.FC<StatisticsChartProps> = ({
                 ),
                 trend: "+12.5%",
                 isUp: true,
+                icon: <AttachMoneyIcon />,
             },
             {
                 title: "Tổng vé đã bán",
                 value: statistics?.overallStats.totalTicketsSold || 0,
                 trend: "+8.3%",
                 isUp: true,
+                icon: <ReceiptIcon />,
             },
             {
                 title: "Số đơn hủy",
                 value: statistics?.overallStats.totalCancellations || 0,
                 trend: "-2.1%",
                 isUp: false,
+                icon: <CancelIcon />,
             },
             {
                 title: "Giá vé trung bình",
@@ -319,6 +367,7 @@ const StatisticsChart: React.FC<StatisticsChartProps> = ({
                 ),
                 trend: "+5.2%",
                 isUp: true,
+                icon: <TimelineIcon />,
             },
         ];
 
@@ -787,6 +836,354 @@ const StatisticsChart: React.FC<StatisticsChartProps> = ({
         );
     };
 
+    const BusPerformanceChart = () => {
+        return (
+            <Box>
+                <Paper
+                    sx={{
+                        p: 3,
+                        mb: 3,
+                        borderRadius: 2,
+                        background:
+                            "linear-gradient(135deg, #1976d2 0%, #1565c0 100%)",
+                    }}
+                >
+                    <Grid container spacing={3}>
+                        <Grid item xs={12} md={6}>
+                            <Typography
+                                variant="h5"
+                                color="white"
+                                gutterBottom
+                                fontWeight={"bold"}
+                            >
+                                Hiệu suất hoạt động xe
+                            </Typography>
+                            <Typography
+                                variant="body1"
+                                color="white"
+                                sx={{ opacity: 0.9 }}
+                            >
+                                Theo dõi và đánh giá hiệu suất của từng xe trong
+                                đội xe
+                            </Typography>
+                        </Grid>
+                        <Grid item xs={12} md={6}>
+                            <Box
+                                sx={{
+                                    display: "flex",
+                                    gap: 2,
+                                    justifyContent: "flex-end",
+                                }}
+                            >
+                                <Paper
+                                    sx={{
+                                        p: 2,
+                                        flex: 1,
+                                        maxWidth: 200,
+                                        bgcolor: "rgba(255, 255, 255, 0.9)",
+                                        textAlign: "center",
+                                    }}
+                                >
+                                    <Typography
+                                        variant="h6"
+                                        color="primary.main"
+                                    >
+                                        {statistics?.busStatistics.length}
+                                    </Typography>
+                                    <Typography
+                                        variant="body2"
+                                        color="text.secondary"
+                                    >
+                                        Tổng số xe
+                                    </Typography>
+                                </Paper>
+                                <Paper
+                                    sx={{
+                                        p: 2,
+                                        flex: 1,
+                                        maxWidth: 200,
+                                        bgcolor: "rgba(255, 255, 255, 0.9)",
+                                        textAlign: "center",
+                                    }}
+                                >
+                                    <Typography
+                                        variant="h6"
+                                        color="warning.main"
+                                    >
+                                        {
+                                            statistics?.busStatistics.filter(
+                                                (bus) =>
+                                                    bus.averageOccupancyRate >
+                                                    100
+                                            ).length
+                                        }
+                                    </Typography>
+                                    <Typography
+                                        variant="body2"
+                                        color="text.secondary"
+                                    >
+                                        Xe quá tải
+                                    </Typography>
+                                </Paper>
+                            </Box>
+                        </Grid>
+                    </Grid>
+                </Paper>
+
+                {/* Bus List */}
+                <Grid container spacing={3}>
+                    {statistics?.busStatistics.map((bus) => (
+                        <Grid item xs={12} md={6} key={bus.licensePlate}>
+                            <Paper
+                                sx={{
+                                    p: 3,
+                                    borderRadius: 2,
+                                    border: "1px solid",
+                                    borderColor: "divider",
+                                    bgcolor:
+                                        bus.averageOccupancyRate > 100
+                                            ? alpha("#f44336", 0.05)
+                                            : "background.paper",
+                                    transition: "all 0.3s ease",
+                                    "&:hover": {
+                                        transform: "translateY(-4px)",
+                                        boxShadow: (theme) =>
+                                            `0 4px 20px ${alpha(
+                                                theme.palette.primary.main,
+                                                0.15
+                                            )}`,
+                                    },
+                                }}
+                            >
+                                {/* Header */}
+                                <Box
+                                    sx={{
+                                        display: "flex",
+                                        justifyContent: "space-between",
+                                        mb: 3,
+                                    }}
+                                >
+                                    <Box>
+                                        <Box
+                                            sx={{
+                                                display: "flex",
+                                                alignItems: "center",
+                                                gap: 1,
+                                                mb: 0.5,
+                                            }}
+                                        >
+                                            <DirectionsBusIcon
+                                                color={
+                                                    bus.averageOccupancyRate >
+                                                    100
+                                                        ? "error"
+                                                        : "primary"
+                                                }
+                                            />
+                                            <Typography
+                                                variant="h6"
+                                                color={
+                                                    bus.averageOccupancyRate >
+                                                    100
+                                                        ? "error.main"
+                                                        : "primary.main"
+                                                }
+                                            >
+                                                {bus.licensePlate}
+                                            </Typography>
+                                        </Box>
+                                        <Typography
+                                            variant="body2"
+                                            color="text.secondary"
+                                            sx={{ ml: 4 }}
+                                        >
+                                            {bus.busType}
+                                        </Typography>
+                                    </Box>
+                                    <Box sx={{ textAlign: "right" }}>
+                                        <Typography
+                                            variant="h6"
+                                            color={
+                                                bus.totalRevenue > 0
+                                                    ? "success.main"
+                                                    : "text.secondary"
+                                            }
+                                        >
+                                            {formatCurrency(bus.totalRevenue)}
+                                        </Typography>
+                                        <Typography
+                                            variant="caption"
+                                            color="text.secondary"
+                                        >
+                                            Doanh thu
+                                        </Typography>
+                                    </Box>
+                                </Box>
+
+                                {/* Stats Grid */}
+                                <Grid container spacing={2} sx={{ mb: 2 }}>
+                                    <Grid item xs={4}>
+                                        <Box
+                                            sx={{
+                                                p: 1.5,
+                                                borderRadius: 2,
+                                                bgcolor: alpha("#1976d2", 0.1),
+                                                textAlign: "center",
+                                            }}
+                                        >
+                                            <Typography
+                                                variant="h6"
+                                                color="primary.main"
+                                            >
+                                                {bus.totalBookings}
+                                            </Typography>
+                                            <Typography
+                                                variant="caption"
+                                                color="text.secondary"
+                                            >
+                                                Số chuyến
+                                            </Typography>
+                                        </Box>
+                                    </Grid>
+                                    <Grid item xs={4}>
+                                        <Box
+                                            sx={{
+                                                p: 1.5,
+                                                borderRadius: 2,
+                                                bgcolor: alpha("#2e7d32", 0.1),
+                                                textAlign: "center",
+                                            }}
+                                        >
+                                            <Typography
+                                                variant="h6"
+                                                color="success.main"
+                                            >
+                                                {bus.totalTicketsSold}
+                                            </Typography>
+                                            <Typography
+                                                variant="caption"
+                                                color="text.secondary"
+                                            >
+                                                Vé đã bán
+                                            </Typography>
+                                        </Box>
+                                    </Grid>
+                                    <Grid item xs={4}>
+                                        <Box
+                                            sx={{
+                                                p: 1.5,
+                                                borderRadius: 2,
+                                                bgcolor:
+                                                    bus.averageOccupancyRate >
+                                                    100
+                                                        ? alpha("#f44336", 0.1)
+                                                        : alpha("#ed6c02", 0.1),
+                                                textAlign: "center",
+                                            }}
+                                        >
+                                            <Typography
+                                                variant="h6"
+                                                color={
+                                                    bus.averageOccupancyRate >
+                                                    100
+                                                        ? "error.main"
+                                                        : "warning.main"
+                                                }
+                                            >
+                                                {bus.averageOccupancyRate}%
+                                            </Typography>
+                                            <Typography
+                                                variant="caption"
+                                                color="text.secondary"
+                                            >
+                                                Tỷ lệ lấp đầy
+                                            </Typography>
+                                        </Box>
+                                    </Grid>
+                                </Grid>
+
+                                {/* Progress Bar */}
+                                <Box sx={{ mt: 3 }}>
+                                    <Box
+                                        sx={{
+                                            display: "flex",
+                                            justifyContent: "space-between",
+                                            mb: 1,
+                                        }}
+                                    >
+                                        <Typography
+                                            variant="body2"
+                                            color="text.secondary"
+                                        >
+                                            Công suất sử dụng
+                                        </Typography>
+                                        <Typography
+                                            variant="body2"
+                                            color={
+                                                bus.averageOccupancyRate > 100
+                                                    ? "error.main"
+                                                    : "success.main"
+                                            }
+                                            fontWeight="medium"
+                                        >
+                                            {bus.averageOccupancyRate}%
+                                        </Typography>
+                                    </Box>
+                                    <Box sx={{ position: "relative" }}>
+                                        <Box
+                                            sx={{
+                                                width: "100%",
+                                                height: 10,
+                                                bgcolor: alpha("#000", 0.05),
+                                                borderRadius: 5,
+                                            }}
+                                        />
+                                        <Box
+                                            sx={{
+                                                position: "absolute",
+                                                top: 0,
+                                                left: 0,
+                                                width: `${Math.min(
+                                                    bus.averageOccupancyRate,
+                                                    100
+                                                )}%`,
+                                                height: 10,
+                                                bgcolor:
+                                                    bus.averageOccupancyRate >
+                                                    100
+                                                        ? "error.main"
+                                                        : "success.main",
+                                                borderRadius: 5,
+                                                transition:
+                                                    "width 1s ease-in-out",
+                                            }}
+                                        />
+                                    </Box>
+                                    {bus.averageOccupancyRate > 100 && (
+                                        <Typography
+                                            variant="caption"
+                                            color="error"
+                                            sx={{
+                                                display: "flex",
+                                                alignItems: "center",
+                                                gap: 0.5,
+                                                mt: 1,
+                                            }}
+                                        >
+                                            <ErrorOutlineIcon fontSize="small" />
+                                            Cảnh báo: Xe đang hoạt động vượt quá
+                                            công suất
+                                        </Typography>
+                                    )}
+                                </Box>
+                            </Paper>
+                        </Grid>
+                    ))}
+                </Grid>
+            </Box>
+        );
+    };
+
     const TabPanel = (props: TabPanelProps) => {
         const { children, value, index, ...other } = props;
         return (
@@ -979,18 +1376,44 @@ const StatisticsChart: React.FC<StatisticsChartProps> = ({
                             value={chartTab}
                             onChange={handleChartTabChange}
                             aria-label="statistics tabs"
+                            sx={{
+                                "& .MuiTab-root": {
+                                    minHeight: 64,
+                                    minWidth: 120,
+                                    borderRadius: "8px 8px 0 0",
+                                    fontSize: "0.875rem",
+                                    fontWeight: "medium",
+                                    textTransform: "none",
+                                    "&.Mui-selected": {
+                                        color: "primary.main",
+                                        bgcolor: "background.paper",
+                                    },
+                                },
+                                "& .MuiTabs-indicator": {
+                                    height: 3,
+                                    borderRadius: 1.5,
+                                },
+                            }}
                         >
                             <Tab
+                                icon={<RouteIcon />}
+                                iconPosition="start"
                                 label="Tuyến đường"
-                                sx={{ textTransform: "none" }}
                             />
                             <Tab
+                                icon={<DirectionsBusIcon />}
+                                iconPosition="start"
                                 label="Loại xe"
-                                sx={{ textTransform: "none" }}
                             />
                             <Tab
+                                icon={<PersonIcon />}
+                                iconPosition="start"
                                 label="Khách hàng"
-                                sx={{ textTransform: "none" }}
+                            />
+                            <Tab
+                                icon={<TimelineIcon />}
+                                iconPosition="start"
+                                label="Hiệu suất xe"
                             />
                         </Tabs>
                     </Box>
@@ -1003,6 +1426,9 @@ const StatisticsChart: React.FC<StatisticsChartProps> = ({
                     </TabPanel>
                     <TabPanel value={chartTab} index={2}>
                         <CustomerStatisticsChart />
+                    </TabPanel>
+                    <TabPanel value={chartTab} index={3}>
+                        <BusPerformanceChart />
                     </TabPanel>
                 </>
             ) : (
