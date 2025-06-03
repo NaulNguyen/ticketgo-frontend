@@ -11,6 +11,8 @@ import {
     MenuItem,
     ListItemIcon,
     Typography,
+    Popover,
+    Tooltip,
 } from "@mui/material";
 import LoginIcon from "@mui/icons-material/Login";
 import Registration from "./Register";
@@ -30,6 +32,9 @@ import MenuIcon from "@mui/icons-material/Menu";
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import MembershipRules from "../popup/MembershipRules";
+import { Bus } from "../global";
+import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
+import NotificationsIcon from "@mui/icons-material/Notifications";
 
 const Header = ({ onToggleDrawer }: { onToggleDrawer?: () => void }) => {
     const [modalState, setModalState] = useState({
@@ -42,6 +47,9 @@ const Header = ({ onToggleDrawer }: { onToggleDrawer?: () => void }) => {
     const [openRules, setOpenRules] = useState(false);
     const scheduleId = searchParams.get("scheduleId");
     const [remainingTime, setRemainingTime] = useState<number | null>(null);
+    const [notificationAnchor, setNotificationAnchor] =
+        useState<HTMLElement | null>(null);
+    const [expiringBuses, setExpiringBuses] = useState<Bus[]>([]);
 
     const dispatch = useDispatch();
     const open = Boolean(anchorEl);
@@ -75,6 +83,14 @@ const Header = ({ onToggleDrawer }: { onToggleDrawer?: () => void }) => {
 
     const handleAvatarClose = () => {
         setAnchorEl(null);
+    };
+
+    const handleNotificationClick = (event: React.MouseEvent<HTMLElement>) => {
+        setNotificationAnchor(event.currentTarget);
+    };
+
+    const handleNotificationClose = () => {
+        setNotificationAnchor(null);
     };
 
     const openModal = (type: "register" | "login") => {
@@ -119,6 +135,100 @@ const Header = ({ onToggleDrawer }: { onToggleDrawer?: () => void }) => {
             },
         },
     }));
+
+    const NotificationPopover = () => (
+        <Popover
+            open={Boolean(notificationAnchor)}
+            anchorEl={notificationAnchor}
+            onClose={handleNotificationClose}
+            anchorOrigin={{
+                vertical: "bottom",
+                horizontal: "right",
+            }}
+            transformOrigin={{
+                vertical: "top",
+                horizontal: "right",
+            }}
+            PaperProps={{
+                sx: {
+                    p: 2,
+                    width: 350,
+                    maxHeight: 400,
+                    overflowY: "auto",
+                    borderRadius: 2,
+                },
+            }}
+        >
+            <Typography
+                variant="h6"
+                gutterBottom
+                sx={{ borderBottom: 1, borderColor: "divider", pb: 1 }}
+            >
+                Thông báo xe sắp hết hạn
+            </Typography>
+            {expiringBuses.length > 0 ? (
+                expiringBuses.map((bus) => (
+                    <Box
+                        key={bus.busId}
+                        sx={{
+                            p: 1.5,
+                            "&:not(:last-child)": {
+                                borderBottom: 1,
+                                borderColor: "divider",
+                            },
+                            "&:hover": { bgcolor: "action.hover" },
+                            borderRadius: 1,
+                        }}
+                    >
+                        <Typography
+                            variant="subtitle2"
+                            sx={{ fontWeight: "bold", color: "primary.main" }}
+                        >
+                            {bus.licensePlate} - {bus.busType}
+                        </Typography>
+                        {bus.registrationExpiringSoon && (
+                            <Typography
+                                variant="body2"
+                                color="warning.main"
+                                sx={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 0.5,
+                                    mt: 0.5,
+                                }}
+                            >
+                                <ErrorOutlineIcon fontSize="small" />
+                                Hạn đăng kiểm: {bus.registrationExpiry}
+                            </Typography>
+                        )}
+                        {bus.usageExpiringSoon && (
+                            <Typography
+                                variant="body2"
+                                color="error"
+                                sx={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 0.5,
+                                    mt: 0.5,
+                                }}
+                            >
+                                <ErrorOutlineIcon fontSize="small" />
+                                Hạn sử dụng: {bus.expirationDate}
+                            </Typography>
+                        )}
+                    </Box>
+                ))
+            ) : (
+                <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ textAlign: "center", py: 2 }}
+                >
+                    Không có thông báo mới
+                </Typography>
+            )}
+        </Popover>
+    );
 
     const handleLogout = () => {
         Cookies.remove("accessToken");
@@ -377,23 +487,68 @@ const Header = ({ onToggleDrawer }: { onToggleDrawer?: () => void }) => {
                 </Box>
             </Modal>
             {userInfo?.isAuthenticated ? (
-                <IconButton
-                    onClick={handleAvatarClick}
-                    aria-controls={open ? "account-menu" : undefined}
-                    aria-haspopup="true"
-                    aria-expanded={open ? "true" : undefined}
-                >
-                    <StyledBadge
-                        overlap="circular"
-                        anchorOrigin={{
-                            vertical: "bottom",
-                            horizontal: "right",
-                        }}
-                        variant="dot"
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    {userInfo?.user.role === "ROLE_BUS_COMPANY" && (
+                        <Tooltip title="Thông báo" arrow>
+                            <IconButton
+                                onClick={handleNotificationClick}
+                                sx={{
+                                    color: "white",
+                                    padding: "8px",
+                                    transition: "all 0.2s ease",
+                                    "&:hover": {
+                                        bgcolor: "rgba(255, 255, 255, 0.15)",
+                                        transform: "translateY(-2px)",
+                                    },
+                                    "&:active": {
+                                        transform: "translateY(0px)",
+                                    },
+                                }}
+                            >
+                                <Badge
+                                    badgeContent={expiringBuses.length}
+                                    color="error"
+                                    sx={{
+                                        "& .MuiBadge-badge": {
+                                            fontSize: "0.75rem",
+                                            height: "20px",
+                                            minWidth: "20px",
+                                            padding: "0 4px",
+                                            backgroundColor: "#ef5350",
+                                            boxShadow:
+                                                "0 2px 4px rgba(0,0,0,0.2)",
+                                        },
+                                    }}
+                                >
+                                    <NotificationsIcon
+                                        sx={{
+                                            fontSize: "1.75rem",
+                                            filter: "drop-shadow(0 2px 2px rgba(0,0,0,0.2))",
+                                        }}
+                                    />
+                                </Badge>
+                            </IconButton>
+                        </Tooltip>
+                    )}
+                    <IconButton
+                        onClick={handleAvatarClick}
+                        aria-controls={open ? "account-menu" : undefined}
+                        aria-haspopup="true"
+                        aria-expanded={open ? "true" : undefined}
                     >
-                        <Avatar src={userInfo.user.imageUrl} />
-                    </StyledBadge>
-                </IconButton>
+                        <StyledBadge
+                            overlap="circular"
+                            anchorOrigin={{
+                                vertical: "bottom",
+                                horizontal: "right",
+                            }}
+                            variant="dot"
+                        >
+                            <Avatar src={userInfo.user.imageUrl} />
+                        </StyledBadge>
+                    </IconButton>
+                    <NotificationPopover />
+                </Box>
             ) : (
                 <div className="flex space-x-4">
                     <Button

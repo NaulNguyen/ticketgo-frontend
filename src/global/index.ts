@@ -48,6 +48,8 @@ export interface Bus {
     floors: number;
     registrationExpiry: string;
     expirationDate: string;
+    registrationExpiringSoon: boolean;
+    usageExpiringSoon: boolean;
 }
 
 export interface EstimatedPrice {
