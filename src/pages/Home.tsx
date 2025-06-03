@@ -17,6 +17,7 @@ import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import NavigateNextIcon from "@mui/icons-material/NavigateNext";
 import NavigateBeforeIcon from "@mui/icons-material/NavigateBefore";
+import BotChat from "../components/BotChat";
 
 type RouteData = {
     routeImage: string;
@@ -832,7 +833,13 @@ const Home = () => {
                 </Box>
             </Container>
             <MemoizedFooter />
-            {shouldShowChat && <BoxChat />}
+            <MemoizedFooter />
+            {shouldShowChat && (
+                <>
+                    <BoxChat />
+                    <BotChat />
+                </>
+            )}
             <style>{`
     .slick-dots {
         bottom: -30px;

@@ -227,7 +227,7 @@ const BoxChat = () => {
     };
 
     return (
-        <Box sx={{ position: "fixed", bottom: 20, right: 20, zIndex: 1000 }}>
+        <Box sx={{ position: "fixed", bottom: 20, right: 100, zIndex: 1000 }}>
             {isOpen ? (
                 <Paper
                     elevation={3}
@@ -238,6 +238,9 @@ const BoxChat = () => {
                         flexDirection: "column",
                         borderRadius: 2,
                         overflow: "hidden",
+                        position: "absolute",
+                        bottom: 0,
+                        right: 0,
                     }}
                 >
                     <Box

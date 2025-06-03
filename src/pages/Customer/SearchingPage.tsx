@@ -12,6 +12,7 @@ import {
     Typography,
     Pagination,
     Skeleton,
+    alpha,
 } from "@mui/material";
 import StarIcon from "@mui/icons-material/Star";
 import SeatSelect from "../../components/Customer/SeatSelect";
@@ -23,6 +24,9 @@ import axios from "axios";
 import dayjs from "dayjs";
 import Details from "../../components/Customer/Details";
 import { toast } from "react-toastify";
+import BoxChat from "../../components/BoxChat";
+import useAppAccessor from "../../hook/useAppAccessor";
+import BotChat from "../../components/BotChat";
 
 interface Seat {
     ticketCode: string;
@@ -80,8 +84,18 @@ const SearchingPage = () => {
     const location = useLocation();
     const navigate = useNavigate();
 
+    const { getUserInfor } = useAppAccessor();
+    const userInfor = getUserInfor();
+
+    const shouldShowChat =
+        userInfor && userInfor.user.role !== "ROLE_BUS_COMPANY";
+
     const [isReturn, setIsReturn] = useState(false);
     const [firstTripData, setFirstTripData] = useState(null);
+
+    const [autoSelectedScheduleId, setAutoSelectedScheduleId] = useState<
+        string | null
+    >(null);
 
     const [expandedId, setExpandedId] = useState<string | null>(null);
     const [seatSelectId, setSeatSelectId] = useState<string | null>(null);
@@ -168,7 +182,6 @@ const SearchingPage = () => {
     };
 
     const handleFirstTripComplete = (tripData: any) => {
-        console.log("handleFirstTripComplete called with:", tripData);
         setFirstTripData(tripData);
         setIsReturn(true);
     };
@@ -176,9 +189,6 @@ const SearchingPage = () => {
     const currentTripList = isReturn
         ? searchResults.return
         : searchResults.departure;
-
-    console.log("Current Trip List:", currentTripList);
-    console.log(isReturn);
 
     useEffect(() => {
         const fetchSearchResults = async () => {
@@ -282,6 +292,33 @@ const SearchingPage = () => {
 
         fetchSearchResults();
     }, [location.search, currentPage, sortBy, sortDirection]);
+
+    useEffect(() => {
+        const searchParams = new URLSearchParams(location.search);
+        const selectedScheduleId = searchParams.get("selectedScheduleId");
+
+        if (selectedScheduleId && currentTripList?.length) {
+            const matchingTrip = currentTripList.find(
+                (trip) => trip.scheduleId === selectedScheduleId
+            );
+
+            if (matchingTrip) {
+                setExpandedId(selectedScheduleId);
+                setSeatSelectId(selectedScheduleId);
+                setAutoSelectedScheduleId(selectedScheduleId);
+
+                const element = document.getElementById(
+                    `trip-${selectedScheduleId}`
+                );
+                if (element) {
+                    element.scrollIntoView({
+                        behavior: "smooth",
+                        block: "center",
+                    });
+                }
+            }
+        }
+    }, [currentTripList, location.search]);
 
     useEffect(() => {
         if (!searchResults.departure?.length && !searchResults.return?.length)
@@ -510,21 +547,42 @@ const SearchingPage = () => {
                         ) : (currentTripList?.length ?? 0) > 0 ? (
                             currentTripList?.map((result) => (
                                 <Box
+                                    id={`trip-${result.scheduleId}`}
                                     key={result.scheduleId}
                                     mb={3}
                                     sx={{
-                                        backgroundColor: "white",
+                                        backgroundColor:
+                                            autoSelectedScheduleId ===
+                                            result.scheduleId
+                                                ? alpha("#1976d2", 0.05)
+                                                : "white",
                                         p: 3,
                                         borderRadius: 2,
-                                        borderColor: "gray.300",
-                                        boxShadow: 2,
+                                        borderColor:
+                                            autoSelectedScheduleId ===
+                                            result.scheduleId
+                                                ? "primary.main"
+                                                : "gray.300",
+                                        borderWidth:
+                                            autoSelectedScheduleId ===
+                                            result.scheduleId
+                                                ? 2
+                                                : 1,
+                                        boxShadow:
+                                            autoSelectedScheduleId ===
+                                            result.scheduleId
+                                                ? 4
+                                                : 2,
                                         display: "flex",
                                         flexDirection: "column",
                                         gap: 2,
                                         width: "100%",
                                         minHeight: "270px",
-                                        transition: "box-shadow 0.3s",
-                                        "&:hover": { boxShadow: 10 },
+                                        transition: "all 0.3s ease",
+                                        "&:hover": {
+                                            boxShadow: 10,
+                                            transform: "translateY(-2px)",
+                                        },
                                     }}
                                 >
                                     <Box display="flex" gap={2} height="full">
@@ -552,24 +610,6 @@ const SearchingPage = () => {
                                                     >
                                                         <span className="text-blue-700 font-bold">
                                                             {result.routeName}
-                                                        </span>
-                                                        <span
-                                                            className="text-white text-sm flex items-center justify-center px-1 rounded-sm"
-                                                            style={{
-                                                                backgroundColor:
-                                                                    "rgb(36, 116, 229)",
-                                                                height: "fit-content",
-                                                            }}
-                                                        >
-                                                            <StarIcon
-                                                                sx={{
-                                                                    fontSize:
-                                                                        "14px",
-                                                                    mb: "2px",
-                                                                    color: "white",
-                                                                }}
-                                                            />
-                                                            4.7 (90)
                                                         </span>
                                                     </Typography>
                                                     <Typography className="text-gray-500 text-sm">
@@ -757,6 +797,13 @@ const SearchingPage = () => {
                             />
                         </Box>
                     )}
+
+                {shouldShowChat && (
+                    <>
+                        <BoxChat />
+                        <BotChat />
+                    </>
+                )}
             </Container>
         </div>
     );
