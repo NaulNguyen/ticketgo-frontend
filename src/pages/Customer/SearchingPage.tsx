@@ -202,6 +202,8 @@ const SearchingPage = () => {
 
             const isRoundTrip = !!returnDate;
 
+            const pageSize = autoSelectedScheduleId ? 20 : 5;
+
             try {
                 // 1. Fetch outbound trip
                 const firstLegResponse = await axios.post(
@@ -213,7 +215,7 @@ const SearchingPage = () => {
                         sortBy,
                         sortDirection,
                         pageNumber: currentPage,
-                        pageSize: 5,
+                        pageSize,
                     }
                 );
 
@@ -796,9 +798,6 @@ const SearchingPage = () => {
                 {/* Pagination */}
                 {!searchLoading &&
                     getFilteredTripList().length > 0 &&
-                    !new URLSearchParams(location.search).get(
-                        "selectedScheduleId"
-                    ) &&
                     searchResults.pagination.totalPages > 1 && (
                         <Box
                             display="flex"
