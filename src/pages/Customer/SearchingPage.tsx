@@ -320,6 +320,21 @@ const SearchingPage = () => {
         }
     }, [currentTripList, location.search]);
 
+    const getFilteredTripList = () => {
+        if (!currentTripList) return [];
+
+        const searchParams = new URLSearchParams(location.search);
+        const selectedScheduleId = searchParams.get("selectedScheduleId");
+
+        if (selectedScheduleId) {
+            return currentTripList.filter(
+                (trip) => trip.scheduleId === selectedScheduleId
+            );
+        }
+
+        return currentTripList;
+    };
+
     useEffect(() => {
         if (!searchResults.departure?.length && !searchResults.return?.length)
             return;
@@ -544,8 +559,8 @@ const SearchingPage = () => {
                                     </Box>
                                 </Box>
                             ))
-                        ) : (currentTripList?.length ?? 0) > 0 ? (
-                            currentTripList?.map((result) => (
+                        ) : getFilteredTripList().length > 0 ? (
+                            getFilteredTripList().map((result) => (
                                 <Box
                                     id={`trip-${result.scheduleId}`}
                                     key={result.scheduleId}
@@ -780,8 +795,10 @@ const SearchingPage = () => {
 
                 {/* Pagination */}
                 {!searchLoading &&
-                    searchResults.departure &&
-                    searchResults.departure.length > 0 &&
+                    getFilteredTripList().length > 0 &&
+                    !new URLSearchParams(location.search).get(
+                        "selectedScheduleId"
+                    ) &&
                     searchResults.pagination.totalPages > 1 && (
                         <Box
                             display="flex"
