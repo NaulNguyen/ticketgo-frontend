@@ -323,15 +323,18 @@ const SearchingPage = () => {
     }, [currentTripList, location.search]);
 
     const getFilteredTripList = () => {
-        if (!currentTripList) return [];
+        if (!currentTripList) {
+            return [];
+        }
 
         const searchParams = new URLSearchParams(location.search);
         const selectedScheduleId = searchParams.get("selectedScheduleId");
 
         if (selectedScheduleId) {
-            return currentTripList.filter(
-                (trip) => trip.scheduleId === selectedScheduleId
+            const filteredList = currentTripList.filter(
+                (trip) => String(trip.scheduleId) === String(selectedScheduleId)
             );
+            return filteredList;
         }
 
         return currentTripList;
