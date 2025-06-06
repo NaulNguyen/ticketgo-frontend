@@ -35,6 +35,7 @@ import MembershipRules from "../popup/MembershipRules";
 import { Bus } from "../global";
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 import NotificationsIcon from "@mui/icons-material/Notifications";
+import { axiosWithJWT } from "../config/axiosConfig";
 
 const Header = ({ onToggleDrawer }: { onToggleDrawer?: () => void }) => {
     const [modalState, setModalState] = useState({
@@ -50,6 +51,7 @@ const Header = ({ onToggleDrawer }: { onToggleDrawer?: () => void }) => {
     const [notificationAnchor, setNotificationAnchor] =
         useState<HTMLElement | null>(null);
     const [expiringBuses, setExpiringBuses] = useState<Bus[]>([]);
+    console.log(expiringBuses);
 
     const dispatch = useDispatch();
     const open = Boolean(anchorEl);
@@ -135,6 +137,67 @@ const Header = ({ onToggleDrawer }: { onToggleDrawer?: () => void }) => {
             },
         },
     }));
+
+    const fetchExpiringBuses = async () => {
+        try {
+            const response = await axiosWithJWT.get(
+                "/api/v1/buses?pageNumber=1&pageSize=50"
+            );
+            if (response.data.status === 200) {
+                const buses = response.data.data;
+                const expiring = buses.filter(
+                    (bus: Bus) =>
+                        bus.registrationExpiringSoon || bus.usageExpiringSoon
+                );
+                setExpiringBuses(expiring);
+            }
+        } catch (error) {
+            console.error("Error fetching expiring buses:", error);
+            toast.error("Không thể tải thông tin xe");
+        }
+    };
+
+    useEffect(() => {
+        let intervalId: NodeJS.Timeout;
+
+        const fetchAndUpdateBuses = async () => {
+            try {
+                const response = await axiosWithJWT.get(
+                    "/api/v1/buses?pageNumber=1&pageSize=50"
+                );
+                if (response.data.status === 200) {
+                    const buses = response.data.data;
+                    const expiring = buses.filter(
+                        (bus: Bus) =>
+                            bus.registrationExpiringSoon ||
+                            bus.usageExpiringSoon
+                    );
+
+                    // Only update state if there are changes
+                    setExpiringBuses((prevBuses) => {
+                        const hasChanges =
+                            JSON.stringify(prevBuses) !==
+                            JSON.stringify(expiring);
+                        return hasChanges ? expiring : prevBuses;
+                    });
+                }
+            } catch (error) {
+                console.error("Error fetching expiring buses:", error);
+            }
+        };
+
+        if (userInfo?.user.role === "ROLE_BUS_COMPANY") {
+            fetchAndUpdateBuses();
+
+            intervalId = setInterval(fetchAndUpdateBuses, 5 * 1000);
+        }
+
+        return () => {
+            if (intervalId) {
+                clearInterval(intervalId);
+            }
+        };
+    }, [userInfo?.user.role]);
 
     const NotificationPopover = () => (
         <Popover

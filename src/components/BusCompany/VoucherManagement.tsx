@@ -371,12 +371,6 @@ const VoucherManagement = () => {
                                                 Chỉnh sửa
                                             </Typography>
                                         </IconButton>
-                                        <EditVoucherPopup
-                                            open={isEditPopupOpen}
-                                            onClose={handleCloseEditPopup}
-                                            onSuccess={fetchVouchers}
-                                            voucherId={selectedVoucherId}
-                                        />
 
                                         <IconButton
                                             size="small"
@@ -419,6 +413,12 @@ const VoucherManagement = () => {
                     </TableBody>
                 </Table>
             </TableContainer>
+            <EditVoucherPopup
+                open={isEditPopupOpen}
+                onClose={handleCloseEditPopup}
+                onSuccess={fetchVouchers}
+                voucherId={selectedVoucherId}
+            />
         </Container>
     );
 };

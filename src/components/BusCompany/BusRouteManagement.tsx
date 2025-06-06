@@ -65,6 +65,7 @@ const BusRouteManagement = () => {
             totalItems: 0,
         },
     });
+    console.log("searchResults", searchResults);
     const [currentPage, setCurrentPage] = useState(1);
 
     const handleToggleDetails = (id: string) => {
@@ -283,9 +284,7 @@ const BusRouteManagement = () => {
                                         <LocationRoute />
                                         <Box className="text-gray-600">
                                             <Typography className="text-xl font-bold">
-                                                {dayjs(
-                                                    result.departureTime
-                                                ).format("HH:mm DD/MM/YYYY")}
+                                                {result.departureTime}
                                                 <span className="mx-1 font-normal text-base">
                                                     • {result.departureLocation}
                                                 </span>
@@ -294,9 +293,7 @@ const BusRouteManagement = () => {
                                                 {result.travelDuration}
                                             </Typography>
                                             <Typography className="text-xl font-bold text-gray-500">
-                                                {dayjs(
-                                                    result.arrivalTime
-                                                ).format("HH:mm DD/MM/YYYY")}
+                                                {result.arrivalTime}
                                                 <span className="mx-1 font-normal text-base">
                                                     • {result.arrivalLocation}
                                                 </span>

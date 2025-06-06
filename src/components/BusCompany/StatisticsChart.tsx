@@ -176,10 +176,13 @@ const StatisticsChart: React.FC<StatisticsChartProps> = ({
     }, [selectedSubIndex]);
 
     const formatCurrency = (value: number): string => {
-        return new Intl.NumberFormat("vi-VN", {
-            style: "currency",
-            currency: "VND",
-        }).format(value);
+        return (
+            new Intl.NumberFormat("vi-VN", {
+                style: "decimal",
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0,
+            }).format(value) + " ₫"
+        );
     };
 
     const handleChartTabChange = (

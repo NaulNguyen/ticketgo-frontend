@@ -295,6 +295,12 @@ const SearchingPage = () => {
         fetchSearchResults();
     }, [location.search, currentPage, sortBy, sortDirection]);
 
+    const formatDateTime = (dateTimeStr: string) => {
+        const [date, time] = dateTimeStr.split(" ");
+        const [day, month, year] = date.split("/");
+        return dayjs(`${year}-${month}-${day} ${time}`);
+    };
+
     useEffect(() => {
         const searchParams = new URLSearchParams(location.search);
         const selectedScheduleId = searchParams.get("selectedScheduleId");
@@ -666,7 +672,7 @@ const SearchingPage = () => {
                                                     <LocationRoute />
                                                     <Box className="text-gray-600">
                                                         <Typography className="text-xl font-bold">
-                                                            {dayjs(
+                                                            {formatDateTime(
                                                                 result.departureTime
                                                             ).format("HH:mm")}
                                                             <span className="mx-1 font-normal text-base">
@@ -682,7 +688,7 @@ const SearchingPage = () => {
                                                             }
                                                         </Typography>
                                                         <Typography className="text-xl font-bold text-gray-500">
-                                                            {dayjs(
+                                                            {formatDateTime(
                                                                 result.arrivalTime
                                                             ).format("HH:mm")}
                                                             <span className="mx-1 font-normal text-base">
