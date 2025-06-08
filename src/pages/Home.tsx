@@ -1,13 +1,6 @@
 import React, { useEffect, useState, useCallback, memo } from "react";
 import { DestinationCard, Footer, Header, Search } from "../components";
-import {
-    Typography,
-    Box,
-    Skeleton,
-    Fade,
-    Container,
-    Paper,
-} from "@mui/material";
+import { Typography, Box, Skeleton, Fade, Container, Paper } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import BoxChat from "../components/BoxChat";
@@ -74,8 +67,7 @@ const Home = () => {
         "linear-gradient(135deg, #EF6C00 0%, #FF9800 100%)",
     ];
 
-    const shouldShowChat =
-        userInfor && userInfor.user.role !== "ROLE_BUS_COMPANY";
+    const shouldShowChat = userInfor && userInfor.user.role !== "ROLE_BUS_COMPANY";
 
     const NextArrow = ({ onClick }: { onClick?: () => void }) => (
         <Box
@@ -101,8 +93,7 @@ const Home = () => {
                     color: "white",
                     transform: "translateY(-50%) scale(1.1)",
                 },
-            }}
-        >
+            }}>
             <NavigateNextIcon />
         </Box>
     );
@@ -131,8 +122,7 @@ const Home = () => {
                     color: "white",
                     transform: "translateY(-50%) scale(1.1)",
                 },
-            }}
-        >
+            }}>
             <NavigateBeforeIcon />
         </Box>
     );
@@ -140,9 +130,7 @@ const Home = () => {
     // Memoized fetch functions
     const fetchRoutes = useCallback(async () => {
         try {
-            const response = await axios.get(
-                "https://ticketgo.site/api/v1/routes/popular"
-            );
+            const response = await axios.get("https://ticketgo.site/api/v1/routes/popular");
             const data = response.data;
             if (data.status === 200) {
                 setRoutes(data.data);
@@ -158,9 +146,7 @@ const Home = () => {
 
     const fetchHomepageData = useCallback(async () => {
         try {
-            const response = await axios.get(
-                "https://ticketgo.site/api/v1/bus-companies"
-            );
+            const response = await axios.get("https://ticketgo.site/api/v1/bus-companies");
             const data = response.data;
             if (data.status === 200) {
                 setHomepageData(data.data);
@@ -209,16 +195,8 @@ const Home = () => {
     );
 
     const LoadingSkeleton = memo(() => (
-        <Paper
-            elevation={2}
-            sx={{ width: 280, height: "fit-content", p: 2, borderRadius: 2 }}
-        >
-            <Skeleton
-                variant="rectangular"
-                width="100%"
-                height={180}
-                sx={{ borderRadius: 1 }}
-            />
+        <Paper elevation={2} sx={{ width: 280, height: "fit-content", p: 2, borderRadius: 2 }}>
+            <Skeleton variant="rectangular" width="100%" height={180} sx={{ borderRadius: 1 }} />
             <Box sx={{ pt: 1.5 }}>
                 <Skeleton width="85%" height={28} />
                 <Skeleton width="60%" height={24} />
@@ -232,11 +210,7 @@ const Home = () => {
             <Box className="relative">
                 {loadingHomepage ? (
                     <Box sx={{ width: "100%", height: 480 }}>
-                        <Skeleton
-                            variant="rectangular"
-                            width="100%"
-                            height="100%"
-                        />
+                        <Skeleton variant="rectangular" width="100%" height="100%" />
                     </Box>
                 ) : (
                     homepageData && (
@@ -269,8 +243,7 @@ const Home = () => {
                             mr: 2,
                             borderRadius: 1,
                         },
-                    }}
-                >
+                    }}>
                     Tuyến đường phổ biến
                 </Typography>
 
@@ -315,32 +288,21 @@ const Home = () => {
                                         slidesToScroll: 1,
                                     },
                                 },
-                            ]}
-                        >
+                            ]}>
                             {routes.map((route, i) => (
                                 <Box key={i} sx={{ p: 1 }}>
-                                    <Fade
-                                        in={!loadingRoutes}
-                                        timeout={800 + i * 200}
-                                    >
+                                    <Fade in={!loadingRoutes} timeout={800 + i * 200}>
                                         <Paper
                                             elevation={2}
-                                            onClick={() =>
-                                                handleRouteClick(
-                                                    route.routeName
-                                                )
-                                            }
+                                            onClick={() => handleRouteClick(route.routeName)}
                                             sx={{
-                                                transition:
-                                                    "transform 0.2s, box-shadow 0.2s",
+                                                transition: "transform 0.2s, box-shadow 0.2s",
                                                 "&:hover": {
-                                                    transform:
-                                                        "translateY(-4px)",
+                                                    transform: "translateY(-4px)",
                                                     boxShadow: 4,
                                                 },
                                                 cursor: "pointer",
-                                            }}
-                                        >
+                                            }}>
                                             <MemoizedDestinationCard
                                                 routeImage={route.routeImage}
                                                 routeName={route.routeName}
@@ -370,8 +332,7 @@ const Home = () => {
                                 mr: 2,
                                 borderRadius: 1,
                             },
-                        }}
-                    >
+                        }}>
                         Ưu đãi hiện có
                     </Typography>
 
@@ -382,8 +343,7 @@ const Home = () => {
                                     display: "flex",
                                     gap: 2,
                                     flexWrap: "wrap",
-                                }}
-                            >
+                                }}>
                                 {Array.from({ length: 3 }).map((_, i) => (
                                     <Skeleton
                                         key={i}
@@ -400,8 +360,7 @@ const Home = () => {
                                     display: "flex",
                                     gap: 3,
                                     flexWrap: "wrap",
-                                }}
-                            >
+                                }}>
                                 {promotions.map((promo, index) => (
                                     <Paper
                                         key={promo.promotionId}
@@ -412,8 +371,7 @@ const Home = () => {
                                             borderRadius: 2,
                                             background:
                                                 promotionGradients[
-                                                    index %
-                                                        promotionGradients.length
+                                                    index % promotionGradients.length
                                                 ],
                                             color: "white",
                                             transition: "all 0.3s ease",
@@ -431,25 +389,20 @@ const Home = () => {
                                                 zIndex: 1,
                                             },
                                             "&:hover": {
-                                                transform:
-                                                    "translateY(-4px) scale(1.02)",
-                                                boxShadow:
-                                                    "0 8px 24px rgba(0,0,0,0.15)",
+                                                transform: "translateY(-4px) scale(1.02)",
+                                                boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
                                                 "&::before": {
                                                     opacity: 0.8,
                                                 },
                                             },
-                                        }}
-                                    >
+                                        }}>
                                         <Typography
                                             variant="h6"
                                             gutterBottom
                                             sx={{
                                                 fontWeight: 600,
-                                                textShadow:
-                                                    "0 2px 4px rgba(0,0,0,0.1)",
-                                            }}
-                                        >
+                                                textShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                                            }}>
                                             {promo.description}
                                         </Typography>
                                         <Typography
@@ -458,13 +411,11 @@ const Home = () => {
                                                 color: "#fff",
                                                 mb: 2,
                                                 fontWeight: 700,
-                                                textShadow:
-                                                    "0 2px 4px rgba(0,0,0,0.2)",
+                                                textShadow: "0 2px 4px rgba(0,0,0,0.2)",
                                                 display: "flex",
                                                 alignItems: "center",
                                                 gap: 1,
-                                            }}
-                                        >
+                                            }}>
                                             {promo.discountPercentage}%
                                             <Typography
                                                 component="span"
@@ -472,22 +423,19 @@ const Home = () => {
                                                 sx={{
                                                     fontWeight: 600,
                                                     opacity: 0.9,
-                                                }}
-                                            >
+                                                }}>
                                                 GIẢM
                                             </Typography>
                                         </Typography>
                                         <Box
                                             sx={{
-                                                bgcolor:
-                                                    "rgba(255,255,255,0.15)",
+                                                bgcolor: "rgba(255,255,255,0.15)",
                                                 p: 1.5,
                                                 borderRadius: 1,
                                                 mb: 2,
                                                 backdropFilter: "blur(4px)",
                                                 border: "1px solid rgba(255,255,255,0.2)",
-                                            }}
-                                        >
+                                            }}>
                                             <Typography
                                                 variant="body2"
                                                 sx={{
@@ -495,10 +443,8 @@ const Home = () => {
                                                     fontWeight: 600,
                                                     letterSpacing: 1,
                                                     textAlign: "center",
-                                                    textShadow:
-                                                        "0 1px 2px rgba(0,0,0,0.1)",
-                                                }}
-                                            >
+                                                    textShadow: "0 1px 2px rgba(0,0,0,0.1)",
+                                                }}>
                                                 Mã: {promo.discountCode}
                                             </Typography>
                                         </Box>
@@ -508,20 +454,18 @@ const Home = () => {
                                                 flexDirection: "column",
                                                 gap: 0.5,
                                                 opacity: 0.9,
-                                            }}
-                                        >
+                                            }}>
                                             <Typography
                                                 variant="caption"
                                                 sx={{
                                                     display: "flex",
                                                     alignItems: "center",
                                                     gap: 1,
-                                                }}
-                                            >
+                                                }}>
                                                 Hiệu lực từ:{" "}
-                                                {new Date(
-                                                    promo.startDate
-                                                ).toLocaleDateString("vi-VN")}
+                                                {new Date(promo.startDate).toLocaleDateString(
+                                                    "vi-VN"
+                                                )}
                                             </Typography>
                                             <Typography
                                                 variant="caption"
@@ -529,12 +473,11 @@ const Home = () => {
                                                     display: "flex",
                                                     alignItems: "center",
                                                     gap: 1,
-                                                }}
-                                            >
+                                                }}>
                                                 Đến:{" "}
-                                                {new Date(
-                                                    promo.endDate
-                                                ).toLocaleDateString("vi-VN")}
+                                                {new Date(promo.endDate).toLocaleDateString(
+                                                    "vi-VN"
+                                                )}
                                             </Typography>
                                         </Box>
                                     </Paper>
@@ -546,8 +489,7 @@ const Home = () => {
                                 sx={{
                                     textAlign: "center",
                                     color: "text.secondary",
-                                }}
-                            >
+                                }}>
                                 Hiện tại chưa có ưu đãi nào.
                             </Typography>
                         )}
@@ -569,8 +511,7 @@ const Home = () => {
                             mr: 2,
                             borderRadius: 1,
                         },
-                    }}
-                >
+                    }}>
                     Về chúng tôi
                 </Typography>
 
@@ -593,16 +534,14 @@ const Home = () => {
                                     maxWidth: "1200px",
                                     margin: "0 auto",
                                     boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
-                                }}
-                            >
+                                }}>
                                 <Box
                                     sx={{
                                         p: { xs: 2, md: 5 },
                                         display: "flex",
                                         flexDirection: "column",
                                         gap: 6,
-                                    }}
-                                >
+                                    }}>
                                     {/* First Section */}
                                     <Box
                                         sx={{
@@ -627,8 +566,7 @@ const Home = () => {
                                                 zIndex: 0,
                                                 borderRadius: 4,
                                             },
-                                        }}
-                                    >
+                                        }}>
                                         <Typography
                                             variant="body1"
                                             sx={{
@@ -642,24 +580,18 @@ const Home = () => {
                                                 position: "relative",
                                                 zIndex: 1,
                                                 p: 3,
-                                                bgcolor:
-                                                    "rgba(255,255,255,0.9)",
+                                                bgcolor: "rgba(255,255,255,0.9)",
                                                 borderRadius: 2,
-                                                boxShadow:
-                                                    "0 2px 12px rgba(0,0,0,0.06)",
+                                                boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
                                                 "& .font-pacifico": {
                                                     background:
                                                         "linear-gradient(45deg, #1976d2, #42a5f5)",
-                                                    WebkitBackgroundClip:
-                                                        "text",
-                                                    WebkitTextFillColor:
-                                                        "transparent",
+                                                    WebkitBackgroundClip: "text",
+                                                    WebkitTextFillColor: "transparent",
                                                     display: "inline-block",
-                                                    transform:
-                                                        "translateY(4px)",
+                                                    transform: "translateY(4px)",
                                                 },
-                                            }}
-                                        >
+                                            }}>
                                             <span
                                                 dangerouslySetInnerHTML={{
                                                     __html: homepageData.description
@@ -687,8 +619,7 @@ const Home = () => {
                                                     opacity: 0.3,
                                                     zIndex: 0,
                                                 },
-                                            }}
-                                        >
+                                            }}>
                                             <Box
                                                 component="img"
                                                 src="https://res.cloudinary.com/dj1h07rea/image/upload/v1733365012/z6098699997331_d46ffa1573577506f3613cbe5cd50ec3_gxauhr.jpg"
@@ -700,15 +631,12 @@ const Home = () => {
                                                     },
                                                     objectFit: "cover",
                                                     borderRadius: 2,
-                                                    boxShadow:
-                                                        "0 4px 20px rgba(0,0,0,0.15)",
+                                                    boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
                                                     position: "relative",
                                                     zIndex: 1,
-                                                    transition:
-                                                        "transform 0.3s ease",
+                                                    transition: "transform 0.3s ease",
                                                     "&:hover": {
-                                                        transform:
-                                                            "scale(1.02)",
+                                                        transform: "scale(1.02)",
                                                     },
                                                 }}
                                             />
@@ -739,8 +667,7 @@ const Home = () => {
                                                 zIndex: 0,
                                                 borderRadius: 4,
                                             },
-                                        }}
-                                    >
+                                        }}>
                                         <Box
                                             sx={{
                                                 flex: "0 0 50%",
@@ -757,8 +684,7 @@ const Home = () => {
                                                     opacity: 0.3,
                                                     zIndex: 0,
                                                 },
-                                            }}
-                                        >
+                                            }}>
                                             <Box
                                                 component="img"
                                                 src="https://res.cloudinary.com/dj1h07rea/image/upload/v1733365012/z6098697156421_1d372dc62b02c82a30aee123a2c3d485_s4kai3.jpg"
@@ -770,15 +696,12 @@ const Home = () => {
                                                     },
                                                     objectFit: "cover",
                                                     borderRadius: 2,
-                                                    boxShadow:
-                                                        "0 4px 20px rgba(0,0,0,0.15)",
+                                                    boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
                                                     position: "relative",
                                                     zIndex: 1,
-                                                    transition:
-                                                        "transform 0.3s ease",
+                                                    transition: "transform 0.3s ease",
                                                     "&:hover": {
-                                                        transform:
-                                                            "scale(1.02)",
+                                                        transform: "scale(1.02)",
                                                     },
                                                 }}
                                             />
@@ -796,24 +719,18 @@ const Home = () => {
                                                 position: "relative",
                                                 zIndex: 1,
                                                 p: 3,
-                                                bgcolor:
-                                                    "rgba(255,255,255,0.9)",
+                                                bgcolor: "rgba(255,255,255,0.9)",
                                                 borderRadius: 2,
-                                                boxShadow:
-                                                    "0 2px 12px rgba(0,0,0,0.06)",
+                                                boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
                                                 "& .font-pacifico": {
                                                     background:
                                                         "linear-gradient(45deg, #1976d2, #42a5f5)",
-                                                    WebkitBackgroundClip:
-                                                        "text",
-                                                    WebkitTextFillColor:
-                                                        "transparent",
+                                                    WebkitBackgroundClip: "text",
+                                                    WebkitTextFillColor: "transparent",
                                                     display: "inline-block",
-                                                    transform:
-                                                        "translateY(4px)",
+                                                    transform: "translateY(4px)",
                                                 },
-                                            }}
-                                        >
+                                            }}>
                                             <span
                                                 dangerouslySetInnerHTML={{
                                                     __html: homepageData.description
@@ -832,7 +749,6 @@ const Home = () => {
                     )}
                 </Box>
             </Container>
-            <MemoizedFooter />
             <MemoizedFooter />
             {shouldShowChat && (
                 <>
