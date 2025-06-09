@@ -355,134 +355,157 @@ const Home = () => {
                                 ))}
                             </Box>
                         ) : promotions.length > 0 ? (
-                            <Box
-                                sx={{
-                                    display: "flex",
-                                    gap: 3,
-                                    flexWrap: "wrap",
-                                }}>
+                            <Slider
+                                dots={true}
+                                infinite={true}
+                                speed={500}
+                                slidesToShow={3}
+                                slidesToScroll={1}
+                                nextArrow={<NextArrow />}
+                                prevArrow={<PrevArrow />}
+                                autoplay={true}
+                                autoplaySpeed={6000}
+                                pauseOnHover={true}
+                                responsive={[
+                                    {
+                                        breakpoint: 1024,
+                                        settings: {
+                                            slidesToShow: 2,
+                                            slidesToScroll: 1,
+                                        },
+                                    },
+                                    {
+                                        breakpoint: 600,
+                                        settings: {
+                                            slidesToShow: 1,
+                                            slidesToScroll: 1,
+                                        },
+                                    },
+                                ]}>
                                 {promotions.map((promo, index) => (
-                                    <Paper
-                                        key={promo.promotionId}
-                                        elevation={3}
-                                        sx={{
-                                            width: 300,
-                                            p: 3,
-                                            borderRadius: 2,
-                                            background:
-                                                promotionGradients[
-                                                    index % promotionGradients.length
-                                                ],
-                                            color: "white",
-                                            transition: "all 0.3s ease",
-                                            position: "relative",
-                                            overflow: "hidden",
-                                            "&::before": {
-                                                content: '""',
-                                                position: "absolute",
-                                                top: 0,
-                                                left: 0,
-                                                right: 0,
-                                                bottom: 0,
+                                    <Box key={promo.promotionId} sx={{ p: 1 }}>
+                                        <Paper
+                                            elevation={3}
+                                            sx={{
+                                                width: "100%",
+                                                height: "100%",
+                                                p: 3,
+                                                borderRadius: 2,
                                                 background:
-                                                    "linear-gradient(45deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%)",
-                                                zIndex: 1,
-                                            },
-                                            "&:hover": {
-                                                transform: "translateY(-4px) scale(1.02)",
-                                                boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
+                                                    promotionGradients[
+                                                        index % promotionGradients.length
+                                                    ],
+                                                color: "white",
+                                                transition: "all 0.3s ease",
+                                                position: "relative",
+                                                overflow: "hidden",
                                                 "&::before": {
-                                                    opacity: 0.8,
+                                                    content: '""',
+                                                    position: "absolute",
+                                                    top: 0,
+                                                    left: 0,
+                                                    right: 0,
+                                                    bottom: 0,
+                                                    background:
+                                                        "linear-gradient(45deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%)",
+                                                    zIndex: 1,
                                                 },
-                                            },
-                                        }}>
-                                        <Typography
-                                            variant="h6"
-                                            gutterBottom
-                                            sx={{
-                                                fontWeight: 600,
-                                                textShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                                                "&:hover": {
+                                                    transform: "translateY(-4px) scale(1.02)",
+                                                    boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
+                                                    "&::before": {
+                                                        opacity: 0.8,
+                                                    },
+                                                },
                                             }}>
-                                            {promo.description}
-                                        </Typography>
-                                        <Typography
-                                            variant="h4"
-                                            sx={{
-                                                color: "#fff",
-                                                mb: 2,
-                                                fontWeight: 700,
-                                                textShadow: "0 2px 4px rgba(0,0,0,0.2)",
-                                                display: "flex",
-                                                alignItems: "center",
-                                                gap: 1,
-                                            }}>
-                                            {promo.discountPercentage}%
                                             <Typography
-                                                component="span"
-                                                variant="h5"
+                                                variant="h6"
+                                                gutterBottom
                                                 sx={{
                                                     fontWeight: 600,
+                                                    textShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                                                }}>
+                                                {promo.description}
+                                            </Typography>
+                                            <Typography
+                                                variant="h4"
+                                                sx={{
+                                                    color: "#fff",
+                                                    mb: 2,
+                                                    fontWeight: 700,
+                                                    textShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    gap: 1,
+                                                }}>
+                                                {promo.discountPercentage}%
+                                                <Typography
+                                                    component="span"
+                                                    variant="h5"
+                                                    sx={{
+                                                        fontWeight: 600,
+                                                        opacity: 0.9,
+                                                    }}>
+                                                    GIẢM
+                                                </Typography>
+                                            </Typography>
+                                            <Box
+                                                sx={{
+                                                    bgcolor: "rgba(255,255,255,0.15)",
+                                                    p: 1.5,
+                                                    borderRadius: 1,
+                                                    mb: 2,
+                                                    backdropFilter: "blur(4px)",
+                                                    border: "1px solid rgba(255,255,255,0.2)",
+                                                }}>
+                                                <Typography
+                                                    variant="body2"
+                                                    sx={{
+                                                        fontFamily: "monospace",
+                                                        fontWeight: 600,
+                                                        letterSpacing: 1,
+                                                        textAlign: "center",
+                                                        textShadow: "0 1px 2px rgba(0,0,0,0.1)",
+                                                    }}>
+                                                    Mã: {promo.discountCode}
+                                                </Typography>
+                                            </Box>
+                                            <Box
+                                                sx={{
+                                                    display: "flex",
+                                                    flexDirection: "column",
+                                                    gap: 0.5,
                                                     opacity: 0.9,
                                                 }}>
-                                                GIẢM
-                                            </Typography>
-                                        </Typography>
-                                        <Box
-                                            sx={{
-                                                bgcolor: "rgba(255,255,255,0.15)",
-                                                p: 1.5,
-                                                borderRadius: 1,
-                                                mb: 2,
-                                                backdropFilter: "blur(4px)",
-                                                border: "1px solid rgba(255,255,255,0.2)",
-                                            }}>
-                                            <Typography
-                                                variant="body2"
-                                                sx={{
-                                                    fontFamily: "monospace",
-                                                    fontWeight: 600,
-                                                    letterSpacing: 1,
-                                                    textAlign: "center",
-                                                    textShadow: "0 1px 2px rgba(0,0,0,0.1)",
-                                                }}>
-                                                Mã: {promo.discountCode}
-                                            </Typography>
-                                        </Box>
-                                        <Box
-                                            sx={{
-                                                display: "flex",
-                                                flexDirection: "column",
-                                                gap: 0.5,
-                                                opacity: 0.9,
-                                            }}>
-                                            <Typography
-                                                variant="caption"
-                                                sx={{
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    gap: 1,
-                                                }}>
-                                                Hiệu lực từ:{" "}
-                                                {new Date(promo.startDate).toLocaleDateString(
-                                                    "vi-VN"
-                                                )}
-                                            </Typography>
-                                            <Typography
-                                                variant="caption"
-                                                sx={{
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    gap: 1,
-                                                }}>
-                                                Đến:{" "}
-                                                {new Date(promo.endDate).toLocaleDateString(
-                                                    "vi-VN"
-                                                )}
-                                            </Typography>
-                                        </Box>
-                                    </Paper>
+                                                <Typography
+                                                    variant="caption"
+                                                    sx={{
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        gap: 1,
+                                                    }}>
+                                                    Hiệu lực từ:{" "}
+                                                    {new Date(promo.startDate).toLocaleDateString(
+                                                        "vi-VN"
+                                                    )}
+                                                </Typography>
+                                                <Typography
+                                                    variant="caption"
+                                                    sx={{
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        gap: 1,
+                                                    }}>
+                                                    Đến:{" "}
+                                                    {new Date(promo.endDate).toLocaleDateString(
+                                                        "vi-VN"
+                                                    )}
+                                                </Typography>
+                                            </Box>
+                                        </Paper>
+                                    </Box>
                                 ))}
-                            </Box>
+                            </Slider>
                         ) : (
                             <Typography
                                 variant="body1"
@@ -752,8 +775,8 @@ const Home = () => {
             <MemoizedFooter />
             {shouldShowChat && (
                 <>
-                    <BoxChat />
                     <BotChat />
+                    <BoxChat />
                 </>
             )}
             <style>{`

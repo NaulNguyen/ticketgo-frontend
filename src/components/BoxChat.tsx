@@ -7,6 +7,7 @@ import {
     TextField,
     Button,
     CircularProgress,
+    Fade,
 } from "@mui/material";
 import ChatIcon from "@mui/icons-material/Chat";
 import CloseIcon from "@mui/icons-material/Close";
@@ -39,8 +40,7 @@ const BoxChat = () => {
 
     // Check if user is logged in and not a BUS_COMPANY
     const userInfo = getUserInfor();
-    const shouldShowChat =
-        userInfo && userInfo.user.role !== "ROLE_BUS_COMPANY";
+    const shouldShowChat = userInfo && userInfo.user.role !== "ROLE_BUS_COMPANY";
 
     useEffect(() => {
         if (!userInfo) {
@@ -69,23 +69,19 @@ const BoxChat = () => {
         client.onConnect = () => {
             console.log("✅ Connected to STOMP");
             setIsConnected(true);
-            client.subscribe(
-                `/topic/chat-${info.user.userId}`,
-                async (message) => {
-                    try {
-                        const newMessage = JSON.parse(message.body);
-                        const updatedMessages = await fetchMessageHistory(info);
-                        setMessages(updatedMessages);
+            client.subscribe(`/topic/chat-${info.user.userId}`, async (message) => {
+                try {
+                    const newMessage = JSON.parse(message.body);
+                    const updatedMessages = await fetchMessageHistory(info);
+                    setMessages(updatedMessages);
 
-                        if (chatBoxRef.current) {
-                            chatBoxRef.current.scrollTop =
-                                chatBoxRef.current.scrollHeight;
-                        }
-                    } catch (err) {
-                        console.error("Error handling message:", err);
+                    if (chatBoxRef.current) {
+                        chatBoxRef.current.scrollTop = chatBoxRef.current.scrollHeight;
                     }
+                } catch (err) {
+                    console.error("Error handling message:", err);
                 }
-            );
+            });
         };
 
         client.onStompError = (frame) => {
@@ -131,8 +127,7 @@ const BoxChat = () => {
                 setMessages(messages);
 
                 if (chatBoxRef.current) {
-                    chatBoxRef.current.scrollTop =
-                        chatBoxRef.current.scrollHeight;
+                    chatBoxRef.current.scrollTop = chatBoxRef.current.scrollHeight;
                 }
             } catch (error) {
                 console.error("Error fetching messages:", error);
@@ -161,8 +156,7 @@ const BoxChat = () => {
 
                     requestAnimationFrame(() => {
                         if (chatBoxRef.current) {
-                            chatBoxRef.current.scrollTop =
-                                chatBoxRef.current.scrollHeight;
+                            chatBoxRef.current.scrollTop = chatBoxRef.current.scrollHeight;
                         }
                     });
 
@@ -182,8 +176,7 @@ const BoxChat = () => {
     useEffect(() => {
         if (isOpen && chatBoxRef.current && messages.length > 0) {
             requestAnimationFrame(() => {
-                chatBoxRef.current!.scrollTop =
-                    chatBoxRef.current!.scrollHeight;
+                chatBoxRef.current!.scrollTop = chatBoxRef.current!.scrollHeight;
             });
         }
     }, [isOpen, messages.length]);
@@ -226,23 +219,49 @@ const BoxChat = () => {
         }
     };
 
+    const handleToggle = () => {
+        setIsOpen(!isOpen);
+    };
+
     return (
-        <Box sx={{ position: "fixed", bottom: 20, right: 100, zIndex: 1000 }}>
-            {isOpen ? (
+        <>
+            <IconButton
+                onClick={handleToggle}
+                title="AI Assistant"
+                sx={{
+                    position: "fixed",
+                    bottom: 20,
+                    right: 20,
+                    backgroundColor: "primary.main",
+                    color: "white",
+                    "&:hover": {
+                        backgroundColor: "primary.dark",
+                        transform: "translateY(-4px)",
+                    },
+                    width: 60,
+                    height: 60,
+                    boxShadow: 3,
+                    transition: "all 0.3s ease",
+                }}>
+                <ChatIcon />
+            </IconButton>
+            <Fade in={isOpen}>
                 <Paper
                     elevation={3}
                     sx={{
-                        width: 320,
-                        height: 400,
+                        position: "fixed",
+                        bottom: 90,
+                        right: 20,
+                        width: 350,
+                        maxHeight: 400,
                         display: "flex",
                         flexDirection: "column",
-                        borderRadius: 2,
+                        boxShadow: "0 8px 32px rgba(0,0,0,0.1)",
+                        borderRadius: 3,
                         overflow: "hidden",
-                        position: "absolute",
-                        bottom: 0,
-                        right: 0,
-                    }}
-                >
+                        zIndex: 1100,
+                        bgcolor: "#fcfcfc",
+                    }}>
                     <Box
                         sx={{
                             bgcolor: "primary.main",
@@ -250,16 +269,14 @@ const BoxChat = () => {
                             display: "flex",
                             justifyContent: "space-between",
                             alignItems: "center",
-                        }}
-                    >
+                        }}>
                         <Typography variant="h6" sx={{ color: "white" }}>
                             Hỗ trợ khách hàng
                         </Typography>
                         <IconButton
                             size="small"
                             onClick={() => setIsOpen(false)}
-                            sx={{ color: "white" }}
-                        >
+                            sx={{ color: "white" }}>
                             <CloseIcon />
                         </IconButton>
                     </Box>
@@ -276,8 +293,7 @@ const BoxChat = () => {
                             gap: 1,
                             position: "relative",
                             scrollBehavior: "instant",
-                        }}
-                    >
+                        }}>
                         {isLoading && (
                             <Box
                                 sx={{
@@ -285,8 +301,7 @@ const BoxChat = () => {
                                     top: "50%",
                                     left: "50%",
                                     transform: "translate(-50%, -50%)",
-                                }}
-                            >
+                                }}>
                                 <CircularProgress size={24} />
                             </Box>
                         )}
@@ -295,35 +310,25 @@ const BoxChat = () => {
                                 key={msg.messageId}
                                 sx={{
                                     alignSelf:
-                                        msg.senderId ===
-                                        getUserInfor()?.user.userId
+                                        msg.senderId === getUserInfor()?.user.userId
                                             ? "flex-end"
                                             : "flex-start",
                                     maxWidth: "80%",
-                                }}
-                            >
+                                }}>
                                 <Paper
                                     sx={{
                                         p: 1,
                                         bgcolor:
-                                            msg.senderId ===
-                                            getUserInfor()?.user.userId
+                                            msg.senderId === getUserInfor()?.user.userId
                                                 ? "primary.main"
                                                 : "white",
                                         color:
-                                            msg.senderId ===
-                                            getUserInfor()?.user.userId
+                                            msg.senderId === getUserInfor()?.user.userId
                                                 ? "white"
                                                 : "text.primary",
-                                    }}
-                                >
-                                    <Typography variant="body2">
-                                        {msg.content}
-                                    </Typography>
-                                    <Typography
-                                        variant="caption"
-                                        sx={{ opacity: 0.7 }}
-                                    >
+                                    }}>
+                                    <Typography variant="body2">{msg.content}</Typography>
+                                    <Typography variant="caption" sx={{ opacity: 0.7 }}>
                                         {formatMessageTime(msg.sentAt)}
                                     </Typography>
                                 </Paper>
@@ -338,8 +343,7 @@ const BoxChat = () => {
                             borderTop: "1px solid #e0e0e0",
                             display: "flex",
                             gap: 1,
-                        }}
-                    >
+                        }}>
                         <TextField
                             fullWidth
                             size="small"
@@ -357,30 +361,13 @@ const BoxChat = () => {
                             variant="contained"
                             color="primary"
                             onClick={handleSend}
-                            sx={{ minWidth: "40px", px: 2 }}
-                        >
+                            sx={{ minWidth: "40px", px: 2 }}>
                             <SendIcon />
                         </Button>
                     </Box>
                 </Paper>
-            ) : (
-                <IconButton
-                    onClick={() => setIsOpen(true)}
-                    sx={{
-                        bgcolor: "primary.main",
-                        color: "white",
-                        width: 56,
-                        height: 56,
-                        "&:hover": {
-                            bgcolor: "primary.dark",
-                        },
-                        boxShadow: 2,
-                    }}
-                >
-                    <ChatIcon fontSize="large" />
-                </IconButton>
-            )}
-        </Box>
+            </Fade>
+        </>
     );
 };
 
