@@ -17,10 +17,23 @@ import DOMPurify from "dompurify";
 import { useNavigate, useLocation } from "react-router-dom";
 import { keyframes } from "@mui/material/styles";
 import RocketLaunchIcon from "@mui/icons-material/RocketLaunch";
+import useAppAccessor from "../hook/useAppAccessor";
 
 interface Message {
     type: "user" | "bot";
     content: string;
+}
+
+interface ChatMessage {
+    role: "user" | "assistant";
+    content: string;
+    createdAt: string;
+}
+
+interface ConversationHistory {
+    conversationId: string;
+    title: string;
+    messages: ChatMessage[];
 }
 
 const BotChat = () => {
@@ -31,6 +44,8 @@ const BotChat = () => {
     const [conversationId, setConversationId] = useState<string | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const [initializing, setInitializing] = useState(false);
+    const { getUserInfor } = useAppAccessor();
+    const userInfor = getUserInfor();
 
     const navigate = useNavigate();
 
@@ -75,7 +90,8 @@ const BotChat = () => {
                 bgcolor: "grey.100",
                 borderRadius: 2,
                 width: "fit-content",
-            }}>
+            }}
+        >
             {[0, 1, 2].map((dot) => (
                 <Box
                     key={dot}
@@ -94,24 +110,87 @@ const BotChat = () => {
 
     const initializeConversation = async () => {
         setInitializing(true);
+        console.log(userInfor);
         try {
-            const response = await axios.post("https://ticketgo.site/api/v1/chatbot/conversations");
+            if (userInfor?.user?.userId) {
+                // Try to get existing conversation
+                const historyResponse = await axios.get(
+                    `https://ticketgo.site/api/v1/chatbot/conversations/latest?userId=${userInfor.user.userId}`
+                );
+
+                if (historyResponse.data.conversationId) {
+                    // Have existing conversation
+                    setConversationId(historyResponse.data.conversationId);
+
+                    // Convert history messages to our Message format
+                    const historyMessages = historyResponse.data.messages.map(
+                        (msg: ChatMessage) => ({
+                            type: msg.role === "user" ? "user" : "bot",
+                            content: msg.content,
+                        })
+                    );
+
+                    setMessages(historyMessages);
+                    return;
+                }
+            }
+
+            // No history or anonymous user - create new conversation
+            const response = await axios.post(
+                "https://ticketgo.site/api/v1/chatbot/conversations" +
+                    (userInfor?.user?.userId
+                        ? `?userId=${userInfor.user.userId}`
+                        : "")
+            );
+
             setConversationId(response.data);
+
             // Add welcome message
-            const welcomeResponse = await axios.post("https://ticketgo.site/api/v1/chatbot/chat", {
-                conversationId: response.data,
-                content: "Xin chào",
-            });
-            setMessages([{ type: "bot", content: welcomeResponse.data }]);
-        } catch (error) {
-            console.error("Error initializing conversation:", error);
-            setMessages([
+            const welcomeResponse = await axios.post(
+                "https://ticketgo.site/api/v1/chatbot/chat",
                 {
-                    type: "bot",
-                    content:
-                        '<p style="color: #f44336;">Không thể kết nối đến chatbot. Vui lòng thử lại sau.</p>',
-                },
-            ]);
+                    conversationId: response.data,
+                    content: "Xin chào",
+                }
+            );
+
+            setMessages([{ type: "bot", content: welcomeResponse.data }]);
+        } catch (error: any) {
+            console.error("Error initializing conversation:", error);
+            // Check if error is "User has no conversations"
+            if (
+                error.response?.status === 500 &&
+                error.response?.data?.message === "User has no conversations"
+            ) {
+                // Create new conversation for user
+                const response = await axios.post(
+                    "https://ticketgo.site/api/v1/chatbot/conversations" +
+                        (userInfor?.user?.userId
+                            ? `?userId=${userInfor.user.userId}`
+                            : "")
+                );
+
+                setConversationId(response.data);
+
+                // Add welcome message
+                const welcomeResponse = await axios.post(
+                    "https://ticketgo.site/api/v1/chatbot/chat",
+                    {
+                        conversationId: response.data,
+                        content: "Xin chào",
+                    }
+                );
+
+                setMessages([{ type: "bot", content: welcomeResponse.data }]);
+            } else {
+                setMessages([
+                    {
+                        type: "bot",
+                        content:
+                            '<p style="color: #f44336;">Không thể kết nối đến chatbot. Vui lòng thử lại sau.</p>',
+                    },
+                ]);
+            }
         } finally {
             setInitializing(false);
         }
@@ -129,16 +208,25 @@ const BotChat = () => {
 
         const userMessage = input.trim();
         setInput("");
-        setMessages((prev) => [...prev, { type: "user", content: userMessage }]);
+        setMessages((prev) => [
+            ...prev,
+            { type: "user", content: userMessage },
+        ]);
         setLoading(true);
 
         try {
-            const response = await axios.post("https://ticketgo.site/api/v1/chatbot/chat", {
-                conversationId,
-                content: userMessage,
-            });
+            const response = await axios.post(
+                "https://ticketgo.site/api/v1/chatbot/chat",
+                {
+                    conversationId,
+                    content: userMessage,
+                }
+            );
 
-            setMessages((prev) => [...prev, { type: "bot", content: response.data }]);
+            setMessages((prev) => [
+                ...prev,
+                { type: "bot", content: response.data },
+            ]);
 
             // Check if response contains a selectedScheduleId
             const htmlContent = response.data;
@@ -148,11 +236,15 @@ const BotChat = () => {
 
             for (const link of links) {
                 const url = new URL(link.href);
-                const selectedScheduleId = url.searchParams.get("selectedScheduleId");
+                const selectedScheduleId =
+                    url.searchParams.get("selectedScheduleId");
                 if (selectedScheduleId) {
                     // Update current URL with selectedScheduleId
                     const currentUrl = new URL(window.location.href);
-                    currentUrl.searchParams.set("selectedScheduleId", selectedScheduleId);
+                    currentUrl.searchParams.set(
+                        "selectedScheduleId",
+                        selectedScheduleId
+                    );
                     navigate(currentUrl.pathname + currentUrl.search);
                     break;
                 }
@@ -182,14 +274,16 @@ const BotChat = () => {
                 justifyContent: "center",
                 gap: 2,
                 p: 3,
-            }}>
+            }}
+        >
             <Box
                 sx={{
                     display: "flex",
                     alignItems: "center",
                     gap: 1,
                     animation: `${fadeInUp} 0.5s ease-out`,
-                }}>
+                }}
+            >
                 {[0, 1, 2, 3].map((dot) => (
                     <Box
                         key={dot}
@@ -211,7 +305,8 @@ const BotChat = () => {
                     animation: `${fadeInUp} 0.5s ease-out`,
                     animationDelay: "0.2s",
                     animationFillMode: "backwards",
-                }}>
+                }}
+            >
                 Đang kết nối...
             </Typography>
         </Box>
@@ -236,8 +331,11 @@ const BotChat = () => {
                     height: 60,
                     boxShadow: 3,
                     transition: "all 0.3s ease",
-                    animation: !isOpen ? `${pulseAnimation} 2s infinite` : "none",
-                }}>
+                    animation: !isOpen
+                        ? `${pulseAnimation} 2s infinite`
+                        : "none",
+                }}
+            >
                 <SmartToyIcon />
             </IconButton>
 
@@ -257,17 +355,20 @@ const BotChat = () => {
                         zIndex: 1100,
                         animation: `${fadeInUp} 0.3s ease-out`,
                         bgcolor: "#fcfcfc",
-                    }}>
+                    }}
+                >
                     {/* Header */}
                     <Box
                         sx={{
                             p: 2,
-                            background: "linear-gradient(135deg, #1976d2 0%, #1565c0 100%)",
+                            background:
+                                "linear-gradient(135deg, #1976d2 0%, #1565c0 100%)",
                             color: "white",
                             display: "flex",
                             justifyContent: "space-between",
                             alignItems: "center",
-                        }}>
+                        }}
+                    >
                         <Typography
                             variant="h6"
                             sx={{
@@ -276,7 +377,8 @@ const BotChat = () => {
                                 gap: 1,
                                 fontWeight: 500,
                                 textShadow: "0 2px 4px rgba(0,0,0,0.1)",
-                            }}>
+                            }}
+                        >
                             <RocketLaunchIcon
                                 sx={{
                                     animation: `${pulseAnimation} 2s infinite`,
@@ -293,7 +395,8 @@ const BotChat = () => {
                                     transform: "rotate(90deg)",
                                     transition: "transform 0.3s ease",
                                 },
-                            }}>
+                            }}
+                        >
                             <CloseIcon />
                         </IconButton>
                     </Box>
@@ -319,7 +422,8 @@ const BotChat = () => {
                                     bgcolor: alpha("#1976d2", 0.3),
                                 },
                             },
-                        }}>
+                        }}
+                    >
                         {initializing ? (
                             <InitializingIndicator />
                         ) : (
@@ -331,9 +435,12 @@ const BotChat = () => {
                                             mb: 2,
                                             display: "flex",
                                             justifyContent:
-                                                message.type === "user" ? "flex-end" : "flex-start",
+                                                message.type === "user"
+                                                    ? "flex-end"
+                                                    : "flex-start",
                                             animation: `${fadeInUp} 0.3s ease-out`,
-                                        }}>
+                                        }}
+                                    >
                                         <Box
                                             sx={{
                                                 maxWidth: "80%",
@@ -354,17 +461,23 @@ const BotChat = () => {
                                                 transition: "all 0.2s ease",
                                                 "&:hover": {
                                                     boxShadow: 2,
-                                                    transform: "translateY(-1px)",
+                                                    transform:
+                                                        "translateY(-1px)",
                                                 },
-                                            }}>
+                                            }}
+                                        >
                                             {message.type === "bot" ? (
                                                 <div
                                                     dangerouslySetInnerHTML={{
-                                                        __html: DOMPurify.sanitize(message.content),
+                                                        __html: DOMPurify.sanitize(
+                                                            message.content
+                                                        ),
                                                     }}
                                                 />
                                             ) : (
-                                                <Typography>{message.content}</Typography>
+                                                <Typography>
+                                                    {message.content}
+                                                </Typography>
                                             )}
                                         </Box>
                                     </Box>
@@ -376,7 +489,8 @@ const BotChat = () => {
                                             display: "flex",
                                             justifyContent: "flex-start",
                                             my: 2,
-                                        }}>
+                                        }}
+                                    >
                                         <LoadingIndicator />
                                     </Box>
                                 )}
@@ -391,15 +505,22 @@ const BotChat = () => {
                             bgcolor: "background.paper",
                             borderTop: "1px solid",
                             borderColor: "divider",
-                        }}>
+                        }}
+                    >
                         <TextField
                             fullWidth
                             variant="outlined"
-                            placeholder={initializing ? "Đang kết nối..." : "Nhập tin nhắn..."}
+                            placeholder={
+                                initializing
+                                    ? "Đang kết nối..."
+                                    : "Nhập tin nhắn..."
+                            }
                             value={input}
                             disabled={initializing}
                             onChange={(e) => setInput(e.target.value)}
-                            onKeyPress={(e) => e.key === "Enter" && handleSend()}
+                            onKeyPress={(e) =>
+                                e.key === "Enter" && handleSend()
+                            }
                             sx={{
                                 "& .MuiOutlinedInput-root": {
                                     borderRadius: 3,
@@ -424,7 +545,8 @@ const BotChat = () => {
                                             "&:active": {
                                                 transform: "scale(0.95)",
                                             },
-                                        }}>
+                                        }}
+                                    >
                                         <SendIcon />
                                     </IconButton>
                                 ),
