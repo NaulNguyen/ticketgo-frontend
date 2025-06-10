@@ -737,6 +737,7 @@ const SearchingPage = () => {
                 {shouldShowChat && (
                     <>
                         <BoxChat />
+                        <BotChat />
                     </>
                 )}
             </Container>
