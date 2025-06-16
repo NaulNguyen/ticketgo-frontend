@@ -1,50 +1,66 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
     Box,
-    Button,
-    Container,
-    Divider,
-    Grid,
     Typography,
-    Pagination,
-    CircularProgress,
-    Tooltip,
+    Paper,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    Chip,
+    IconButton,
     TextField,
-    InputAdornment,
-    Select,
+    Button,
+    Tooltip,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
+    Grid,
     MenuItem,
     FormControl,
     InputLabel,
-    Stack,
-    IconButton,
-    Collapse,
-    Paper,
-    debounce,
+    Select,
+    Autocomplete,
+    Menu,
+    ListItemText,
+    DialogContentText,
+    ListItemIcon,
 } from "@mui/material";
-import { formatPrice } from "../../utils/formatPrice";
-import RefreshIcon from "@mui/icons-material/Refresh";
-import { axiosWithJWT } from "../../config/axiosConfig";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import { toast } from "react-toastify";
-import SearchIcon from "@mui/icons-material/Search";
 import FilterListIcon from "@mui/icons-material/FilterList";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import CreditCardIcon from "@mui/icons-material/CreditCard";
+import LocationOnIcon from "@mui/icons-material/LocationOn";
+import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import PersonIcon from "@mui/icons-material/Person";
+import EmailIcon from "@mui/icons-material/Email";
+import DirectionsBusIcon from "@mui/icons-material/DirectionsBus";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import dayjs from "dayjs";
+import dayjs, { Dayjs } from "dayjs";
+import { axiosWithJWT } from "../../config/axiosConfig";
+import { toast } from "react-toastify";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import CancelIcon from "@mui/icons-material/Cancel";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
+import MoneyIcon from "@mui/icons-material/Money";
 
-interface Booking {
+interface BookingHistory {
     bookingId: number;
     bookingDate: string;
     seatInfos: string;
     contactName: string;
+    contactEmail: string;
     routeName: string;
     departureDate: string;
     pickupTime: string;
     pickupLocation: string;
     dropoffLocation: string;
     licensePlate: string;
-    contactEmail: string;
     originalPrice: string;
     discountedPrice: string;
     status: string;
@@ -56,958 +72,1171 @@ interface Booking {
     driverPhone: string;
 }
 
-interface PaginationInfo {
+interface Pagination {
     pageNumber: number;
     pageSize: number;
     totalPages: number;
     totalItems: number;
 }
 
-interface FilterState {
-    search: string;
-    status: string;
-    dateRange: {
-        from: string | null;
-        to: string | null;
-    };
+interface ApiResponse {
+    status: number;
+    message: string;
+    data: BookingHistory[];
+    pagination: Pagination;
 }
 
-const TicketManagement = () => {
-    const [bookings, setBookings] = useState<Booking[]>([]);
+interface FilterOptions {
+    bookingId?: string;
+    contactName?: string;
+    contactEmail?: string;
+    contactPhone?: string;
+    routeName?: string;
+    status?: string;
+    refundStatus?: string;
+    fromDate?: Dayjs | null;
+    toDate?: Dayjs | null;
+    paymentStatus?: string;
+    departureDate?: Dayjs | null;
+}
+
+interface RouteOption {
+    routeId: number;
+    routeName: string;
+}
+
+const BookingManagement = () => {
+    const [bookings, setBookings] = useState<BookingHistory[]>([]);
     const [loading, setLoading] = useState(true);
-    const [pagination, setPagination] = useState<PaginationInfo>({
-        pageNumber: 1,
-        pageSize: 5,
-        totalPages: 1,
-        totalItems: 0,
-    });
+    const [page, setPage] = useState(1);
+    const [pageSize, setPageSize] = useState(10);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalItems, setTotalItems] = useState(0);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [filterDialogOpen, setFilterDialogOpen] = useState(false);
+    const [filterOptions, setFilterOptions] = useState<FilterOptions>({});
+    const [routes, setRoutes] = useState<RouteOption[]>([]);
+    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+    const [selectedBooking, setSelectedBooking] =
+        useState<BookingHistory | null>(null);
+    const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+    const [confirmAction, setConfirmAction] = useState<
+        "refund" | "payment" | "cancel" | null
+    >(null);
 
-    const [filters, setFilters] = useState<FilterState>({
-        search: "",
-        status: "all",
-        dateRange: {
-            from: null,
-            to: null,
-        },
-    });
-
-    const fetchBookings = async (
-        page: number,
-        status?: string,
-        dateRange?: { from: string | null; to: string | null }
-    ) => {
+    const fetchRoutes = async () => {
         try {
-            setLoading(true);
-            const params = new URLSearchParams({
-                pageNumber: page.toString(),
-                pageSize: pagination.pageSize.toString(),
-            });
+            const response = await axiosWithJWT.get("/api/v1/routes");
+            if (response.data && Array.isArray(response.data.data)) {
+                const routeOptions = response.data.data.map((route: any) => ({
+                    routeId: route.routeId,
+                    routeName: route.routeName,
+                }));
+                setRoutes(routeOptions);
+            } else {
+                console.error("Routes data is not an array:", response.data);
+                setRoutes([]);
+            }
+        } catch (error) {
+            console.error("Error fetching routes:", error);
+            setRoutes([]);
+        }
+    };
 
-            if (status && status !== "all") params.append("status", status);
-            if (dateRange?.from) params.append("fromDate", dateRange.from);
-            if (dateRange?.to) params.append("toDate", dateRange.to);
+    // Handle action menu open
+    const handleMenuOpen = (
+        event: React.MouseEvent<HTMLElement>,
+        booking: BookingHistory
+    ) => {
+        setAnchorEl(event.currentTarget);
+        setSelectedBooking(booking);
+    };
 
-            const response = await axiosWithJWT.get(
-                `/api/v1/bookings/all-history?${params.toString()}`
+    // Handle action menu close
+    const handleMenuClose = () => {
+        setAnchorEl(null);
+    };
+
+    // Handle action confirmation dialog
+    const handleConfirmDialogOpen = (
+        action: "refund" | "payment" | "cancel"
+    ) => {
+        setConfirmAction(action);
+        setConfirmDialogOpen(true);
+        handleMenuClose();
+    };
+
+    // Close confirmation dialog
+    const handleConfirmDialogClose = () => {
+        setConfirmDialogOpen(false);
+        setConfirmAction(null);
+    };
+
+    // Execute confirmed action
+    const handleConfirmAction = async () => {
+        if (!selectedBooking || !confirmAction) return;
+
+        try {
+            switch (confirmAction) {
+                case "refund":
+                    await axiosWithJWT.put(
+                        `/api/v1/bookings/${selectedBooking.bookingId}/refund`
+                    );
+                    toast.success("Đã xác nhận hoàn tiền thành công");
+                    break;
+
+                case "payment":
+                    await axiosWithJWT.put(
+                        `/api/v1/admin-payment-confirm?bookingId=${selectedBooking.bookingId}`
+                    );
+                    toast.success("Đã xác nhận thanh toán thành công");
+                    break;
+
+                case "cancel":
+                    await axiosWithJWT.post(`/api/v1/bookings/cancel`, {
+                        bookingId: selectedBooking.bookingId,
+                    });
+                    toast.success("Đã hủy đặt vé thành công");
+                    break;
+            }
+
+            // Refresh bookings after action
+            fetchBookings();
+        } catch (error: any) {
+            console.error(`Error performing ${confirmAction} action:`, error);
+            toast.error(
+                error.response?.data?.message ||
+                    `Không thể thực hiện thao tác. Vui lòng thử lại sau.`
+            );
+        } finally {
+            handleConfirmDialogClose();
+        }
+    };
+
+    // Get confirmation dialog content based on action
+    const getConfirmDialogContent = () => {
+        if (!selectedBooking) return null;
+
+        switch (confirmAction) {
+            case "refund":
+                return {
+                    title: "Xác nhận hoàn tiền",
+                    content: `Bạn có chắc chắn muốn xác nhận hoàn tiền cho đặt vé #${selectedBooking.bookingId} không?`,
+                    confirmButton: "Xác nhận hoàn tiền",
+                    color: "success" as const,
+                };
+
+            case "payment":
+                return {
+                    title: "Xác nhận thanh toán",
+                    content: `Bạn có chắc chắn muốn xác nhận thanh toán cho đặt vé #${selectedBooking.bookingId} không?`,
+                    confirmButton: "Xác nhận thanh toán",
+                    color: "success" as const,
+                };
+
+            case "cancel":
+                return {
+                    title: "Xác nhận hủy đặt vé",
+                    content: `Bạn có chắc chắn muốn hủy đặt vé #${selectedBooking.bookingId} không? Hành động này không thể hoàn tác.`,
+                    confirmButton: "Hủy đặt vé",
+                    color: "error" as const,
+                };
+
+            default:
+                return {
+                    title: "",
+                    content: "",
+                    confirmButton: "",
+                    color: "primary" as const,
+                };
+        }
+    };
+
+    const isAwaitingRefund = (booking: BookingHistory) => {
+        return (
+            booking.status === "Đã hủy" &&
+            booking.refundStatus === "Đang chờ hoàn tiền"
+        );
+    };
+
+    const isAwaitingPayment = (booking: BookingHistory) => {
+        return booking.status === "Đã xác nhận" && !booking.refundStatus;
+    };
+
+    const canBeCancelled = (booking: BookingHistory) => {
+        return booking.status !== "Đã hủy" && booking.status !== "Hoàn thành";
+    };
+
+    const hasAvailableActions = (booking: BookingHistory) => {
+        const canRefund = isAwaitingRefund(booking);
+        const canConfirmPayment = isAwaitingPayment(booking);
+        const canCancel = canBeCancelled(booking);
+
+        return canRefund || canConfirmPayment || canCancel;
+    };
+
+    useEffect(() => {
+        fetchRoutes();
+    }, []);
+
+    const fetchBookings = async () => {
+        setLoading(true);
+        try {
+            // Build query params from filterOptions
+            const queryParams = new URLSearchParams();
+            queryParams.append("pageNumber", page.toString());
+            queryParams.append("pageSize", pageSize.toString());
+
+            if (searchTerm) queryParams.append("search", searchTerm);
+            if (filterOptions.bookingId)
+                queryParams.append("bookingId", filterOptions.bookingId);
+            if (filterOptions.contactName)
+                queryParams.append("contactName", filterOptions.contactName);
+            if (filterOptions.contactEmail)
+                queryParams.append("contactEmail", filterOptions.contactEmail);
+            if (filterOptions.contactPhone)
+                queryParams.append("contactPhone", filterOptions.contactPhone);
+            if (filterOptions.routeName)
+                queryParams.append("routeName", filterOptions.routeName);
+            if (filterOptions.status)
+                queryParams.append("status", filterOptions.status);
+            if (filterOptions.refundStatus)
+                queryParams.append("refundStatus", filterOptions.refundStatus);
+            if (filterOptions.paymentStatus)
+                queryParams.append(
+                    "paymentStatus",
+                    filterOptions.paymentStatus
+                );
+
+            if (filterOptions.fromDate) {
+                queryParams.append(
+                    "fromDate",
+                    filterOptions.fromDate.format("YYYY-MM-DD")
+                );
+            }
+
+            if (filterOptions.toDate) {
+                queryParams.append(
+                    "toDate",
+                    filterOptions.toDate.format("YYYY-MM-DD")
+                );
+            }
+
+            if (filterOptions.departureDate) {
+                queryParams.append(
+                    "departureDate",
+                    filterOptions.departureDate.format("YYYY-MM-DD")
+                );
+            }
+
+            const response = await axiosWithJWT.get<ApiResponse>(
+                `/api/v1/bookings/all-history?${queryParams.toString()}`
             );
 
             if (response.data.status === 200) {
                 setBookings(response.data.data);
-                setPagination(response.data.pagination);
+                setTotalPages(response.data.pagination.totalPages);
+                setTotalItems(response.data.pagination.totalItems);
             }
         } catch (error) {
             console.error("Error fetching bookings:", error);
-            toast.error("Không thể tải danh sách vé");
+            toast.error("Không thể tải danh sách đặt vé");
         } finally {
             setLoading(false);
         }
     };
 
-    const handleStatusChange = (event: any) => {
-        const status = event.target.value;
-        setFilters((prev) => ({ ...prev, status }));
-        fetchBookings(1, status, filters.dateRange);
-    };
-
-    const handleDateChange = (type: "from" | "to", value: string | null) => {
-        setFilters((prev) => ({
-            ...prev,
-            dateRange: { ...prev.dateRange, [type]: value },
-        }));
-        fetchBookings(1, filters.status, {
-            ...filters.dateRange,
-            [type]: value,
-        });
-    };
-
-    const handleRefundConfirm = async (bookingId: number) => {
-        try {
-            const response = await axiosWithJWT.put(
-                `/api/v1/bookings/${bookingId}/refund`
-            );
-
-            if (response.data.status === 200) {
-                toast.success("Xác nhận hoàn tiền thành công");
-                // Refresh the bookings list
-                fetchBookings(
-                    pagination.pageNumber,
-                    filters.status,
-                    filters.dateRange
-                );
-            }
-        } catch (error) {
-            console.error("Error confirming refund:", error);
-            toast.error("Không thể xác nhận hoàn tiền");
-        }
-    };
-
     useEffect(() => {
-        fetchBookings(pagination.pageNumber);
-    }, []);
+        fetchBookings();
+    }, [page, pageSize, searchTerm, filterOptions]);
 
-    const handlePageChange = (_: React.ChangeEvent<unknown>, value: number) => {
-        fetchBookings(value, filters.status, filters.dateRange);
+    const handleFilterApply = () => {
+        setPage(1); // Reset page when applying filters
+        setFilterDialogOpen(false);
     };
 
-    const parseRouteName = (routeName: string) => {
-        const [origin, destination] = routeName.split(" - ");
-        return { origin, destination };
+    const handleFilterClear = () => {
+        setFilterOptions({});
     };
 
-    const formatPickupDateTime = (dateTime: string) => {
-        const [time, date] = dateTime.split(" ");
-        return { time, date };
+    const getStatusChip = (status: string) => {
+        type StatusColorType = {
+            [key: string]: { bg: string; text: string; border: string };
+        };
+        const statusColors: StatusColorType = {
+            "Đã xác nhận": {
+                bg: "rgb(219, 234, 254)",
+                text: "rgb(30, 64, 175)",
+                border: "rgb(191, 219, 254)",
+            },
+            "Hoàn thành": {
+                bg: "rgb(220, 252, 231)",
+                text: "rgb(22, 101, 52)",
+                border: "rgb(187, 247, 208)",
+            },
+            "Đã hủy": {
+                bg: "rgb(254, 226, 226)",
+                text: "rgb(153, 27, 27)",
+                border: "rgb(254, 202, 202)",
+            },
+        };
+
+        const colors = statusColors[status] || {
+            bg: "rgb(243, 244, 246)",
+            text: "rgb(55, 65, 81)",
+            border: "rgb(229, 231, 235)",
+        };
+
+        return (
+            <Chip
+                label={status}
+                size="small"
+                sx={{
+                    bgcolor: colors.bg,
+                    color: colors.text,
+                    fontWeight: 700,
+                    border: `1px solid ${colors.border}`,
+                }}
+            />
+        );
+    };
+
+    const getPaymentStatusChip = (isPaid: boolean) => {
+        const status = isPaid ? "Đã thanh toán" : "Đang chờ thanh toán";
+
+        const statusColors = {
+            "Đã thanh toán": {
+                bg: "rgb(220, 252, 231)",
+                text: "rgb(22, 101, 52)",
+                border: "rgb(187, 247, 208)",
+            },
+            "Đang chờ thanh toán": {
+                bg: "rgb(254, 250, 222)",
+                text: "rgb(161, 98, 7)",
+                border: "rgb(253, 224, 71)",
+            },
+        };
+
+        const colors = statusColors[status];
+
+        return (
+            <Chip
+                label={status}
+                size="small"
+                icon={<CreditCardIcon fontSize="small" />}
+                sx={{
+                    bgcolor: colors.bg,
+                    color: colors.text,
+                    fontWeight: 700,
+                    border: `1px solid ${colors.border}`,
+                    "& .MuiChip-icon": {
+                        color: colors.text,
+                    },
+                }}
+            />
+        );
+    };
+
+    const getRefundStatusChip = (booking: BookingHistory) => {
+        if (booking.status !== "Đã hủy" || !booking.refundAmount) {
+            return null;
+        }
+
+        const status =
+            booking.refundStatus === "Đã hoàn tiền"
+                ? "Đã hoàn tiền"
+                : "Đang chờ hoàn tiền";
+
+        const statusColors = {
+            "Đã hoàn tiền": {
+                bg: "rgb(220, 252, 231)",
+                text: "rgb(22, 101, 52)",
+                border: "rgb(187, 247, 208)",
+            },
+            "Đang chờ hoàn tiền": {
+                bg: "rgb(255, 237, 213)",
+                text: "rgb(154, 52, 18)",
+                border: "rgb(254, 215, 170)",
+            },
+        };
+
+        const colors = statusColors[status];
+
+        const label =
+            status === "Đã hoàn tiền"
+                ? `Đã hoàn tiền ${parseInt(booking.refundAmount).toLocaleString(
+                      "vi-VN"
+                  )} đ`
+                : "Đang chờ hoàn tiền";
+
+        return (
+            <Chip
+                label={label}
+                size="small"
+                sx={{
+                    bgcolor: colors.bg,
+                    color: colors.text,
+                    fontWeight: 700,
+                    border: `1px solid ${colors.border}`,
+                }}
+            />
+        );
     };
 
     return (
-        <Container maxWidth="xl" sx={{ py: 4 }}>
-            {/* Header Section */}
+        <Box sx={{ p: 3 }}>
             <Box
-                sx={{
-                    mb: 4,
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                }}
+                display="flex"
+                justifyContent="space-between"
+                alignItems="center"
+                mb={3}
             >
-                <Typography variant="h4" fontWeight={600} color="primary">
+                <Typography variant="h5" fontWeight="bold" color="#1976d2">
                     Quản lý đặt vé
                 </Typography>
-                <Stack direction="row" spacing={2}>
-                    {/* <IconButton onClick={() => setShowFilters(!showFilters)}>
-                        <FilterListIcon />
-                    </IconButton> */}
-                    <Tooltip title="Làm mới">
-                        <Button
-                            startIcon={<RefreshIcon />}
-                            onClick={() => fetchBookings(pagination.pageNumber)}
-                            variant="contained"
-                        >
-                            Làm mới
-                        </Button>
-                    </Tooltip>
-                </Stack>
+
+                <Box display="flex" gap={2}>
+                    <Button
+                        variant={
+                            Object.keys(filterOptions).length > 0
+                                ? "contained"
+                                : "outlined"
+                        }
+                        startIcon={<FilterListIcon />}
+                        onClick={() => setFilterDialogOpen(true)}
+                        sx={{
+                            px: 2.5,
+                            borderRadius: 2,
+                            borderColor:
+                                Object.keys(filterOptions).length > 0
+                                    ? "primary.main"
+                                    : "grey.400",
+                            color:
+                                Object.keys(filterOptions).length > 0
+                                    ? "primary.contrastText"
+                                    : "text.primary",
+                            bgcolor:
+                                Object.keys(filterOptions).length > 0
+                                    ? "primary.main"
+                                    : "background.paper",
+                            "&:hover": {
+                                bgcolor:
+                                    Object.keys(filterOptions).length > 0
+                                        ? "primary.dark"
+                                        : "grey.100",
+                            },
+                            textTransform: "none",
+                        }}
+                    >
+                        <Box display="flex" alignItems="center" gap={1}>
+                            <span>Bộ lọc</span>
+                            {Object.keys(filterOptions).length > 0 && (
+                                <Chip
+                                    size="small"
+                                    label={Object.keys(filterOptions).length}
+                                    sx={{
+                                        height: 20,
+                                        fontSize: 12,
+                                        fontWeight: "bold",
+                                        bgcolor: "white",
+                                        color: "primary.main",
+                                        px: 1,
+                                    }}
+                                />
+                            )}
+                        </Box>
+                    </Button>
+                </Box>
             </Box>
 
-            <Paper sx={{ mb: 3, p: 2 }}>
-                <Stack spacing={2}>
-                    <Box>
-                        <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
-                            <FormControl fullWidth>
-                                <InputLabel>Trạng thái</InputLabel>
-                                <Select
-                                    value={filters.status}
-                                    onChange={handleStatusChange}
-                                    label="Trạng thái"
-                                >
-                                    <MenuItem value="all">Tất cả</MenuItem>
-                                    <MenuItem value="Đã xác nhận">
-                                        Đã xác nhận
-                                    </MenuItem>
-                                    <MenuItem value="Hoàn thành">
-                                        Hoàn thành
-                                    </MenuItem>
-                                    <MenuItem value="Đã hủy">Đã hủy</MenuItem>
-                                </Select>
-                            </FormControl>
-
-                            <LocalizationProvider dateAdapter={AdapterDayjs}>
-                                <DatePicker
-                                    label="Từ ngày"
-                                    value={
-                                        filters.dateRange.from
-                                            ? dayjs(filters.dateRange.from)
-                                            : null
-                                    }
-                                    onChange={(value) =>
-                                        handleDateChange(
-                                            "from",
-                                            value?.format("YYYY-MM-DD") || null
-                                        )
-                                    }
-                                    slotProps={{
-                                        textField: { fullWidth: true },
-                                    }}
-                                />
-                                <DatePicker
-                                    label="Đến ngày"
-                                    value={
-                                        filters.dateRange.to
-                                            ? dayjs(filters.dateRange.to)
-                                            : null
-                                    }
-                                    onChange={(value) =>
-                                        handleDateChange(
-                                            "to",
-                                            value?.format("YYYY-MM-DD") || null
-                                        )
-                                    }
-                                    slotProps={{
-                                        textField: { fullWidth: true },
-                                    }}
-                                />
-                            </LocalizationProvider>
-                        </Stack>
-                    </Box>
-                </Stack>
-            </Paper>
-
-            {/* Loading State */}
-            {loading ? (
-                <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-                    <CircularProgress />
+            <Paper sx={{ borderRadius: 2, overflow: "hidden" }}>
+                <Box sx={{ p: 3, borderBottom: "1px solid rgba(0,0,0,0.1)" }}>
+                    <Typography fontWeight="bold">
+                        Kết quả ({totalItems} booking)
+                    </Typography>
                 </Box>
-            ) : (
-                <>
-                    {/* Bookings List */}
-                    {bookings.map((booking) => (
-                        <Box
-                            key={booking.bookingId}
-                            sx={{
-                                display: "flex",
-                                flexDirection: "column",
-                                bgcolor: "white",
-                                borderRadius: 3,
-                                boxShadow: "0 4px 24px rgba(0,0,0,0.1)",
-                                margin: "24px auto",
-                                overflow: "hidden",
-                                transition: "transform 0.2s ease",
-                                "&:hover": {
-                                    transform: "translateY(-4px)",
-                                },
-                            }}
-                        >
-                            <Box sx={{ width: "100%" }}>
-                                {/* Header */}
-                                <Box
+
+                <TableContainer>
+                    <Table>
+                        <TableHead sx={{ bgcolor: "rgb(244, 246, 248)" }}>
+                            <TableRow>
+                                <TableCell
+                                    width="15%"
+                                    sx={{ fontWeight: "bold" }}
+                                >
+                                    BOOKING INFO
+                                </TableCell>
+                                <TableCell
+                                    width="15%"
+                                    sx={{ fontWeight: "bold" }}
+                                >
+                                    KHÁCH HÀNG
+                                </TableCell>
+                                <TableCell
+                                    width="25%"
+                                    sx={{ fontWeight: "bold" }}
+                                >
+                                    CHUYẾN ĐI
+                                </TableCell>
+                                <TableCell
+                                    width="10%"
+                                    sx={{ fontWeight: "bold" }}
+                                >
+                                    GIÁ VÉ
+                                </TableCell>
+                                <TableCell
+                                    width="10%"
+                                    sx={{ fontWeight: "bold" }}
+                                >
+                                    TRẠNG THÁI
+                                </TableCell>
+                                <TableCell
+                                    width="15%"
+                                    sx={{ fontWeight: "bold" }}
+                                >
+                                    HOÀN TIỀN
+                                </TableCell>
+                                <TableCell
+                                    width="10%"
+                                    sx={{ fontWeight: "bold" }}
+                                >
+                                    THAO TÁC
+                                </TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {bookings.map((booking) => (
+                                <TableRow
+                                    key={booking.bookingId}
                                     sx={{
-                                        backgroundColor: "#1976d2",
-                                        backgroundImage:
-                                            "linear-gradient(135deg, #1976d2 0%, #2196f3 100%)",
-                                        color: "white",
-                                        padding: "16px 24px",
-                                        borderBottom:
-                                            "1px solid rgba(255,255,255,0.1)",
-                                        display: "grid",
-                                        gridTemplateColumns: "1fr auto 1fr",
-                                        alignItems: "center",
+                                        "&:hover": {
+                                            bgcolor:
+                                                "rgba(145, 158, 171, 0.04)",
+                                        },
                                     }}
                                 >
-                                    {/* Left section - Refund Button */}
-                                    <Box>
-                                        {booking.status === "Đã hủy" &&
-                                            booking.refundStatus ===
-                                                "Đang chờ hoàn tiền" && (
-                                                <Button
-                                                    variant="contained"
-                                                    color="success"
-                                                    size="small"
-                                                    onClick={() =>
-                                                        handleRefundConfirm(
-                                                            booking.bookingId
-                                                        )
-                                                    }
-                                                    sx={{
-                                                        backgroundColor:
-                                                            "#00C853",
-                                                    }}
-                                                >
-                                                    <CheckCircleIcon
-                                                        sx={{
-                                                            fontSize: "1rem",
-                                                            mr: 0.5,
-                                                        }}
-                                                    />
-                                                    <Typography
-                                                        sx={{
-                                                            fontSize: "0.9rem",
-                                                            textTransform:
-                                                                "none",
-                                                            fontWeight: 600,
-                                                        }}
-                                                    >
-                                                        Xác nhận hoàn tiền
-                                                    </Typography>
-                                                </Button>
-                                            )}
-                                    </Box>
-                                    {/* Center section - Booking Info */}
-                                    <Box
-                                        sx={{
-                                            display: "flex",
-                                            flexDirection: "column",
-                                            alignItems: "center",
-                                            gap: 1,
-                                        }}
-                                    >
-                                        <Typography
-                                            sx={{
-                                                fontSize: "1.25rem",
-                                                fontWeight: 600,
-                                            }}
-                                        >
-                                            Thông tin đặt vé xe
-                                        </Typography>
+                                    <TableCell>
                                         <Box
                                             sx={{
                                                 display: "flex",
-                                                gap: 3,
-                                                opacity: 0.9,
+                                                flexDirection: "column",
+                                                gap: 0.5,
                                             }}
                                         >
+                                            <Typography
+                                                variant="subtitle2"
+                                                fontWeight="bold"
+                                            >
+                                                #{booking.bookingId}
+                                            </Typography>
                                             <Box
                                                 sx={{
                                                     display: "flex",
                                                     alignItems: "center",
-                                                    gap: 1,
+                                                    gap: 0.5,
+                                                    color: "text.secondary",
                                                 }}
                                             >
-                                                <Typography
-                                                    sx={{ fontSize: "0.9rem" }}
-                                                >
-                                                    Mã vé:
-                                                </Typography>
-                                                <Typography
-                                                    sx={{ fontWeight: 600 }}
-                                                >
-                                                    #{booking.bookingId}
-                                                </Typography>
-                                            </Box>
-                                            <Box
-                                                sx={{
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    gap: 1,
-                                                }}
-                                            >
-                                                <Typography
-                                                    sx={{ fontSize: "0.9rem" }}
-                                                >
-                                                    Ngày đặt:
-                                                </Typography>
-                                                <Typography
-                                                    sx={{ fontWeight: 500 }}
-                                                >
+                                                <CalendarTodayIcon
+                                                    sx={{ fontSize: 14 }}
+                                                />
+                                                <Typography variant="body2">
                                                     {booking.bookingDate}
                                                 </Typography>
                                             </Box>
+                                            <Typography
+                                                variant="body2"
+                                                color="text.secondary"
+                                            >
+                                                Ghế: {booking.seatInfos}
+                                            </Typography>
                                         </Box>
-                                    </Box>
-
-                                    {/* Right section - Status Badge */}
-                                    <Box
-                                        sx={{
-                                            display: "flex",
-                                            justifyContent: "flex-end",
-                                        }}
-                                    >
+                                    </TableCell>
+                                    <TableCell>
                                         <Box
-                                            sx={{
-                                                fontWeight: "bold",
-                                                backgroundColor:
-                                                    booking.status ===
-                                                    "Đã xác nhận"
-                                                        ? "#00C853"
-                                                        : booking.status ===
-                                                          "Hoàn thành"
-                                                        ? "#FFD700"
-                                                        : booking.status ===
-                                                          "Đã hủy"
-                                                        ? "#FF1744"
-                                                        : "transparent",
-                                                color:
-                                                    booking.status ===
-                                                    "Hoàn thành"
-                                                        ? "#000"
-                                                        : "#fff",
-                                                padding: "4px 12px",
-                                                borderRadius: "4px",
-                                                whiteSpace: "nowrap",
-                                            }}
-                                        >
-                                            <Typography
-                                                sx={{
-                                                    color:
-                                                        booking.status ===
-                                                        "Hoàn thành"
-                                                            ? "#000"
-                                                            : "#fff",
-                                                    fontWeight: 600,
-                                                    fontSize: "0.9rem",
-                                                }}
-                                            >
-                                                {booking.status}
-                                            </Typography>
-                                        </Box>
-                                    </Box>
-                                </Box>
-                                {/* Body */}
-                                <Box sx={{ pt: 2 }}>
-                                    <Box
-                                        sx={{
-                                            display: "flex",
-                                            justifyContent: "center",
-                                        }}
-                                    >
-                                        <Typography
-                                            sx={{
-                                                fontSize: "1.1rem",
-                                                fontWeight: 600,
-                                                color: "#1976d2",
-                                                backgroundColor:
-                                                    "rgba(25, 118, 210, 0.08)",
-                                                padding: "8px 24px",
-                                                borderRadius: "20px",
-                                                boxShadow:
-                                                    "0 2px 8px rgba(25, 118, 210, 0.15)",
-                                            }}
-                                        >
-                                            Ngày khởi hành:{" "}
-                                            {
-                                                formatPickupDateTime(
-                                                    booking.departureDate
-                                                ).date
-                                            }
-                                        </Typography>
-                                    </Box>
-                                </Box>
-
-                                <Box sx={{ px: 3, py: 2 }}>
-                                    {/* ==== Thông tin hành trình ==== */}
-                                    <Grid
-                                        container
-                                        alignItems="center"
-                                        spacing={3}
-                                    >
-                                        <Grid item xs={5}>
-                                            <Typography
-                                                fontSize="1.5rem"
-                                                lineHeight={1.5}
-                                                fontWeight={600}
-                                                textAlign={"center"}
-                                                ml={5}
-                                            >
-                                                {
-                                                    parseRouteName(
-                                                        booking.routeName
-                                                    ).origin
-                                                }
-                                            </Typography>
-                                        </Grid>
-
-                                        <Grid
-                                            item
-                                            xs={2}
-                                            container
-                                            justifyContent="center"
-                                        >
-                                            <svg
-                                                width="40"
-                                                height="40"
-                                                viewBox="0 -2.03 20.051 20.051"
-                                                xmlns="http://www.w3.org/2000/svg"
-                                            >
-                                                <g
-                                                    id="bus"
-                                                    transform="translate(-2 -4)"
-                                                >
-                                                    <path
-                                                        fill="#2ca9bc"
-                                                        d="M21,11H3v5a1,1,0,0,0,1,1H5a2,2,0,0,1,4,0h6a2,2,0,0,1,4,0h1a1,1,0,0,0,1-1V11Z"
-                                                    />
-                                                    <path
-                                                        fill="none"
-                                                        stroke="#000"
-                                                        strokeWidth="2"
-                                                        d="M4.91,17H4a1,1,0,0,1-1-1V6A1,1,0,0,1,4,5H18.28a1,1,0,0,1,.95.68L21,10.85l.05.31V16a1,1,0,0,1-1,1h-.91"
-                                                    />
-                                                    <path
-                                                        fill="none"
-                                                        stroke="#000"
-                                                        strokeWidth="2"
-                                                        d="M3,11H21m-6,6H9.08M9,11h6V5H9Zm0,6a2,2,0,1,1-2-2A2,2,0,0,1,9,17Zm10,0a2,2,0,1,1-2-2A2,2,0,0,1,19,17Z"
-                                                    />
-                                                    <path
-                                                        d="M-3,21 H50"
-                                                        stroke="black"
-                                                        strokeDasharray="2,1"
-                                                    />
-                                                </g>
-                                            </svg>
-                                        </Grid>
-
-                                        <Grid item xs={5} textAlign="right">
-                                            <Typography
-                                                fontSize="1.5rem"
-                                                lineHeight={1.5}
-                                                fontWeight={600}
-                                                textAlign={"center"}
-                                                mr={5}
-                                            >
-                                                {
-                                                    parseRouteName(
-                                                        booking.routeName
-                                                    ).destination
-                                                }
-                                            </Typography>
-                                        </Grid>
-                                    </Grid>
-
-                                    <Divider sx={{ my: 3 }} />
-
-                                    {/* ==== Thông tin xe & liên lạc ==== */}
-                                    <Grid container spacing={1}>
-                                        {/* Thông tin xe */}
-                                        <Grid
-                                            item
-                                            md={
-                                                booking.status !== "Đã hủy"
-                                                    ? 5
-                                                    : 6
-                                            }
-                                        >
-                                            <Typography
-                                                variant="subtitle1"
-                                                fontWeight={600}
-                                                color="primary"
-                                                mb={2}
-                                                textAlign="center"
-                                            >
-                                                Thông tin xe
-                                            </Typography>
-                                            <Box sx={{ pl: 2 }}>
-                                                <Typography
-                                                    fontWeight="bold"
-                                                    mb={1}
-                                                >
-                                                    <span className="font-thin">
-                                                        Biển số xe:{" "}
-                                                    </span>{" "}
-                                                    {booking.licensePlate}
-                                                </Typography>
-                                                <Typography
-                                                    fontWeight="bold"
-                                                    mb={1}
-                                                >
-                                                    <span className="font-thin">
-                                                        Số ghế:{" "}
-                                                    </span>{" "}
-                                                    {booking.seatInfos}
-                                                </Typography>
-                                                <Typography
-                                                    fontWeight="bold"
-                                                    mb={1}
-                                                >
-                                                    <span className="font-thin">
-                                                        Thời gian đón dự kiến:{" "}
-                                                    </span>{" "}
-                                                    {
-                                                        formatPickupDateTime(
-                                                            booking.pickupTime
-                                                        ).time
-                                                    }
-                                                </Typography>
-                                                <Typography
-                                                    fontWeight="bold"
-                                                    mb={1}
-                                                >
-                                                    <span className="font-thin">
-                                                        Điểm đón:{" "}
-                                                    </span>{" "}
-                                                    {booking.pickupLocation}
-                                                </Typography>
-                                                <Typography
-                                                    fontWeight="bold"
-                                                    mb={1}
-                                                >
-                                                    <span className="font-thin">
-                                                        Điểm trả:{" "}
-                                                    </span>{" "}
-                                                    {booking.dropoffLocation}
-                                                </Typography>
-                                            </Box>
-                                        </Grid>
-                                        <Grid
-                                            item
-                                            md={0.5}
                                             sx={{
                                                 display: "flex",
-                                                justifyContent: "center",
-                                            }}
-                                        >
-                                            <Divider
-                                                orientation="vertical"
-                                                flexItem
-                                                sx={{
-                                                    height: "100%",
-                                                    borderRightWidth: 2,
-                                                    borderColor:
-                                                        "rgba(0, 0, 0, 0.1)",
-                                                }}
-                                            />
-                                        </Grid>
-                                        {/* Thông tin liên hệ */}
-                                        <Grid
-                                            item
-                                            md={
-                                                booking.status !== "Đã hủy"
-                                                    ? 3
-                                                    : 5.5
-                                            }
-                                        >
-                                            <Typography
-                                                variant="subtitle1"
-                                                fontWeight={600}
-                                                color="primary"
-                                                mb={2}
-                                                textAlign="center"
-                                            >
-                                                Thông tin liên hệ
-                                            </Typography>
-                                            <Box sx={{ pl: 2 }}>
-                                                <Typography
-                                                    fontWeight="bold"
-                                                    mb={1}
-                                                >
-                                                    <span className="font-thin">
-                                                        Tên liên lạc:{" "}
-                                                    </span>{" "}
-                                                    {booking.contactName}
-                                                </Typography>
-                                                <Typography
-                                                    fontWeight="bold"
-                                                    mb={1}
-                                                >
-                                                    <span className="font-thin">
-                                                        Email:{" "}
-                                                    </span>{" "}
-                                                    {booking.contactEmail}
-                                                </Typography>
-                                                <Typography fontWeight="bold">
-                                                    <span className="font-thin">
-                                                        Giá:{" "}
-                                                    </span>
-                                                    {formatPrice(
-                                                        booking.originalPrice,
-                                                        booking.discountedPrice
-                                                    )}{" "}
-                                                    VND
-                                                    {booking.discountedPrice &&
-                                                        booking.discountedPrice !==
-                                                            booking.originalPrice && (
-                                                            <Typography
-                                                                component="span"
-                                                                sx={{
-                                                                    textDecoration:
-                                                                        "line-through",
-                                                                    color: "text.secondary",
-                                                                    ml: 1,
-                                                                    fontSize:
-                                                                        "0.9em",
-                                                                }}
-                                                            >
-                                                                (
-                                                                {formatPrice(
-                                                                    booking.originalPrice,
-                                                                    null
-                                                                )}{" "}
-                                                                VND)
-                                                            </Typography>
-                                                        )}
-                                                </Typography>
-                                            </Box>
-                                        </Grid>
-                                        {/* Thông tin tài xế */}
-                                        {booking.status !== "Đã hủy" && (
-                                            <>
-                                                <Grid
-                                                    item
-                                                    md={0.5}
-                                                    sx={{
-                                                        display: "flex",
-                                                        justifyContent:
-                                                            "center",
-                                                    }}
-                                                >
-                                                    <Divider
-                                                        orientation="vertical"
-                                                        flexItem
-                                                        sx={{
-                                                            height: "100%",
-                                                            borderRightWidth: 2,
-                                                            borderColor:
-                                                                "rgba(0, 0, 0, 0.1)",
-                                                        }}
-                                                    />
-                                                </Grid>
-                                                <Grid item md={3}>
-                                                    <Typography
-                                                        variant="subtitle1"
-                                                        fontWeight={600}
-                                                        color="primary"
-                                                        mb={2}
-                                                        textAlign="center"
-                                                    >
-                                                        Thông tin tài xế
-                                                    </Typography>
-                                                    <Box sx={{ pl: 2 }}>
-                                                        <Typography
-                                                            fontWeight="bold"
-                                                            mb={1}
-                                                        >
-                                                            <span className="font-thin">
-                                                                Tên tài xế:{" "}
-                                                            </span>{" "}
-                                                            {booking.driverName}
-                                                        </Typography>
-                                                        <Typography
-                                                            fontWeight="bold"
-                                                            mb={1}
-                                                        >
-                                                            <span className="font-thin">
-                                                                Số điện thoại
-                                                                tài xế:{" "}
-                                                            </span>{" "}
-                                                            {
-                                                                booking.driverPhone
-                                                            }
-                                                        </Typography>
-                                                    </Box>
-                                                </Grid>
-                                            </>
-                                        )}
-                                    </Grid>
-                                </Box>
-
-                                {(booking.refundStatus ||
-                                    booking.refundAmount ||
-                                    booking.refundReason ||
-                                    booking.refundDate) && (
-                                    <Box sx={{ p: 2 }}>
-                                        <Box
-                                            sx={{
-                                                backgroundColor: "#FFF4E5",
-                                                borderRadius: 2,
-                                                p: 2.5,
-                                                border: "1px solid #FFB74D",
-                                                position: "relative",
-                                                overflow: "hidden",
-                                                "&::before": {
-                                                    content: '""',
-                                                    position: "absolute",
-                                                    top: 0,
-                                                    left: 0,
-                                                    width: "4px",
-                                                    height: "100%",
-                                                    backgroundColor: "#ED6C02",
-                                                },
+                                                flexDirection: "column",
+                                                gap: 0.5,
                                             }}
                                         >
                                             <Box
                                                 sx={{
                                                     display: "flex",
                                                     alignItems: "center",
-                                                    mb: 2,
+                                                    gap: 0.5,
                                                 }}
                                             >
-                                                <svg
-                                                    width="24"
-                                                    height="24"
-                                                    viewBox="0 0 24 24"
-                                                    fill="none"
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                >
-                                                    <path
-                                                        d="M12 2L2 7L12 12L22 7L12 2Z"
-                                                        stroke="#ED6C02"
-                                                        strokeWidth="2"
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                    />
-                                                    <path
-                                                        d="M2 17L12 22L22 17"
-                                                        stroke="#ED6C02"
-                                                        strokeWidth="2"
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                    />
-                                                    <path
-                                                        d="M2 12L12 17L22 12"
-                                                        stroke="#ED6C02"
-                                                        strokeWidth="2"
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                    />
-                                                </svg>
-                                                <Typography
+                                                <PersonIcon
                                                     sx={{
-                                                        fontWeight: 600,
-                                                        color: "#ED6C02",
-                                                        ml: 1,
-                                                        fontSize: "1.1rem",
+                                                        fontSize: 16,
+                                                        color: "text.secondary",
                                                     }}
+                                                />
+                                                <Typography
+                                                    variant="body2"
+                                                    fontWeight="medium"
                                                 >
-                                                    Thông tin hoàn tiền
+                                                    {booking.contactName}
                                                 </Typography>
                                             </Box>
-
                                             <Box
                                                 sx={{
-                                                    display: "grid",
-                                                    gridTemplateColumns:
-                                                        "repeat(auto-fit, minmax(200px, 1fr))",
-                                                    gap: 2,
-                                                    pl: 0.5,
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    gap: 0.5,
                                                 }}
                                             >
-                                                {booking.refundStatus && (
-                                                    <Box>
-                                                        <Typography
-                                                            color="text.secondary"
-                                                            variant="caption"
-                                                            sx={{
-                                                                display:
-                                                                    "block",
-                                                                mb: 0.5,
-                                                            }}
-                                                        >
-                                                            Trạng thái
-                                                        </Typography>
-                                                        <Typography
-                                                            sx={{
-                                                                fontWeight: 600,
-                                                            }}
-                                                        >
-                                                            {
-                                                                booking.refundStatus
-                                                            }
-                                                        </Typography>
-                                                    </Box>
-                                                )}
-
-                                                {booking.refundAmount && (
-                                                    <Box>
-                                                        <Typography
-                                                            color="text.secondary"
-                                                            variant="caption"
-                                                            sx={{
-                                                                display:
-                                                                    "block",
-                                                                mb: 0.5,
-                                                            }}
-                                                        >
-                                                            Số tiền hoàn
-                                                        </Typography>
-                                                        <Typography
-                                                            sx={{
-                                                                fontWeight: 600,
-                                                                color: "#00C853",
-                                                            }}
-                                                        >
-                                                            {formatPrice(
-                                                                booking.refundAmount,
-                                                                null
-                                                            )}{" "}
-                                                            VND
-                                                        </Typography>
-                                                    </Box>
-                                                )}
-
-                                                {booking.refundReason && (
-                                                    <Box>
-                                                        <Typography
-                                                            color="text.secondary"
-                                                            variant="caption"
-                                                            sx={{
-                                                                display:
-                                                                    "block",
-                                                                mb: 0.5,
-                                                            }}
-                                                        >
-                                                            Lý do
-                                                        </Typography>
-                                                        <Typography
-                                                            sx={{
-                                                                fontWeight: 600,
-                                                            }}
-                                                        >
-                                                            {
-                                                                booking.refundReason
-                                                            }
-                                                        </Typography>
-                                                    </Box>
-                                                )}
-
-                                                {booking.refundDate && (
-                                                    <Box>
-                                                        <Typography
-                                                            color="text.secondary"
-                                                            variant="caption"
-                                                            sx={{
-                                                                display:
-                                                                    "block",
-                                                                mb: 0.5,
-                                                            }}
-                                                        >
-                                                            Ngày hoàn tiền
-                                                        </Typography>
-                                                        <Typography
-                                                            sx={{
-                                                                fontWeight: 600,
-                                                            }}
-                                                        >
-                                                            {booking.refundDate}
-                                                        </Typography>
-                                                    </Box>
-                                                )}
+                                                <EmailIcon
+                                                    sx={{
+                                                        fontSize: 16,
+                                                        color: "text.secondary",
+                                                    }}
+                                                />
+                                                <Typography
+                                                    variant="body2"
+                                                    color="text.secondary"
+                                                >
+                                                    {booking.contactEmail}
+                                                </Typography>
                                             </Box>
                                         </Box>
-                                    </Box>
-                                )}
-                            </Box>
-                        </Box>
-                    ))}
+                                    </TableCell>
+                                    <TableCell>
+                                        <Box
+                                            sx={{
+                                                display: "flex",
+                                                flexDirection: "column",
+                                                gap: 0.5,
+                                            }}
+                                        >
+                                            <Box
+                                                sx={{
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    gap: 0.5,
+                                                }}
+                                            >
+                                                <LocationOnIcon
+                                                    sx={{
+                                                        fontSize: 16,
+                                                        color: "primary.main",
+                                                    }}
+                                                />
+                                                <Typography
+                                                    variant="body2"
+                                                    fontWeight="medium"
+                                                >
+                                                    {booking.routeName}
+                                                </Typography>
+                                            </Box>
+                                            <Box
+                                                sx={{
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    gap: 0.5,
+                                                    color: "text.secondary",
+                                                }}
+                                            >
+                                                <AccessTimeIcon
+                                                    sx={{ fontSize: 16 }}
+                                                />
+                                                <Typography variant="body2">
+                                                    Khởi hành:{" "}
+                                                    {booking.departureDate}
+                                                </Typography>
+                                            </Box>
+                                            <Box
+                                                sx={{
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    gap: 0.5,
+                                                    color: "text.secondary",
+                                                }}
+                                            >
+                                                <DirectionsBusIcon
+                                                    sx={{ fontSize: 16 }}
+                                                />
+                                                <Typography variant="body2">
+                                                    Biển số:{" "}
+                                                    {booking.licensePlate}
+                                                </Typography>
+                                            </Box>
+                                            {booking.driverName && (
+                                                <Typography
+                                                    variant="body2"
+                                                    color="text.secondary"
+                                                >
+                                                    Tài xế: {booking.driverName}
+                                                </Typography>
+                                            )}
+                                        </Box>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Typography
+                                            fontWeight="bold"
+                                            color="primary.main"
+                                        >
+                                            {parseInt(
+                                                booking.discountedPrice
+                                            ).toLocaleString("vi-VN")}{" "}
+                                            đ
+                                        </Typography>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Box
+                                            sx={{
+                                                display: "flex",
+                                                flexDirection: "column",
+                                                gap: 1,
+                                            }}
+                                        >
+                                            {getStatusChip(booking.status)}
+                                            {getPaymentStatusChip(true)}{" "}
+                                            {/* Thay bằng logic thực tế */}
+                                        </Box>
+                                    </TableCell>
+                                    <TableCell>
+                                        {getRefundStatusChip(booking)}
+                                        {booking.refundDate && (
+                                            <Typography
+                                                variant="body2"
+                                                color="text.secondary"
+                                                sx={{ mt: 0.5 }}
+                                            >
+                                                {booking.refundDate}
+                                            </Typography>
+                                        )}
+                                    </TableCell>
+                                    <TableCell>
+                                        <Box
+                                            sx={{
+                                                textAlign: "center",
+                                            }}
+                                        >
+                                            {hasAvailableActions(booking) && (
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={(event) =>
+                                                        handleMenuOpen(
+                                                            event,
+                                                            booking
+                                                        )
+                                                    }
+                                                >
+                                                    <MoreVertIcon />
+                                                </IconButton>
+                                            )}
+                                        </Box>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
 
-                    {/* Pagination */}
-                    <Box
-                        sx={{
-                            display: "flex",
-                            justifyContent: "center",
-                            mt: 4,
-                        }}
-                    >
-                        <Pagination
-                            count={pagination.totalPages}
-                            page={pagination.pageNumber}
-                            onChange={handlePageChange}
-                            color="primary"
-                            size="large"
-                        />
+                            {bookings.length === 0 && !loading && (
+                                <TableRow>
+                                    <TableCell
+                                        colSpan={7}
+                                        align="center"
+                                        sx={{ py: 3 }}
+                                    >
+                                        <Typography
+                                            variant="body1"
+                                            color="text.secondary"
+                                        >
+                                            Không tìm thấy đơn đặt vé nào
+                                        </Typography>
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                </TableContainer>
+
+                <Box
+                    sx={{
+                        p: 2,
+                        borderTop: "1px solid rgba(0,0,0,0.1)",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                    }}
+                >
+                    <Typography variant="body2" color="text.secondary">
+                        Hiển thị {(page - 1) * pageSize + 1} đến{" "}
+                        {Math.min(page * pageSize, totalItems)} trong{" "}
+                        {totalItems} kết quả
+                    </Typography>
+
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <Button
+                            variant="outlined"
+                            disabled={page === 1}
+                            onClick={() => setPage((p) => Math.max(1, p - 1))}
+                        >
+                            Trước
+                        </Button>
+
+                        <Typography>
+                            Trang {page} / {totalPages}
+                        </Typography>
+
+                        <Button
+                            variant="outlined"
+                            disabled={page === totalPages}
+                            onClick={() =>
+                                setPage((p) => Math.min(totalPages, p + 1))
+                            }
+                        >
+                            Sau
+                        </Button>
                     </Box>
-                </>
+                </Box>
+            </Paper>
+
+            <Dialog
+                open={filterDialogOpen}
+                onClose={() => setFilterDialogOpen(false)}
+                maxWidth="md"
+                fullWidth
+            >
+                <DialogTitle sx={{ fontWeight: "bold" }}>
+                    Bộ lọc tìm kiếm
+                </DialogTitle>
+                <DialogContent dividers>
+                    <LocalizationProvider dateAdapter={AdapterDayjs}>
+                        <Grid container spacing={3}>
+                            <Grid item xs={6}>
+                                <TextField
+                                    fullWidth
+                                    label="Mã đặt vé"
+                                    variant="outlined"
+                                    value={filterOptions.bookingId || ""}
+                                    onChange={(e) =>
+                                        setFilterOptions({
+                                            ...filterOptions,
+                                            bookingId: e.target.value,
+                                        })
+                                    }
+                                />
+                            </Grid>
+
+                            <Grid item xs={6}>
+                                <Autocomplete
+                                    options={routes}
+                                    getOptionLabel={(option) =>
+                                        option.routeName
+                                    }
+                                    value={
+                                        filterOptions.routeName
+                                            ? routes.find(
+                                                  (route) =>
+                                                      route.routeName ===
+                                                      filterOptions.routeName
+                                              ) || null
+                                            : null
+                                    }
+                                    onChange={(e, newValue) =>
+                                        setFilterOptions({
+                                            ...filterOptions,
+                                            routeName:
+                                                newValue?.routeName ||
+                                                undefined,
+                                        })
+                                    }
+                                    renderInput={(params) => (
+                                        <TextField
+                                            {...params}
+                                            label="Tuyến xe"
+                                            variant="outlined"
+                                        />
+                                    )}
+                                />
+                            </Grid>
+
+                            <Grid item xs={6}>
+                                <TextField
+                                    fullWidth
+                                    label="Tên người đặt vé"
+                                    variant="outlined"
+                                    value={filterOptions.contactName || ""}
+                                    onChange={(e) =>
+                                        setFilterOptions({
+                                            ...filterOptions,
+                                            contactName: e.target.value,
+                                        })
+                                    }
+                                />
+                            </Grid>
+
+                            <Grid item xs={6}>
+                                <TextField
+                                    fullWidth
+                                    label="Email người đặt vé"
+                                    variant="outlined"
+                                    value={filterOptions.contactEmail || ""}
+                                    onChange={(e) =>
+                                        setFilterOptions({
+                                            ...filterOptions,
+                                            contactEmail: e.target.value,
+                                        })
+                                    }
+                                />
+                            </Grid>
+
+                            <Grid item xs={6}>
+                                <TextField
+                                    fullWidth
+                                    label="Số điện thoại người đặt vé"
+                                    variant="outlined"
+                                    value={filterOptions.contactPhone || ""}
+                                    onChange={(e) =>
+                                        setFilterOptions({
+                                            ...filterOptions,
+                                            contactPhone: e.target.value,
+                                        })
+                                    }
+                                />
+                            </Grid>
+
+                            <Grid item xs={6}>
+                                <FormControl fullWidth>
+                                    <InputLabel>Trạng thái vé</InputLabel>
+                                    <Select
+                                        value={filterOptions.status || ""}
+                                        label="Trạng thái vé"
+                                        onChange={(e) =>
+                                            setFilterOptions({
+                                                ...filterOptions,
+                                                status: e.target
+                                                    .value as string,
+                                            })
+                                        }
+                                    >
+                                        <MenuItem value="">Tất cả</MenuItem>
+                                        <MenuItem value="Đã xác nhận">
+                                            Đã xác nhận
+                                        </MenuItem>
+                                        <MenuItem value="Hoàn thành">
+                                            Hoàn thành
+                                        </MenuItem>
+                                        <MenuItem value="Đã hủy">
+                                            Đã hủy
+                                        </MenuItem>
+                                    </Select>
+                                </FormControl>
+                            </Grid>
+
+                            <Grid item xs={6}>
+                                <FormControl fullWidth>
+                                    <InputLabel>
+                                        Trạng thái thanh toán
+                                    </InputLabel>
+                                    <Select
+                                        value={
+                                            filterOptions.paymentStatus || ""
+                                        }
+                                        label="Trạng thái thanh toán"
+                                        onChange={(e) =>
+                                            setFilterOptions({
+                                                ...filterOptions,
+                                                paymentStatus: e.target
+                                                    .value as string,
+                                            })
+                                        }
+                                    >
+                                        <MenuItem value="">Tất cả</MenuItem>
+                                        <MenuItem value="Đã thanh toán">
+                                            Đã thanh toán
+                                        </MenuItem>
+                                        <MenuItem value="Đang chờ thanh toán">
+                                            Đang chờ thanh toán
+                                        </MenuItem>
+                                    </Select>
+                                </FormControl>
+                            </Grid>
+
+                            <Grid item xs={6}>
+                                <FormControl fullWidth>
+                                    <InputLabel>
+                                        Trạng thái hoàn tiền
+                                    </InputLabel>
+                                    <Select
+                                        value={filterOptions.refundStatus || ""}
+                                        label="Trạng thái hoàn tiền"
+                                        onChange={(e) =>
+                                            setFilterOptions({
+                                                ...filterOptions,
+                                                refundStatus: e.target
+                                                    .value as string,
+                                            })
+                                        }
+                                    >
+                                        <MenuItem value="">Tất cả</MenuItem>
+                                        <MenuItem value="Đã hoàn tiền">
+                                            Đã hoàn tiền
+                                        </MenuItem>
+                                        <MenuItem value="Đang chờ hoàn tiền">
+                                            Đang chờ hoàn tiền
+                                        </MenuItem>
+                                    </Select>
+                                </FormControl>
+                            </Grid>
+
+                            <Grid item xs={6}>
+                                <DatePicker
+                                    label="Ngày đặt vé từ"
+                                    value={filterOptions.fromDate}
+                                    onChange={(newValue) =>
+                                        setFilterOptions({
+                                            ...filterOptions,
+                                            fromDate: newValue,
+                                        })
+                                    }
+                                    slotProps={{
+                                        textField: {
+                                            fullWidth: true,
+                                            variant: "outlined",
+                                        },
+                                    }}
+                                />
+                            </Grid>
+
+                            <Grid item xs={6}>
+                                <DatePicker
+                                    label="Ngày đặt vé đến"
+                                    value={filterOptions.toDate}
+                                    onChange={(newValue) =>
+                                        setFilterOptions({
+                                            ...filterOptions,
+                                            toDate: newValue,
+                                        })
+                                    }
+                                    slotProps={{
+                                        textField: {
+                                            fullWidth: true,
+                                            variant: "outlined",
+                                        },
+                                    }}
+                                />
+                            </Grid>
+
+                            <Grid item xs={6}>
+                                <DatePicker
+                                    label="Ngày khởi hành"
+                                    value={filterOptions.departureDate}
+                                    onChange={(newValue) =>
+                                        setFilterOptions({
+                                            ...filterOptions,
+                                            departureDate: newValue,
+                                        })
+                                    }
+                                    slotProps={{
+                                        textField: {
+                                            fullWidth: true,
+                                            variant: "outlined",
+                                        },
+                                    }}
+                                />
+                            </Grid>
+                        </Grid>
+                    </LocalizationProvider>
+                </DialogContent>
+                <DialogActions sx={{ p: 2, gap: 1 }}>
+                    <Button
+                        variant="outlined"
+                        color="inherit"
+                        onClick={handleFilterClear}
+                    >
+                        Xóa bộ lọc
+                    </Button>
+                    <Button
+                        variant="outlined"
+                        onClick={() => setFilterDialogOpen(false)}
+                    >
+                        Hủy
+                    </Button>
+                    <Button variant="contained" onClick={handleFilterApply}>
+                        Áp dụng
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            <Menu
+                anchorEl={anchorEl}
+                open={Boolean(anchorEl)}
+                onClose={handleMenuClose}
+                anchorOrigin={{
+                    vertical: "bottom",
+                    horizontal: "right",
+                }}
+                transformOrigin={{
+                    vertical: "top",
+                    horizontal: "right",
+                }}
+            >
+                {selectedBooking && isAwaitingRefund(selectedBooking) && (
+                    <MenuItem onClick={() => handleConfirmDialogOpen("refund")}>
+                        <ListItemIcon>
+                            <MoneyIcon fontSize="small" color="success" />
+                        </ListItemIcon>
+                        <ListItemText>Xác nhận hoàn tiền</ListItemText>
+                    </MenuItem>
+                )}
+
+                {selectedBooking && isAwaitingPayment(selectedBooking) && (
+                    <MenuItem
+                        onClick={() => handleConfirmDialogOpen("payment")}
+                    >
+                        <ListItemIcon>
+                            <CheckCircleIcon fontSize="small" color="success" />
+                        </ListItemIcon>
+                        <ListItemText>Xác nhận thanh toán</ListItemText>
+                    </MenuItem>
+                )}
+
+                {selectedBooking && canBeCancelled(selectedBooking) && (
+                    <MenuItem onClick={() => handleConfirmDialogOpen("cancel")}>
+                        <ListItemIcon>
+                            <CancelIcon fontSize="small" color="error" />
+                        </ListItemIcon>
+                        <ListItemText>Hủy đặt vé</ListItemText>
+                    </MenuItem>
+                )}
+            </Menu>
+
+            {selectedBooking && (
+                <Dialog
+                    open={confirmDialogOpen}
+                    onClose={handleConfirmDialogClose}
+                >
+                    <DialogTitle>
+                        {getConfirmDialogContent()?.title}
+                    </DialogTitle>
+                    <DialogContent>
+                        <DialogContentText>
+                            {getConfirmDialogContent()?.content}
+                        </DialogContentText>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button
+                            onClick={handleConfirmDialogClose}
+                            color="inherit"
+                        >
+                            Hủy
+                        </Button>
+                        <Button
+                            onClick={handleConfirmAction}
+                            color={getConfirmDialogContent()?.color}
+                            variant="contained"
+                            autoFocus
+                        >
+                            {getConfirmDialogContent()?.confirmButton}
+                        </Button>
+                    </DialogActions>
+                </Dialog>
             )}
-        </Container>
+        </Box>
     );
 };
 
-export default TicketManagement;
+export default BookingManagement;
