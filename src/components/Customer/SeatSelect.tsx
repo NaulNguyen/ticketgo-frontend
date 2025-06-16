@@ -25,6 +25,8 @@ import LocationOnIcon from "@mui/icons-material/LocationOn";
 import AddressPopup from "../../popup/AddressPopup";
 import { calculateDistance } from "../../utils/calculateDistance";
 import MapPopup from "../../popup/MapPopup";
+import BookingConfirmDialog from "../../popup/BookingConfirmDialog";
+import { EstimatedPrice, TripInfo } from "../../global/index";
 
 interface Seat {
     ticketCode: string;
@@ -39,9 +41,10 @@ interface FloorData {
 
 interface SeatSelectProps {
     scheduleId: string;
-    price: number;
+    price?: number;
     isReturn?: boolean;
     isRoundTrip?: boolean;
+    isDashboard?: boolean;
     firstTripData?: {
         scheduleId: string;
         ticketCodes: string[];
@@ -90,6 +93,7 @@ const SeatSelect: React.FC<SeatSelectProps> = ({
     isRoundTrip,
     firstTripData,
     onFirstTripComplete,
+    isDashboard = false,
 }) => {
     const [seatsData, setSeatsData] = useState<FloorData | null>(null);
     const [selectedSeats, setSelectedSeats] = useState<Seat[]>([]);
@@ -106,7 +110,11 @@ const SeatSelect: React.FC<SeatSelectProps> = ({
         useState(false);
     const [isDropoffAddressModalOpen, setIsDropoffAddressModalOpen] =
         useState(false);
-
+    const [bookingConfirmOpen, setBookingConfirmOpen] = useState(false);
+    const [preparedBookingData, setPreparedBookingData] = useState<{
+        tripInfo: TripInfo;
+        estimatedPrice: EstimatedPrice;
+    } | null>(null);
     const location = useLocation();
 
     const [isMapOpen, setIsMapOpen] = useState(false);
@@ -124,16 +132,93 @@ const SeatSelect: React.FC<SeatSelectProps> = ({
     );
 
     const steps = ["Chỗ mong muốn", "Điểm đón trả"];
-    const priceFormatted = new Intl.NumberFormat("en-US").format(price);
     const navigate = useNavigate();
     const dispatch = useDispatch();
 
     const { getUserInfor } = useAppAccessor();
     const userInfo = getUserInfor();
 
+    const getSeatTooltip = (seat: Seat) => {
+        return `Ghế ${seat.seatNumber} - ${
+            seat.isAvailable
+                ? new Intl.NumberFormat("vi-VN", {
+                      style: "currency",
+                      currency: "VND",
+                  }).format(price || 0)
+                : "Đã đặt"
+        }`;
+    };
+
+    const prepareBookingData = async () => {
+        const pickup = routeStops?.pickup.find(
+            (stop) => stop.stopId === selectedPickup
+        );
+        const dropoff = routeStops?.dropoff.find(
+            (stop) => stop.stopId === selectedDropoff
+        );
+
+        // Fetch bus info first
+        const fetchBusInfo = async () => {
+            try {
+                const response = await axiosWithJWT.get(
+                    `https://ticketgo.site/api/v1/drivers/schedule?scheduleId=${scheduleId}`
+                );
+                const busData = response.data.data.bus;
+
+                const tripInfo: TripInfo = {
+                    departureTime: pickup?.arrivalTime || "",
+                    licensePlate: busData.licensePlate,
+                    busType: busData.busType,
+                    pickupTime: pickup?.arrivalTime || "",
+                    pickupLocation: pickup?.location || "",
+                    dropoffTime: dropoff?.arrivalTime || "",
+                    dropoffLocation: dropoff?.location || "",
+                };
+
+                return tripInfo;
+            } catch (error) {
+                console.error("Error fetching bus info:", error);
+                return null;
+            }
+        };
+
+        const tripInfo = await fetchBusInfo();
+
+        const estimatedPrice: EstimatedPrice = {
+            totalPrice: calculateTotalPrice(),
+            unitPrice: price || 0,
+            quantity: selectedSeats.length,
+            seatNumbers: selectedSeats.map((seat) => seat.seatNumber),
+        };
+
+        return { tripInfo, estimatedPrice };
+    };
+
+    const reserveTicketsByAdmin = async (ticketCodes: string[]) => {
+        return await axiosWithJWT.post("/api/v1/admin-reserve", ticketCodes);
+    };
+
     useEffect(() => {
         const checkBookingStep = async () => {
             if (!selectedSeat) return;
+
+            if (isDashboard) {
+                if (
+                    selectedSeats.some(
+                        (s) => s.ticketCode === selectedSeat.ticketCode
+                    )
+                ) {
+                    setSelectedSeats((prev) =>
+                        prev.filter(
+                            (s) => s.ticketCode !== selectedSeat.ticketCode
+                        )
+                    );
+                } else {
+                    setSelectedSeats((prev) => [...prev, selectedSeat]);
+                }
+                setSelectedSeat(null);
+                return;
+            }
 
             try {
                 const response = await axiosWithJWT.get<{
@@ -192,6 +277,12 @@ const SeatSelect: React.FC<SeatSelectProps> = ({
         checkBookingStep();
     }, [selectedSeat, selectedSeats, scheduleId]);
 
+    const handleReservationExpire = () => {
+        setSelectedSeats([]);
+        setBookingConfirmOpen(false);
+        toast.error("Thời gian giữ ghế đã hết hạn. Vui lòng chọn lại ghế.");
+    };
+
     const handleModalContinue = () => {
         const vnPayUrl = window.localStorage.getItem("vnPayUrl");
         if (vnPayUrl) {
@@ -212,6 +303,36 @@ const SeatSelect: React.FC<SeatSelectProps> = ({
 
             if (!selectedSeats || selectedSeats.length === 0) {
                 toast.error("Vui lòng chọn ghế");
+                return;
+            }
+
+            if (isDashboard) {
+                try {
+                    // First reserve the tickets
+                    await reserveTicketsByAdmin(
+                        selectedSeats.map((seat) => seat.ticketCode)
+                    );
+                    toast.success("Đã giữ ghế thành công!");
+
+                    // Then prepare booking data
+                    const bookingData = await prepareBookingData();
+                    if (bookingData.tripInfo) {
+                        // Set the prepared data to state with non-null tripInfo
+                        setPreparedBookingData({
+                            tripInfo: bookingData.tripInfo,
+                            estimatedPrice: bookingData.estimatedPrice,
+                        });
+                        setBookingConfirmOpen(true);
+                    } else {
+                        toast.error("Không thể lấy thông tin xe");
+                    }
+                } catch (error: any) {
+                    console.error("Error in booking process:", error);
+                    toast.error(
+                        error.response?.data?.message ||
+                            "Không thể giữ ghế. Vui lòng thử lại sau."
+                    );
+                }
                 return;
             }
 
@@ -279,7 +400,7 @@ const SeatSelect: React.FC<SeatSelectProps> = ({
     };
 
     const calculateTotalPrice = () => {
-        return selectedSeats.length * price;
+        return selectedSeats.length * (price ?? 0);
     };
 
     const parseLocation = (location: string) => {
@@ -453,7 +574,7 @@ const SeatSelect: React.FC<SeatSelectProps> = ({
                 {row.map((seat) => (
                     <Tooltip
                         key={seat.ticketCode}
-                        title={`Mã ghế: ${seat.seatNumber} - Giá: ${priceFormatted}đ`}
+                        title={getSeatTooltip(seat)}
                         placement="top"
                         arrow
                         slotProps={{
@@ -1326,6 +1447,27 @@ const SeatSelect: React.FC<SeatSelectProps> = ({
                         setSelectedLocation(null);
                     }}
                     location={selectedLocation}
+                />
+            )}
+            {isDashboard && bookingConfirmOpen && preparedBookingData && (
+                <BookingConfirmDialog
+                    open={bookingConfirmOpen}
+                    onClose={() => {
+                        setBookingConfirmOpen(false);
+                        setPreparedBookingData(null);
+                        setActiveStep(0);
+                        setSelectedSeats([]);
+                    }}
+                    scheduleId={scheduleId}
+                    selectedSeats={selectedSeats}
+                    pickupStopId={selectedPickup}
+                    dropoffStopId={selectedDropoff}
+                    tripInfo={preparedBookingData.tripInfo}
+                    estimatedPrice={preparedBookingData.estimatedPrice}
+                    onReservationExpire={() => {
+                        setActiveStep(0);
+                        setSelectedSeats([]);
+                    }}
                 />
             )}
         </Box>

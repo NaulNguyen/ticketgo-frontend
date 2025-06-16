@@ -33,6 +33,8 @@ import DirectionsBusIcon from "@mui/icons-material/DirectionsBus";
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 import UpdateDriverBusDialog from "../../popup/UpdateDriverBusDialog";
 import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
+import useAppAccessor from "../../hook/useAppAccessor";
+import SeatSelect from "./SeatSelect";
 
 interface RouteStop {
     location: string;
@@ -46,6 +48,7 @@ interface RouteStopsData {
 
 interface DetailsProps {
     scheduleId: string;
+    price?: number;
 }
 
 interface Policy {
@@ -107,7 +110,9 @@ interface DriverInfo {
     };
 }
 
-const Details: React.FC<DetailsProps> = ({ scheduleId }) => {
+const Details: React.FC<DetailsProps> = ({ scheduleId, price }) => {
+    const { getUserInfor } = useAppAccessor();
+    const userInfor = getUserInfor();
     const [tabIndex, setTabIndex] = useState(0);
     const [routeStops, setRouteStops] = useState<RouteStopsData | null>(null);
     const [policies, setPolicies] = useState<Policy[]>([]);
@@ -295,13 +300,27 @@ const Details: React.FC<DetailsProps> = ({ scheduleId }) => {
                 )}
                 {window.location.pathname.includes("dashboard") && (
                     <Tab
-                        label="Danh sách khách hàng"
+                        label="Chọn ghế"
                         sx={{
                             textTransform: "none",
                             fontSize: "16px",
                             fontWeight: "500",
                             color:
                                 tabIndex === 4
+                                    ? "rgb(24, 144, 255)"
+                                    : "inherit",
+                        }}
+                    />
+                )}
+                {window.location.pathname.includes("dashboard") && (
+                    <Tab
+                        label="Danh sách khách hàng"
+                        sx={{
+                            textTransform: "none",
+                            fontSize: "16px",
+                            fontWeight: "500",
+                            color:
+                                tabIndex === 5
                                     ? "rgb(24, 144, 255)"
                                     : "inherit",
                         }}
@@ -1061,6 +1080,23 @@ const Details: React.FC<DetailsProps> = ({ scheduleId }) => {
                 )}
 
                 {tabIndex === 4 && (
+                    <Box>
+                        <Box sx={{ mt: 3 }}>
+                            <SeatSelect
+                                scheduleId={scheduleId}
+                                price={price}
+                                onFirstTripComplete={(tripData) => {
+                                    console.log("Trip data:", tripData);
+                                }}
+                                isReturn={false}
+                                firstTripData={null}
+                                isDashboard={true}
+                            />
+                        </Box>
+                    </Box>
+                )}
+
+                {tabIndex === 5 && (
                     <Box>
                         <Divider />
                         <Box

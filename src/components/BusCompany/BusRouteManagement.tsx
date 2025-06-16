@@ -341,7 +341,10 @@ const BusRouteManagement = () => {
                             </Box>
                         </Box>
                         {expandedId === result.scheduleId && (
-                            <Details scheduleId={result.scheduleId} />
+                            <Details
+                                scheduleId={result.scheduleId}
+                                price={result.price}
+                            />
                         )}
                     </Box>
                 ))
