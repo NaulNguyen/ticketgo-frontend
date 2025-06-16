@@ -74,18 +74,12 @@ const BookingConfirmDialog = ({
     );
     const [email, setEmail] = useState("");
 
-    const initialTime = useRef(300); // 5 minutes in seconds
-    const [countdown, setCountdown] = useState(initialTime.current);
+    const timerRef = useRef<number | null>(null);
+    const [remainingTime, setRemainingTime] = useState<number>(300);
 
     const createAdminBooking = async (bookingData: AdminBookingRequest) => {
         return await axiosWithJWT.post("/api/v1/admin-booking", bookingData);
     };
-
-    useEffect(() => {
-        if (open) {
-            setCountdown(initialTime.current);
-        }
-    }, [open]);
 
     const handleBooking = async () => {
         if (!fullName || !phoneNumber || !email) {
@@ -122,32 +116,42 @@ const BookingConfirmDialog = ({
     };
 
     useEffect(() => {
-        let timerInterval: NodeJS.Timeout | null = null;
+        if (open) {
+            setRemainingTime(300); // Reset về 5 phút
 
-        if (open && countdown > 0) {
-            timerInterval = setInterval(() => {
-                setCountdown((prevCount: any) => {
-                    if (prevCount <= 1) {
-                        if (timerInterval) clearInterval(timerInterval);
-                        onReservationExpire();
-                        onClose();
-                        toast.warning("Hết thời gian giữ ghế!");
-                        return 0;
-                    }
-                    return prevCount - 1;
-                });
+            // Clear bất kỳ interval cũ nào
+            if (timerRef.current) {
+                clearInterval(timerRef.current);
+            }
+
+            const start = Date.now();
+
+            timerRef.current = window.setInterval(() => {
+                const elapsedSeconds = Math.floor((Date.now() - start) / 1000);
+                const timeLeft = 300 - elapsedSeconds;
+
+                if (timeLeft <= 0) {
+                    clearInterval(timerRef.current!);
+                    timerRef.current = null;
+                    setRemainingTime(0);
+                    toast.warning("Hết thời gian giữ ghế!");
+                    onReservationExpire();
+                    onClose();
+                } else {
+                    setRemainingTime(timeLeft);
+                }
             }, 1000);
         }
 
-        // Cleanup function
         return () => {
-            if (timerInterval) {
-                clearInterval(timerInterval);
+            if (timerRef.current) {
+                clearInterval(timerRef.current);
+                timerRef.current = null;
             }
         };
-    }, [open, onClose, onReservationExpire]);
+    }, [open]);
 
-    const formatTime = (seconds: number) => {
+    const formatTime = (seconds: number): string => {
         const mins = Math.floor(seconds / 60);
         const secs = seconds % 60;
         return `${mins}:${secs.toString().padStart(2, "0")}`;
@@ -182,7 +186,7 @@ const BookingConfirmDialog = ({
                             alignItems: "center",
                             gap: 1,
                             bgcolor:
-                                countdown <= 60
+                                remainingTime !== null && remainingTime <= 60
                                     ? "error.lighter"
                                     : "warning.lighter",
                             px: 2,
@@ -193,22 +197,29 @@ const BookingConfirmDialog = ({
                         <TimerIcon
                             sx={{
                                 color:
-                                    countdown <= 60
+                                    remainingTime !== null &&
+                                    remainingTime <= 60
                                         ? "error.main"
                                         : "warning.main",
                                 animation: "pulse 1s infinite",
+                                "@keyframes pulse": {
+                                    "0%": { opacity: 0.6 },
+                                    "50%": { opacity: 1 },
+                                    "100%": { opacity: 0.6 },
+                                },
                             }}
                         />
                         <Typography
                             sx={{
                                 color:
-                                    countdown <= 60
+                                    remainingTime !== null &&
+                                    remainingTime <= 60
                                         ? "error.main"
                                         : "warning.main",
                                 fontWeight: "bold",
                             }}
                         >
-                            {formatTime(countdown)}
+                            {formatTime(remainingTime)}
                         </Typography>
                     </Box>
                 </Box>

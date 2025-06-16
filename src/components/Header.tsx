@@ -138,25 +138,6 @@ const Header = ({ onToggleDrawer }: { onToggleDrawer?: () => void }) => {
         },
     }));
 
-    const fetchExpiringBuses = async () => {
-        try {
-            const response = await axiosWithJWT.get(
-                "/api/v1/buses?pageNumber=1&pageSize=50"
-            );
-            if (response.data.status === 200) {
-                const buses = response.data.data;
-                const expiring = buses.filter(
-                    (bus: Bus) =>
-                        bus.registrationExpiringSoon || bus.usageExpiringSoon
-                );
-                setExpiringBuses(expiring);
-            }
-        } catch (error) {
-            console.error("Error fetching expiring buses:", error);
-            toast.error("Không thể tải thông tin xe");
-        }
-    };
-
     useEffect(() => {
         let intervalId: NodeJS.Timeout;
 
