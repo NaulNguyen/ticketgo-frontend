@@ -139,14 +139,7 @@ const SeatSelect: React.FC<SeatSelectProps> = ({
     const userInfo = getUserInfor();
 
     const getSeatTooltip = (seat: Seat) => {
-        return `Ghế ${seat.seatNumber} - ${
-            seat.isAvailable
-                ? new Intl.NumberFormat("vi-VN", {
-                      style: "currency",
-                      currency: "VND",
-                  }).format(price || 0)
-                : "Đã đặt"
-        }`;
+        return `Ghế ${seat.seatNumber}${seat.isAvailable ? "" : " - Đã đặt"}`;
     };
 
     const prepareBookingData = async () => {
@@ -276,12 +269,6 @@ const SeatSelect: React.FC<SeatSelectProps> = ({
 
         checkBookingStep();
     }, [selectedSeat, selectedSeats, scheduleId]);
-
-    const handleReservationExpire = () => {
-        setSelectedSeats([]);
-        setBookingConfirmOpen(false);
-        toast.error("Thời gian giữ ghế đã hết hạn. Vui lòng chọn lại ghế.");
-    };
 
     const handleModalContinue = () => {
         const vnPayUrl = window.localStorage.getItem("vnPayUrl");

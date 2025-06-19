@@ -108,7 +108,7 @@ const BookingHistory = () => {
                 variant: "error",
                 autoHideDuration: 3000,
             });
-            return;
+            return false;
         }
 
         const userInfo = getUserInfor();
@@ -117,7 +117,7 @@ const BookingHistory = () => {
                 variant: "error",
                 autoHideDuration: 3000,
             });
-            return;
+            return false;
         }
 
         try {
@@ -143,7 +143,9 @@ const BookingHistory = () => {
 
                 // Refresh booking list to update status
                 await fetchBookingHistory();
+                return true;
             }
+            return false;
         } catch (error: any) {
             console.error("Error submitting review:", error);
             const errorMessage =
@@ -153,6 +155,7 @@ const BookingHistory = () => {
                 variant: "error",
                 autoHideDuration: 3000,
             });
+            return false;
         } finally {
             setLoading(false);
         }

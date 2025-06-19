@@ -65,7 +65,6 @@ const BusRouteManagement = () => {
             totalItems: 0,
         },
     });
-    console.log("searchResults", searchResults);
     const [currentPage, setCurrentPage] = useState(1);
 
     const handleToggleDetails = (id: string) => {

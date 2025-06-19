@@ -13,12 +13,13 @@ import { useEffect, useState } from "react";
 import { StarBorder, Star } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
 import { enqueueSnackbar } from "notistack";
+import { useNavigate } from "react-router-dom";
 
 // Add these new interfaces
 interface ReviewDialogProps {
     open: boolean;
     onClose: () => void;
-    onSubmit: (rating: number, comment: string) => void;
+    onSubmit: (rating: number, comment: string) => Promise<boolean>;
 }
 
 const StyledDialog = styled(Dialog)(({ theme }) => ({
@@ -62,8 +63,9 @@ const StyledTextArea = styled(TextareaAutosize)(({ theme }) => ({
 const ReviewDialog = ({ open, onClose, onSubmit }: ReviewDialogProps) => {
     const [rating, setRating] = useState<number | null>(5);
     const [comment, setComment] = useState("");
+    const navigate = useNavigate();
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         // Validate rating and comment
         if (!rating) {
             enqueueSnackbar("Vui lòng chọn số sao đánh giá", {
@@ -79,10 +81,21 @@ const ReviewDialog = ({ open, onClose, onSubmit }: ReviewDialogProps) => {
             return;
         }
 
-        // Call onSubmit and reset form
-        onSubmit(rating, comment.trim());
-        setRating(5);
-        setComment("");
+        try {
+            const success = await onSubmit(rating, comment.trim());
+
+            if (success) {
+                enqueueSnackbar("Đánh giá thành công!", { variant: "success" });
+                setRating(5);
+                setComment("");
+                onClose();
+                navigate("/reviews");
+            }
+        } catch (error) {
+            enqueueSnackbar("Có lỗi xảy ra khi gửi đánh giá", {
+                variant: "error",
+            });
+        }
     };
 
     useEffect(() => {

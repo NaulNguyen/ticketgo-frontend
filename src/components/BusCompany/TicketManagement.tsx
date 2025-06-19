@@ -117,7 +117,6 @@ interface CancelBookingFormData {
 
 const BookingManagement = () => {
     const [bookings, setBookings] = useState<BookingHistory[]>([]);
-    console.log("Bookings:", bookings);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(10);
