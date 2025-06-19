@@ -18,6 +18,7 @@ import {
     DialogContent,
     DialogContentText,
     DialogActions,
+    Alert,
 } from "@mui/material";
 import { Bus } from "../../global";
 import BusService from "../../service/BusService";
@@ -37,6 +38,7 @@ import { axiosWithJWT } from "../../config/axiosConfig";
 import ScheduleDialog from "../../popup/ScheduleDialog";
 import dayjs from "dayjs";
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 
 interface ScheduleByDay {
     scheduleId: number;
@@ -63,6 +65,8 @@ const BusManagement = () => {
     const [isEditPopupOpen, setIsEditPopupOpen] = useState(false);
     const [selectedBusId, setSelectedBusId] = useState<string | null>(null);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [busToDelete, setBusToDelete] = useState<Bus | null>(null);
 
     const [scheduleDialog, setScheduleDialog] = useState<{
@@ -161,15 +165,19 @@ const BusManagement = () => {
         if (!busToDelete) return;
 
         try {
-            const response = await BusService.deleteBus(busToDelete.busId);
-            if (response.status === 200) {
-                toast.success("Xóa xe thành công");
-                fetchBuses();
-                handleCloseDeleteDialog();
-            }
-        } catch (error) {
+            await axiosWithJWT.delete(`/api/v1/buses/${busToDelete.busId}`);
+            toast.success("Xóa xe thành công");
+            // Refresh data
+            fetchBuses();
+        } catch (error: any) {
             console.error("Error deleting bus:", error);
-            toast.error("Không thể xóa xe");
+            toast.error(
+                error.response?.data?.message ||
+                    "Không thể xóa xe. Vui lòng thử lại sau."
+            );
+        } finally {
+            setDeleteDialogOpen(false);
+            setBusToDelete(null);
         }
     };
 
@@ -363,11 +371,12 @@ const BusManagement = () => {
                                                                 color: "white",
                                                             },
                                                         }}
-                                                        onClick={() =>
-                                                            handleOpenDeleteDialog(
-                                                                bus
-                                                            )
-                                                        }
+                                                        onClick={() => {
+                                                            setBusToDelete(bus);
+                                                            setDeleteDialogOpen(
+                                                                true
+                                                            );
+                                                        }}
                                                     >
                                                         <DeleteIcon />
                                                     </IconButton>
@@ -717,6 +726,62 @@ const BusManagement = () => {
                         }}
                     >
                         Xóa
+                    </Button>
+                </DialogActions>
+            </Dialog>
+            <Dialog
+                open={deleteDialogOpen}
+                onClose={() => setDeleteDialogOpen(false)}
+                maxWidth="sm"
+                fullWidth
+            >
+                <DialogTitle
+                    sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                        fontWeight: 600,
+                        fontSize: "1.25rem",
+                    }}
+                >
+                    <WarningAmberIcon color="warning" />
+                    Xác nhận xóa xe
+                </DialogTitle>
+
+                <DialogContent sx={{ pt: 1 }}>
+                    <Alert
+                        severity="warning"
+                        icon={<WarningAmberIcon />}
+                        sx={{ mb: 2 }}
+                    >
+                        <Typography variant="body2" color="text.primary">
+                            Trước khi xóa xe này, hãy đảm bảo rằng xe không còn
+                            lịch chạy nào sắp tới. Nếu còn, hãy chuyển lịch sang
+                            xe khác trước khi thực hiện thao tác xóa.
+                        </Typography>
+                    </Alert>
+
+                    <Typography variant="body2" color="text.secondary">
+                        <strong>Hành động này không thể hoàn tác.</strong> Bạn
+                        có chắc chắn muốn xóa?
+                    </Typography>
+                </DialogContent>
+
+                <DialogActions sx={{ px: 3, pb: 2 }}>
+                    <Button
+                        onClick={() => setDeleteDialogOpen(false)}
+                        variant="outlined"
+                        color="inherit"
+                    >
+                        Hủy
+                    </Button>
+                    <Button
+                        onClick={handleDeleteBus}
+                        color="error"
+                        variant="contained"
+                        startIcon={<DeleteIcon />}
+                    >
+                        Xóa xe
                     </Button>
                 </DialogActions>
             </Dialog>

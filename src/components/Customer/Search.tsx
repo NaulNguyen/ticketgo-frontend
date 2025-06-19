@@ -39,7 +39,7 @@ import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import { toast } from "react-toastify";
 
-const cities = ["Sài Gòn", "Vũng Tàu", "Đà Lạt", "Nha Trang", "Phan Thiết"];
+const cities = ["Sài Gòn", "Vũng Tàu", "Đà Lạt", "Nha Trang", "Phan Rang"];
 
 interface SearchParams {
     pageNumber: number;
