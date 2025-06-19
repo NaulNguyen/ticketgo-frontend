@@ -28,6 +28,7 @@ import {
     ListItemText,
     DialogContentText,
     ListItemIcon,
+    InputAdornment,
 } from "@mui/material";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -48,6 +49,8 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import MoneyIcon from "@mui/icons-material/Money";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
+import PaymentsIcon from "@mui/icons-material/Payments";
 
 interface BookingHistory {
     bookingId: number;
@@ -70,6 +73,7 @@ interface BookingHistory {
     refundDate: string | null;
     driverName: string;
     driverPhone: string;
+    paymentStatus: string | null;
 }
 
 interface Pagination {
@@ -105,8 +109,15 @@ interface RouteOption {
     routeName: string;
 }
 
+interface CancelBookingFormData {
+    bookingId: number;
+    amount: string;
+    reason: string;
+}
+
 const BookingManagement = () => {
     const [bookings, setBookings] = useState<BookingHistory[]>([]);
+    console.log("Bookings:", bookings);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(10);
@@ -123,6 +134,13 @@ const BookingManagement = () => {
     const [confirmAction, setConfirmAction] = useState<
         "refund" | "payment" | "cancel" | null
     >(null);
+    const [cancelFormData, setCancelFormData] = useState<CancelBookingFormData>(
+        {
+            bookingId: 0,
+            amount: "",
+            reason: "",
+        }
+    );
 
     const fetchRoutes = async () => {
         try {
@@ -172,7 +190,41 @@ const BookingManagement = () => {
         setConfirmAction(null);
     };
 
-    // Execute confirmed action
+    const displayPrice = (booking: BookingHistory) => {
+        const hasDiscount =
+            booking.discountedPrice && booking.discountedPrice !== "null";
+
+        return (
+            <Box>
+                <Typography fontWeight="bold" color="primary.main">
+                    {parseInt(
+                        hasDiscount
+                            ? booking.discountedPrice
+                            : booking.originalPrice
+                    ).toLocaleString("vi-VN")}{" "}
+                    đ
+                </Typography>
+
+                {hasDiscount && (
+                    <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{
+                            textDecoration: "line-through",
+                            mt: 0.5,
+                        }}
+                    >
+                        (
+                        {parseInt(booking.originalPrice).toLocaleString(
+                            "vi-VN"
+                        )}{" "}
+                        đ)
+                    </Typography>
+                )}
+            </Box>
+        );
+    };
+
     const handleConfirmAction = async () => {
         if (!selectedBooking || !confirmAction) return;
 
@@ -195,12 +247,13 @@ const BookingManagement = () => {
                 case "cancel":
                     await axiosWithJWT.post(`/api/v1/bookings/cancel`, {
                         bookingId: selectedBooking.bookingId,
+                        amount: cancelFormData.amount,
+                        reason: cancelFormData.reason,
                     });
                     toast.success("Đã hủy đặt vé thành công");
                     break;
             }
 
-            // Refresh bookings after action
             fetchBookings();
         } catch (error: any) {
             console.error(`Error performing ${confirmAction} action:`, error);
@@ -210,6 +263,7 @@ const BookingManagement = () => {
             );
         } finally {
             handleConfirmDialogClose();
+            setCancelFormData({ bookingId: 0, amount: "", reason: "" }); // Reset form
         }
     };
 
@@ -237,9 +291,158 @@ const BookingManagement = () => {
             case "cancel":
                 return {
                     title: "Xác nhận hủy đặt vé",
-                    content: `Bạn có chắc chắn muốn hủy đặt vé #${selectedBooking.bookingId} không? Hành động này không thể hoàn tác.`,
+                    content: (
+                        <Box sx={{ mt: 2 }}>
+                            {/* Warning message */}
+                            <Box
+                                sx={{
+                                    p: 2,
+                                    mb: 3,
+                                    borderRadius: 1,
+                                    backgroundColor: "error.lighter",
+                                    border: "1px solid",
+                                    borderColor: "error.light",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 1,
+                                }}
+                            >
+                                <WarningAmberIcon color="error" />
+                                <Typography
+                                    variant="body1"
+                                    color="error.dark"
+                                    fontWeight="500"
+                                >
+                                    Bạn có chắc chắn muốn hủy đặt vé #
+                                    {selectedBooking.bookingId}?
+                                </Typography>
+                            </Box>
+
+                            {/* Booking details summary */}
+                            <Box
+                                sx={{
+                                    p: 2,
+                                    mb: 3,
+                                    borderRadius: 1,
+                                    backgroundColor: "grey.50",
+                                    border: "1px solid",
+                                    borderColor: "grey.200",
+                                }}
+                            >
+                                <Typography
+                                    variant="subtitle2"
+                                    color="text.secondary"
+                                    gutterBottom
+                                >
+                                    Thông tin đặt vé
+                                </Typography>
+                                <Grid container spacing={2}>
+                                    <Grid item xs={6}>
+                                        <Typography
+                                            variant="body2"
+                                            color="text.secondary"
+                                        >
+                                            Mã đặt vé
+                                        </Typography>
+                                        <Typography
+                                            variant="body1"
+                                            fontWeight="500"
+                                        >
+                                            #{selectedBooking.bookingId}
+                                        </Typography>
+                                    </Grid>
+                                    <Grid item xs={6}>
+                                        <Typography
+                                            variant="body2"
+                                            color="text.secondary"
+                                        >
+                                            Tên khách hàng
+                                        </Typography>
+                                        <Typography
+                                            variant="body1"
+                                            fontWeight="500"
+                                        >
+                                            {selectedBooking.contactName}
+                                        </Typography>
+                                    </Grid>
+                                </Grid>
+                            </Box>
+
+                            {/* Form fields */}
+                            <Box sx={{ mb: 3 }}>
+                                <Typography
+                                    variant="subtitle2"
+                                    color="text.secondary"
+                                    sx={{ mb: 1 }}
+                                >
+                                    Thông tin hoàn tiền
+                                </Typography>
+                                <TextField
+                                    fullWidth
+                                    label="Số tiền hoàn trả"
+                                    value={cancelFormData.amount}
+                                    onChange={(e) =>
+                                        setCancelFormData({
+                                            ...cancelFormData,
+                                            amount: e.target.value,
+                                        })
+                                    }
+                                    InputProps={{
+                                        startAdornment: (
+                                            <InputAdornment position="start">
+                                                <PaymentsIcon
+                                                    sx={{
+                                                        color: "primary.main",
+                                                    }}
+                                                />
+                                            </InputAdornment>
+                                        ),
+                                        endAdornment: (
+                                            <InputAdornment position="end">
+                                                VND
+                                            </InputAdornment>
+                                        ),
+                                    }}
+                                    sx={{
+                                        "& .MuiOutlinedInput-root": {
+                                            backgroundColor: "grey.50",
+                                        },
+                                    }}
+                                />
+                            </Box>
+
+                            <Box>
+                                <Typography
+                                    variant="subtitle2"
+                                    color="text.secondary"
+                                    sx={{ mb: 1 }}
+                                >
+                                    Lý do hủy đơn
+                                </Typography>
+                                <TextField
+                                    fullWidth
+                                    multiline
+                                    rows={3}
+                                    placeholder="Nhập lý do hủy đơn..."
+                                    value={cancelFormData.reason}
+                                    onChange={(e) =>
+                                        setCancelFormData({
+                                            ...cancelFormData,
+                                            reason: e.target.value,
+                                        })
+                                    }
+                                    sx={{
+                                        "& .MuiOutlinedInput-root": {
+                                            backgroundColor: "grey.50",
+                                        },
+                                    }}
+                                />
+                            </Box>
+                        </Box>
+                    ),
                     confirmButton: "Hủy đặt vé",
                     color: "error" as const,
+                    isValid: cancelFormData.amount && cancelFormData.reason,
                 };
 
             default:
@@ -260,7 +463,7 @@ const BookingManagement = () => {
     };
 
     const isAwaitingPayment = (booking: BookingHistory) => {
-        return booking.status === "Đã xác nhận" && !booking.refundStatus;
+        return booking.paymentStatus === "Đang chờ thanh toán";
     };
 
     const canBeCancelled = (booking: BookingHistory) => {
@@ -401,10 +604,18 @@ const BookingManagement = () => {
         );
     };
 
-    const getPaymentStatusChip = (isPaid: boolean) => {
-        const status = isPaid ? "Đã thanh toán" : "Đang chờ thanh toán";
+    const getPaymentStatusChip = (booking: BookingHistory) => {
+        const paymentStatus = booking.paymentStatus || "Chưa thanh toán";
 
-        const statusColors = {
+        type PaymentStatusType =
+            | "Đã thanh toán"
+            | "Đang chờ thanh toán"
+            | "Chưa thanh toán";
+
+        const statusColors: Record<
+            PaymentStatusType,
+            { bg: string; text: string; border: string }
+        > = {
             "Đã thanh toán": {
                 bg: "rgb(220, 252, 231)",
                 text: "rgb(22, 101, 52)",
@@ -415,19 +626,25 @@ const BookingManagement = () => {
                 text: "rgb(161, 98, 7)",
                 border: "rgb(253, 224, 71)",
             },
+            "Chưa thanh toán": {
+                bg: "rgb(243, 244, 246)",
+                text: "rgb(55, 65, 81)",
+                border: "rgb(229, 231, 235)",
+            },
         };
-
-        const colors = statusColors[status];
+        const colors =
+            statusColors[paymentStatus as PaymentStatusType] ||
+            statusColors["Chưa thanh toán"];
 
         return (
             <Chip
-                label={status}
+                label={paymentStatus}
                 size="small"
                 icon={<CreditCardIcon fontSize="small" />}
                 sx={{
                     bgcolor: colors.bg,
                     color: colors.text,
-                    fontWeight: 700,
+                    fontWeight: 500,
                     border: `1px solid ${colors.border}`,
                     "& .MuiChip-icon": {
                         color: colors.text,
@@ -777,10 +994,7 @@ const BookingManagement = () => {
                                             fontWeight="bold"
                                             color="primary.main"
                                         >
-                                            {parseInt(
-                                                booking.discountedPrice
-                                            ).toLocaleString("vi-VN")}{" "}
-                                            đ
+                                            {displayPrice(booking)}
                                         </Typography>
                                     </TableCell>
                                     <TableCell>
@@ -792,8 +1006,7 @@ const BookingManagement = () => {
                                             }}
                                         >
                                             {getStatusChip(booking.status)}
-                                            {getPaymentStatusChip(true)}{" "}
-                                            {/* Thay bằng logic thực tế */}
+                                            {getPaymentStatusChip(booking)}
                                         </Box>
                                     </TableCell>
                                     <TableCell>
@@ -1208,27 +1421,37 @@ const BookingManagement = () => {
                 <Dialog
                     open={confirmDialogOpen}
                     onClose={handleConfirmDialogClose}
+                    maxWidth="sm"
+                    fullWidth
                 >
                     <DialogTitle>
                         {getConfirmDialogContent()?.title}
                     </DialogTitle>
                     <DialogContent>
-                        <DialogContentText>
-                            {getConfirmDialogContent()?.content}
-                        </DialogContentText>
+                        {typeof getConfirmDialogContent()?.content ===
+                        "string" ? (
+                            <DialogContentText>
+                                {getConfirmDialogContent()?.content}
+                            </DialogContentText>
+                        ) : (
+                            getConfirmDialogContent()?.content
+                        )}
                     </DialogContent>
                     <DialogActions>
                         <Button
                             onClick={handleConfirmDialogClose}
                             color="inherit"
                         >
-                            Hủy
+                            Đóng
                         </Button>
                         <Button
                             onClick={handleConfirmAction}
                             color={getConfirmDialogContent()?.color}
                             variant="contained"
-                            autoFocus
+                            disabled={
+                                confirmAction === "cancel" &&
+                                !getConfirmDialogContent()?.isValid
+                            }
                         >
                             {getConfirmDialogContent()?.confirmButton}
                         </Button>
