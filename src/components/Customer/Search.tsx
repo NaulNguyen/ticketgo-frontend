@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
     Autocomplete,
     Box,
@@ -38,8 +38,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import { toast } from "react-toastify";
-
-const cities = ["Sài Gòn", "Vũng Tàu", "Đà Lạt", "Nha Trang", "Phan Rang"];
+import axios from "axios";
 
 interface SearchParams {
     pageNumber: number;
@@ -57,12 +56,14 @@ const Search = ({ isDashboard = false, onSearch }: any) => {
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [toDate, setToDate] = useState<Date | null>(null);
     const [returnDate, setReturnDate] = useState<Date | null>(null);
-    const [tripType, setTripType] = useState<"one-way" | "round-trip">(
-        "one-way"
-    );
+    const [tripType, setTripType] = useState<"one-way" | "round-trip">("one-way");
     const [scheduleStatus, setScheduleStatus] = useState<string>("");
-    const [showAdvancedFilters, setShowAdvancedFilters] =
-        useState<boolean>(false);
+    const [showAdvancedFilters, setShowAdvancedFilters] = useState<boolean>(false);
+    const [cities, setCities] = useState<string[]>([]);
+    const [routes, setRoutes] = useState<any[]>([]); // Add state for routes
+    const [loadingRoutes, setLoadingRoutes] = useState<boolean>(false); // Add state for loading routes
+    const [searchDeparture, setSearchDeparture] = useState<string | null>(null);
+    const [searchDestination, setSearchDestination] = useState<string | null>(null);
 
     const location = useLocation();
     const navigate = useNavigate();
@@ -158,6 +159,41 @@ const Search = ({ isDashboard = false, onSearch }: any) => {
         setDestination(temp);
     };
 
+    const extractCitiesFromRoutes = (routes: any) => {
+        const citySet = new Set();
+
+        routes.forEach((route: any) => {
+            const [from, to] = route.routeName.split(" - ");
+            citySet.add(from.trim());
+            citySet.add(to.trim());
+        });
+
+        return Array.from(citySet); // Chuyển Set thành mảng không trùng lặp
+    };
+
+    const fetchRoutes = useCallback(async () => {
+        try {
+            const response = await axios.get("https://ticketgo.site/api/v1/routes/popular");
+            const data = response.data;
+            if (data.status === 200) {
+                setRoutes(data.data);
+                const citiesExtracted = extractCitiesFromRoutes(data.data);
+                setCities(citiesExtracted as string[]); // Giả sử bạn đã khai báo setCities
+            } else {
+                console.error("Failed to fetch routes data");
+            }
+        } catch (error) {
+            console.error("Error fetching routes data:", error);
+        } finally {
+            setLoadingRoutes(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        setLoadingRoutes(true);
+        fetchRoutes();
+    }, [fetchRoutes]);
+
     const handleSearch = () => {
         if (!isDashboard) {
             if (!departure || !destination || !selectedDate) {
@@ -189,8 +225,7 @@ const Search = ({ isDashboard = false, onSearch }: any) => {
         const params = new URLSearchParams();
         if (departure) params.append("departureLocation", departure);
         if (destination) params.append("arrivalLocation", destination);
-        if (selectedDate)
-            params.append("departureDate", format(selectedDate, "yyyy-MM-dd"));
+        if (selectedDate) params.append("departureDate", format(selectedDate, "yyyy-MM-dd"));
         params.append("sortBy", "departureTime");
         params.append("sortDirection", "asc");
         params.append("pageNumber", "1");
@@ -248,9 +283,7 @@ const Search = ({ isDashboard = false, onSearch }: any) => {
             borderRadius: 2,
             textTransform: "none",
             "&:hover": {
-                bgcolor: active
-                    ? alpha("#3b82f6", 0.15)
-                    : alpha("#64748b", 0.05),
+                bgcolor: active ? alpha("#3b82f6", 0.15) : alpha("#64748b", 0.05),
                 borderColor: active ? "#3b82f6" : "#94a3b8",
             },
         }),
@@ -316,23 +349,20 @@ const Search = ({ isDashboard = false, onSearch }: any) => {
                 isHome
                     ? "absolute inset-0 flex justify-center items-center text-white text-3xl font-bold px-4"
                     : "w-full text-white text-3xl font-bold pt-6 px-4"
-            }`}
-        >
+            }`}>
             <div
                 className={`${
                     isHome
                         ? "bg-white p-4 md:p-6 rounded-lg shadow-lg w-full max-w-5xl border border-gray-300 "
                         : "bg-white p-4 md:p-6 rounded-lg shadow-lg border border-gray-300"
-                }`}
-            >
+                }`}>
                 {!isDashBoard && (
                     <Box
                         sx={{
                             mb: 4,
                             display: "flex",
                             justifyContent: "center",
-                        }}
-                    >
+                        }}>
                         <ToggleButtonGroup
                             value={tripType}
                             exclusive
@@ -352,8 +382,7 @@ const Search = ({ isDashboard = false, onSearch }: any) => {
                                     "&.Mui-selected": {
                                         backgroundColor: "#1976d2",
                                         color: "white",
-                                        boxShadow:
-                                            "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                                        boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
                                         "&:hover": {
                                             backgroundColor: "#1565c0",
                                         },
@@ -364,16 +393,12 @@ const Search = ({ isDashboard = false, onSearch }: any) => {
                                         },
                                     },
                                 },
-                            }}
-                        >
+                            }}>
                             <ToggleButton value="one-way" aria-label="one way">
                                 <ArrowRightAltIcon sx={{ mr: 1 }} />
                                 Một chiều
                             </ToggleButton>
-                            <ToggleButton
-                                value="round-trip"
-                                aria-label="round trip"
-                            >
+                            <ToggleButton value="round-trip" aria-label="round trip">
                                 <CompareArrowsIcon sx={{ mr: 1 }} />
                                 Khứ hồi
                             </ToggleButton>
@@ -391,17 +416,13 @@ const Search = ({ isDashboard = false, onSearch }: any) => {
                                     freeSolo
                                     options={cities}
                                     value={departure}
-                                    onChange={(event, newValue) =>
-                                        setDeparture(newValue)
-                                    }
+                                    onChange={(event, newValue) => setDeparture(newValue)}
                                     renderInput={(params) => (
                                         <TextField
                                             {...params}
                                             label="Nơi xuất phát"
                                             fullWidth
-                                            sx={
-                                                adminSearchStyles.inputFieldLarge
-                                            }
+                                            sx={adminSearchStyles.inputFieldLarge}
                                             InputProps={{
                                                 ...params.InputProps,
                                                 startAdornment: (
@@ -425,17 +446,13 @@ const Search = ({ isDashboard = false, onSearch }: any) => {
                                     freeSolo
                                     options={cities}
                                     value={destination}
-                                    onChange={(event, newValue) =>
-                                        setDestination(newValue)
-                                    }
+                                    onChange={(event, newValue) => setDestination(newValue)}
                                     renderInput={(params) => (
                                         <TextField
                                             {...params}
                                             label="Nơi đến"
                                             fullWidth
-                                            sx={
-                                                adminSearchStyles.inputFieldLarge
-                                            }
+                                            sx={adminSearchStyles.inputFieldLarge}
                                             InputProps={{
                                                 ...params.InputProps,
                                                 startAdornment: (
@@ -457,14 +474,11 @@ const Search = ({ isDashboard = false, onSearch }: any) => {
                             <Grid item xs={12} sm={6} md={2.5}>
                                 <LocalizationProvider
                                     dateAdapter={AdapterDateFns}
-                                    adapterLocale={vi}
-                                >
+                                    adapterLocale={vi}>
                                     <DatePicker
                                         label="Từ ngày"
                                         value={selectedDate}
-                                        onChange={(date) =>
-                                            setSelectedDate(date)
-                                        }
+                                        onChange={(date) => setSelectedDate(date)}
                                         format="dd/MM/yyyy"
                                         slotProps={{
                                             textField: {
@@ -495,8 +509,7 @@ const Search = ({ isDashboard = false, onSearch }: any) => {
                                         onClick={handleSearchClick}
                                         startIcon={<SearchIcon />}
                                         disableElevation
-                                        sx={adminSearchStyles.searchButtonLarge}
-                                    >
+                                        sx={adminSearchStyles.searchButtonLarge}>
                                         Tìm kiếm
                                     </Button>
 
@@ -510,20 +523,13 @@ const Search = ({ isDashboard = false, onSearch }: any) => {
                                             )
                                         }
                                         onClick={toggleAdvancedFilters}
-                                        sx={adminSearchStyles.filterButton(
-                                            showAdvancedFilters
-                                        )}
-                                    >
-                                        {showAdvancedFilters
-                                            ? "Ẩn bộ lọc"
-                                            : "Bộ lọc"}
+                                        sx={adminSearchStyles.filterButton(showAdvancedFilters)}>
+                                        {showAdvancedFilters ? "Ẩn bộ lọc" : "Bộ lọc"}
                                         {getActiveFiltersCount() > 0 && (
                                             <Chip
                                                 label={getActiveFiltersCount()}
                                                 size="small"
-                                                sx={
-                                                    adminSearchStyles.filterChip
-                                                }
+                                                sx={adminSearchStyles.filterChip}
                                             />
                                         )}
                                     </Button>
@@ -536,34 +542,24 @@ const Search = ({ isDashboard = false, onSearch }: any) => {
                                 sx={{
                                     ...adminSearchStyles.advancedFilters,
                                     mt: 2.5,
-                                }}
-                            >
+                                }}>
                                 <Typography
                                     variant="subtitle2"
                                     fontWeight={600}
-                                    sx={{ mb: 2, color: "#475569" }}
-                                >
+                                    sx={{ mb: 2, color: "#475569" }}>
                                     Bộ lọc nâng cao
                                 </Typography>
 
-                                <Grid
-                                    container
-                                    spacing={2.5}
-                                    alignItems="center"
-                                >
+                                <Grid container spacing={2.5} alignItems="center">
                                     <Grid item xs={12} sm={6} md={3}>
                                         <LocalizationProvider
                                             dateAdapter={AdapterDateFns}
-                                            adapterLocale={vi}
-                                        >
+                                            adapterLocale={vi}>
                                             <DatePicker
                                                 label="Đến ngày"
                                                 value={toDate}
                                                 onChange={(date) => {
-                                                    if (
-                                                        date &&
-                                                        !isToDateValid(date)
-                                                    ) {
+                                                    if (date && !isToDateValid(date)) {
                                                         toast.warn(
                                                             "Đến ngày phải sau hoặc bằng từ ngày"
                                                         );
@@ -598,18 +594,11 @@ const Search = ({ isDashboard = false, onSearch }: any) => {
                                         <FormControl
                                             fullWidth
                                             size="small"
-                                            sx={adminSearchStyles.inputField}
-                                        >
-                                            <InputLabel>
-                                                Trạng thái lịch trình
-                                            </InputLabel>
+                                            sx={adminSearchStyles.inputField}>
+                                            <InputLabel>Trạng thái lịch trình</InputLabel>
                                             <Select
                                                 value={scheduleStatus}
-                                                onChange={(e) =>
-                                                    setScheduleStatus(
-                                                        e.target.value
-                                                    )
-                                                }
+                                                onChange={(e) => setScheduleStatus(e.target.value)}
                                                 label="Trạng thái lịch trình"
                                                 startAdornment={
                                                     <DirectionsBusIcon
@@ -619,20 +608,13 @@ const Search = ({ isDashboard = false, onSearch }: any) => {
                                                             color: "#0ea5e9",
                                                         }}
                                                     />
-                                                }
-                                            >
-                                                <MenuItem value="">
-                                                    Tất cả
-                                                </MenuItem>
+                                                }>
+                                                <MenuItem value="">Tất cả</MenuItem>
                                                 <MenuItem value="SCHEDULED">
                                                     Chưa khởi hành
                                                 </MenuItem>
-                                                <MenuItem value="IN_PROGRESS">
-                                                    Đang chạy
-                                                </MenuItem>
-                                                <MenuItem value="COMPLETED">
-                                                    Hoàn thành
-                                                </MenuItem>
+                                                <MenuItem value="IN_PROGRESS">Đang chạy</MenuItem>
+                                                <MenuItem value="COMPLETED">Hoàn thành</MenuItem>
                                             </Select>
                                         </FormControl>
                                     </Grid>
@@ -643,12 +625,9 @@ const Search = ({ isDashboard = false, onSearch }: any) => {
                                                 variant="outlined"
                                                 startIcon={<ClearAllIcon />}
                                                 onClick={clearFilters}
-                                                sx={
-                                                    adminSearchStyles.clearFilterButton
-                                                }
+                                                sx={adminSearchStyles.clearFilterButton}
                                                 fullWidth
-                                                size="medium"
-                                            >
+                                                size="medium">
                                                 Xóa lọc
                                             </Button>
                                         </Grid>
@@ -664,8 +643,7 @@ const Search = ({ isDashboard = false, onSearch }: any) => {
                             display: "flex",
                             flexDirection: { xs: "column", md: "row" },
                             gap: 2,
-                        }}
-                    >
+                        }}>
                         {/* Location Selectors */}
                         <Box
                             sx={{
@@ -674,17 +652,13 @@ const Search = ({ isDashboard = false, onSearch }: any) => {
                                 gap: 1,
                                 flex: 3,
                                 minWidth: "500px",
-                            }}
-                        >
+                            }}>
                             <Autocomplete
                                 freeSolo
                                 options={cities}
                                 value={departure}
                                 onChange={(event, newValue) => {
-                                    if (
-                                        !isDashboard &&
-                                        newValue === destination
-                                    ) {
+                                    if (!isDashboard && newValue === destination) {
                                         toast.warn(
                                             "Nơi xuất phát và nơi đến không được giống nhau"
                                         );
@@ -732,8 +706,7 @@ const Search = ({ isDashboard = false, onSearch }: any) => {
                                         backgroundColor: "#f1f5f9",
                                     },
                                     p: 2,
-                                }}
-                            >
+                                }}>
                                 <SwapHorizIcon color="primary" />
                             </IconButton>
 
@@ -742,10 +715,7 @@ const Search = ({ isDashboard = false, onSearch }: any) => {
                                 options={cities}
                                 value={destination}
                                 onChange={(event, newValue) => {
-                                    if (
-                                        !isDashboard &&
-                                        newValue === departure
-                                    ) {
+                                    if (!isDashboard && newValue === departure) {
                                         toast.warn(
                                             "Nơi xuất phát và nơi đến không được giống nhau"
                                         );
@@ -786,18 +756,14 @@ const Search = ({ isDashboard = false, onSearch }: any) => {
                         </Box>
 
                         {/* Date Pickers */}
-                        <LocalizationProvider
-                            dateAdapter={AdapterDateFns}
-                            adapterLocale={vi}
-                        >
+                        <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={vi}>
                             <Box
                                 sx={{
                                     display: "flex",
                                     gap: 1,
                                     flex: 2,
                                     mt: "2px",
-                                }}
-                            >
+                                }}>
                                 <DatePicker
                                     label="Ngày đi"
                                     value={selectedDate}
@@ -824,13 +790,8 @@ const Search = ({ isDashboard = false, onSearch }: any) => {
                                         label="Ngày về"
                                         value={returnDate}
                                         onChange={(date) => {
-                                            if (
-                                                date &&
-                                                !isReturnDateValid(date)
-                                            ) {
-                                                toast.warn(
-                                                    "Ngày về phải sau ngày đi"
-                                                );
+                                            if (date && !isReturnDateValid(date)) {
+                                                toast.warn("Ngày về phải sau ngày đi");
                                                 return;
                                             }
                                             setReturnDate(date);
@@ -842,16 +803,12 @@ const Search = ({ isDashboard = false, onSearch }: any) => {
                                             textField: {
                                                 fullWidth: true,
                                                 sx: {
-                                                    "& .MuiOutlinedInput-root":
-                                                        {
-                                                            backgroundColor:
-                                                                "#f8fafc",
-                                                            "&:hover fieldset":
-                                                                {
-                                                                    borderColor:
-                                                                        "#1976d2",
-                                                                },
+                                                    "& .MuiOutlinedInput-root": {
+                                                        backgroundColor: "#f8fafc",
+                                                        "&:hover fieldset": {
+                                                            borderColor: "#1976d2",
                                                         },
+                                                    },
                                                 },
                                             },
                                         }}
@@ -873,8 +830,7 @@ const Search = ({ isDashboard = false, onSearch }: any) => {
                                     color: "black",
                                     textTransform: "none",
                                     fontSize: "16px",
-                                }}
-                            >
+                                }}>
                                 Tìm kiếm
                             </Button>
                         </div>

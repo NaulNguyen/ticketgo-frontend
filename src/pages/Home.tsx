@@ -50,6 +50,7 @@ const MemoizedSearch = memo(Search);
 
 const Home = () => {
     const [routes, setRoutes] = useState<RouteData[]>([]);
+    console.log("Routes data:", routes);
     const [homepageData, setHomepageData] = useState<HomepageData | null>(null);
     const [loadingRoutes, setLoadingRoutes] = useState(true);
     const [loadingHomepage, setLoadingHomepage] = useState(true);
