@@ -86,6 +86,8 @@ interface Coordinates {
     lon: number;
 }
 
+const MAX_TICKETS_PER_PERSON = 10;
+
 const SeatSelect: React.FC<SeatSelectProps> = ({
     scheduleId,
     price,
@@ -507,6 +509,14 @@ const SeatSelect: React.FC<SeatSelectProps> = ({
     const toggleSeatSelection = (seat: Seat) => {
         if (!userInfo.isAuthenticated) {
             toast.warn("Vui lòng đăng nhập để chọn ghế");
+            return;
+        }
+
+        if (
+            selectedSeats.length >= MAX_TICKETS_PER_PERSON &&
+            !selectedSeats.some((s) => s.ticketCode === seat.ticketCode)
+        ) {
+            toast.error("Một người chỉ được đặt tối đa 10 vé");
             return;
         }
         setSelectedSeat(seat); // Set the clicked seat
